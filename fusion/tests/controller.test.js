@@ -26,7 +26,7 @@ test('keyboard velocity uses only contiguous keyboard observations',()=>{
   assert.equal(e.tick(240).motionSource,'keyboard');
   e.ingest('keyboard',result(null,300));e.ingest('keyboard',result(44,350));assert.equal(e.tick(350).motionSource,'unavailable');
 });
-test('controller obeys the speed bound during mismatch, acceleration, reversal, rest, and irregular frames',()=>{
+test('controller stays within its planned peaks during mismatch, reversal, rest, and irregular frames',()=>{
   for(const gap of [2,8,30]){
     const c=new DisplayController({...config.display,initialAngle:50-gap});let target=50,previous=c.angle;
     c.update(target,0,0);
@@ -37,7 +37,7 @@ test('controller obeys the speed bound during mismatch, acceleration, reversal, 
       assert.ok(Math.abs(out.displayAngleDeg-previous)<1);previous=out.displayAngleDeg;
     }
     const rest=new DisplayController({...config.display,initialAngle:40});rest.update(48,0,0);
-    let t=0;for(let i=0;i<500;i++){t+=i%3===0?17:31;const out=rest.update(48,0,t);assert.ok(Math.abs(out.displayVelocityDegS)<=1+1e-9);assert.ok(out.displayAngleDeg<=48.001);}
+    let t=0;for(let i=0;i<500;i++){t+=i%3===0?17:31;const out=rest.update(48,0,t);assert.ok(Math.abs(out.displayVelocityDegS)<=out.displaySpeedBoundDegS+1e-9);assert.ok(out.displayAngleDeg<=48.001);}
     assert.ok(Math.abs(rest.angle-48)<.01);
   }
 });
@@ -45,4 +45,15 @@ test('a stale time gap freezes position and future samples resume continuously',
   const c=new DisplayController({...config.display,initialAngle:60});c.update(70,20,0);c.update(70,20,100);const previous=c.angle;
   assert.equal(c.update(100,100,2000).displayAngleDeg,previous);
   assert.ok(c.update(100,0,2016).displayAngleDeg-previous<.02);
+});
+test('unavailable raw measurements do not restart a stationary display correction',()=>{
+  const e=new FusionEngine(config),deadlines=new Set();let out;
+  for(let t=0;t<=config.display.deadlineMs;t+=20){
+    const visible=t%400<160;
+    e.ingest('keyboard',result(visible?25:null,t));
+    e.ingest('lighting',result(null,t));out=e.tick(t);
+    if(out.correctionDeadlineMs!==null)deadlines.add(out.correctionDeadlineMs);
+    if(!visible&&t%400>340){assert.equal(out.measurementAngleDeg,null);assert.equal(out.displayTargetHeld,true);}
+  }
+  assert.equal(deadlines.size,1);assert.ok(Math.abs(out.displayAngleDeg-25)<1);
 });

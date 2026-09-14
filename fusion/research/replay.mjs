@@ -10,6 +10,7 @@ export async function replay(data,Adapter){
   const adapter=Adapter.restore(data.adaptationConfig,data.adaptationInitial);
   const engine=new FusionEngine(config),rows=[];let previous=-1;
   for(const record of data.records){
+    if(record.modelGeneration!==undefined&&record.modelGeneration!==(data.records[0].modelGeneration??0))throw new Error('Use a separate replay segment per model generation');
     const timestampMs=data.captureStartMs+record.tMs;
     if(!Number.isFinite(timestampMs)||timestampMs<=previous)throw new Error('Recording timestamps must increase');previous=timestampMs;
     if(record.adaptation?.segment!==adapter.segment){adapter.reset(record.adaptation.prior,record.adaptation.origin);adapter.segment=record.adaptation.segment;}
@@ -49,7 +50,7 @@ export async function replay(data,Adapter){
     limitations:['Replay admits matched labels after scoring each frame; recorded-live metrics retain real processing delays.',
       'Keyboard adaptation labels are excluded from independent accuracy scores.',
       'Camera/reference synchronization and real end-to-end latency require hardware validation.',
-      'Discrepancy correction has no fixed completion deadline.'],rows};
+      'Each chase keeps its original 1-second deadline; gaps retain the original deadline; an expired deadline is reported without restarting the countdown.'],rows};
 }
 
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){

@@ -3,13 +3,23 @@
 <body><main>
   <header><div><p class="eyebrow">CAMERA · KEYBOARD · LIGHT</p><h1>Hinge Fusion</h1><p class="muted">Keyboard accuracy. Motion that follows the screen.</p></div><span id="state" class="badge">Stopped</span></header>
   <section class="dashboard">
-    <div class="reading"><p class="eyebrow">SCREEN OPENING</p><div class="angle"><span id="angle">—</span><span class="unit">°</span></div><p id="source">Start the camera to begin.</p><p id="quality" class="muted">A new session starts with a provisional 120° assumption.</p><div class="metrics"><div><span>Measured angle</span><strong id="measurement">—</strong></div><div><span>Inferred velocity</span><strong id="velocity">—</strong></div><div><span>Reading age</span><strong id="age">—</strong></div></div></div>
+    <div class="reading"><p class="eyebrow">SCREEN OPENING</p><div class="angle"><span id="angle">—</span><span class="unit">°</span></div><p id="source">Start the camera to begin.</p><p id="quality" class="muted">Keyboard readings are authoritative. Choose a saved calibration for brightness measurement.</p><div class="metrics"><div><span>Measured angle</span><strong id="measurement">—</strong></div><div><span>Inferred velocity</span><strong id="velocity">—</strong></div><div><span>Reading age</span><strong id="age">—</strong></div></div></div>
     <div class="preview"><video id="video" autoplay playsinline muted hidden></video><canvas id="preview" width="640" height="480"></canvas><p id="camera-note">One unmirrored camera stream is shared with both services.</p></div>
   </section>
   <section class="controls"><select id="camera" aria-label="Camera"><option value="">Default front camera</option></select><button id="refresh">Refresh cameras</button><button id="start" class="primary">Start camera</button><button id="stop" disabled>Stop</button><button id="preview-toggle">Hide preview</button></section>
   <p id="message" role="status"></p>
   <section class="status-grid"><article><h2>Keyboard</h2><p id="keyboard-status">Checking service…</p></article><article><h2>Brightness</h2><p id="lighting-status">Checking service…</p></article><article><h2>Temporary adaptation</h2><p id="adaptation-status">No session anchors.</p><button id="export-adaptation" disabled>Export adaptation</button></article></section>
-  <details><summary>Baseline calibration and recordings</summary><p>Record separate opening and closing sweeps in the same environment. Hold independently measured angles above keyboard visibility. Keep the base fixed. Training and testing use separate recordings.</p>
+  <section class="calibration-panel">
+    <h2>Sweep calibration</h2>
+    <p>Keep the laptop base fixed and the lighting and display unchanged. Start below 25°, open evenly to approximately 120°, hold, then close at the indicated pace until the keyboard reads below 25°.</p>
+    <div class="controls"><label>Saved calibration <select id="profiles"><option value="">No saved calibration</option></select></label><button id="apply-profile">Use calibration</button><button id="export-profile">Export profile</button></div>
+    <div class="fields"><label>Profile name<input id="profile-name" placeholder="Office daylight"></label></div>
+    <p class="muted">You position the upper endpoint near 120°. Intermediate angles assume an even pace; saved profiles remain provisional. Setup details can be edited below.</p>
+    <div class="controls"><button id="calibrate" class="primary" disabled>Start sweep calibration</button><button id="cancel-calibration" disabled>Cancel calibration</button><button id="upper-hold" disabled>Holding at 120°</button><button id="closing-start" disabled>Start closing now</button></div>
+    <p id="calibration-guide" role="status">Start the camera to calibrate.</p><p id="calibration-pace"></p><p id="profile-details" class="muted"></p>
+    <p id="correction-status" class="muted"></p>
+  </section>
+  <details><summary>Setup details and advanced recordings</summary><p>Record separate opening and closing sweeps in the same environment. Hold independently measured angles above keyboard visibility. Keep the base fixed. Training and testing use separate recordings.</p>
     <div class="fields"><label>Laptop<input id="device" placeholder="My laptop"></label><label>Environment<input id="location" placeholder="Office daylight"></label><label>Position<input id="position" value="desk"></label><label>Lighting<input id="lighting" placeholder="Window and ceiling lamp"></label><label>Display content<input id="display" placeholder="Fixed brightness, document"></label></div>
     <div class="controls"><button id="record" disabled>Start recording</button><button id="end-record" disabled>End recording</button><button id="download" disabled>Download recording</button></div>
     <div class="controls"><label>Measured opening <input id="reference-angle" type="number" min="10" max="120" step="0.1" value="120"> °</label><button id="checkpoint" disabled>Capture 2-second hold</button><span id="record-status"></span></div>

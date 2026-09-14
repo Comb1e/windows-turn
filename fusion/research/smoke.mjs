@@ -38,14 +38,14 @@ try{
   const fusion=await ready(process.execPath,['server.js','--config',join(output,'fusion-config.json')],root);
   const call=async(path,data,method='POST')=>{const response=await fetch(fusion+path,{method,headers:{'Content-Type':'application/json'},body:method==='GET'?undefined:JSON.stringify(data)});
     const body=await response.json();assert.ok(response.ok,JSON.stringify(body));return body;};
-  const session=await call('/api/start',{});const sid=session.sessionId;let frameId=0;
+  const session=await call('/api/start',{profileId:null});const sid=session.sessionId;let frameId=0;
   const hidden=await readFile(join(output,'hidden.rgba')),visible=await readFile(join(output,'visible.rgba'));
   const feed=async(bytes,count)=>{for(let i=0;i<count;i++){
     const response=await fetch(fusion+'/api/frames',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Session-Id':sid,'X-Frame-Id':String(++frameId),
       'X-Timestamp-Ms':String(performance.now()),'X-Width':'640','X-Height':'480'},body:bytes});assert.equal(response.status,202);
     await new Promise(resolve=>setTimeout(resolve,80));
   }};
-  await feed(hidden,40);const initial=await call('/api/angle',null,'GET');assert.equal(initial.source,'lighting');assert.equal(initial.measurementAngleDeg,120);
+  await feed(hidden,40);const initial=await call('/api/angle',null,'GET');assert.equal(initial.source,'lighting');assert.equal(initial.measurementAngleDeg,80);
   await call('/api/recording',{sessionId:sid,timestampMs:performance.now(),epochMs:Date.now(),metadata:{device:'SYNTHETIC-SOFTWARE-SMOKE',location:'synthetic',position:'fixed',lighting:'rendered',display:'none'}});
   await call('/api/checkpoint',{sessionId:sid,timestampMs:performance.now(),angleDeg:25});
   await feed(visible,35);const key=await call('/api/angle',null,'GET');assert.equal(key.source,'keyboard');assert.ok(Math.abs(key.measurementAngleDeg-25)<.5);

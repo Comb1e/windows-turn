@@ -12,27 +12,19 @@ Three independently runnable components share one front-camera stream:
 
 ## Run
 
-Open three PowerShell terminals. Existing virtual environments are already available in this workspace.
-
-```powershell
-Set-Location E:\Projects\windows-turn\keyboard
-.\.venv\Scripts\python.exe -m keyboard_hinge serve
-```
-
-```powershell
-Set-Location E:\Projects\windows-turn\light-track
-npm start
-```
+From `fusion`, one command starts or reuses all three services:
 
 ```powershell
 Set-Location E:\Projects\windows-turn\fusion
 npm start
 ```
 
+The launcher uses each project's own runtime and configuration. It checks service health, reports occupied incompatible ports, and stops only the processes it started when you press Ctrl+C. Existing independently started services keep running. `npm run start:coordinator` starts only Fusion if you prefer managing the services yourself.
+
 Open [Hinge Fusion](http://localhost:1820), then select **Start camera**. Only the coordinator browser opens the webcam; leave the other applications' camera workflows stopped.
 
-Without a real brightness model, keyboard readings and baseline recording work. The wide-angle measurement remains unavailable; the displayed initial 120° is explicitly a retained/provisional value. After source calibration, restart only Light Track with `npm start -- --model artifacts/source/model.json`, then start a new coordinator session.
+Without a real brightness model, keyboard readings and baseline recording work. The wide-angle measurement remains unavailable; the displayed initial 120° is explicitly a retained/provisional value. For provisional measurement, use **Start sweep calibration** in Fusion. It trains, saves, and activates a selectable Light Track profile without a service restart. The stricter source-environment training path remains available for independent validation.
 
-The existing keyboard model requests 640×480 and supports 10–44°. It remains authoritative whenever it returns a valid result. The displayed angle is separate and may take time to converge to an accurate measurement, especially after a large mismatch while stationary.
+The existing keyboard model requests 640×480 and supports 10–44°. It remains authoritative whenever it returns a valid result. The displayed angle is separate and may take time to converge to an accurate measurement, with a hard 1-second correction deadline and continuous trajectory replanning.
 
 See [fusion setup and calibration](fusion/README.md), [architecture](docs/architecture.md), [technical design and research](docs/technical-design.md), and [iteration history](iteration.md).

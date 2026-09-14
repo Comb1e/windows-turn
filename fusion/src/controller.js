@@ -1,26 +1,101 @@
+import { physicalStep, physicalDerivatives } from './motion-feedforward.js';
+import { trajectory } from './trajectory.js';
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 
-/** Continuous motion feedforward plus filtered, bounded error feedback. */
+/** Continuous position, speed, acceleration and jerk with an immutable chase deadline. */
 export class DisplayController {
-  constructor(config){this.c=config;this.angle=config.initialAngle;this.velocity=0;this.correction=0;this.time=null;this.displayVelocity=0;}
-  update(target,motion,timestamp) {
-    if(!Number.isFinite(timestamp))throw new Error('Invalid controller timestamp');
-    if(this.time!==null && timestamp<=this.time)return this.snapshot();
-    const elapsed=this.time===null?0:timestamp-this.time;this.time=timestamp;
-    if(!Number.isFinite(target)||elapsed>this.c.staleMs){this.velocity=0;this.correction=0;this.displayVelocity=0;return this.snapshot();}
-    const steps=Math.max(1,Math.ceil(elapsed/this.c.maxStepMs)),dt=elapsed/steps;
-    for(let i=0;i<steps;i++){
-      this.velocity+=(1-Math.exp(-dt/this.c.motionTauMs))*((Number.isFinite(motion)?motion:0)-this.velocity);
-      const allowance=this.c.restCorrectionDegS+this.c.motionAllowance*Math.abs(this.velocity);
-      const requested=Math.tanh(this.c.errorGain*(target-this.angle)/allowance);
-      this.correction=clamp(this.correction+(1-Math.exp(-dt/this.c.correctionTauMs))*(requested-this.correction),-1,1);
-      this.displayVelocity=this.velocity+allowance*this.correction;
-      this.angle=clamp(this.angle+this.displayVelocity*dt/1000,this.c.minAngle,this.c.maxAngle);
+  constructor(config){
+    this.c={trackingHorizonMs:250,trackingMaxMs:1000,preferredSpeedDegS:4,motionAllowance:.2,
+      preferredAccelerationDegS2:15,preferredJerkDegS3:60,maxInitialMs:950,deadlineMs:1000,
+      toleranceDeg:1,candidateStepMs:250,replanVelocityDegS:.15,replanAngleDeg:.05,displayHoldMs:500,...config};
+    this.state=[config.initialAngle,0,0,0];this.physical=[config.initialAngle,0,0,0];this.rawMotion=0;this.velocity=0;this.time=null;this.plan=null;
+    this.mode='STALE';this.chase=null;this.lastChase=null;this.target=null;
+    this.lastMeasurement=null;this.targetHeld=false;
+    this.comfortExceeded=false;this.peaks=[0,0,0];
+  }
+  get angle(){return this.state[0];}
+  get tau(){return this.c.motionTauMs/3000;}
+  sample(timestamp){
+    const dt=this.time===null?0:Math.max(0,timestamp-this.time)/1000;
+    const physical=physicalStep(this.physical,this.rawMotion,dt,this.tau);
+    const base=physicalDerivatives(physical,this.tau);
+    const correction=this.plan?this.plan.curve.at((timestamp-this.plan.start)/1000):[0,0,0,0];
+    return base.map((v,i)=>v+correction[i]);
+  }
+  advance(timestamp,elapsed){
+    const steps=Math.max(1,Math.ceil(elapsed/this.c.maxStepMs));
+    for(let i=0;i<steps;i++)this.physical=physicalStep(this.physical,this.rawMotion,elapsed/steps/1000,this.tau);
+    const base=physicalDerivatives(this.physical,this.tau);
+    const correction=this.plan?this.plan.curve.at((timestamp-this.plan.start)/1000):[0,0,0,0];
+    this.state=base.map((v,i)=>v+correction[i]);this.velocity=base[1];
+    const bounded=clamp(this.state[0],this.c.minAngle,this.c.maxAngle);
+    if(bounded!==this.state[0]){this.state=[bounded,0,0,0];this.physical=[bounded,0,0,0];this.velocity=0;this.plan=null;}
+  }
+  makePlan(target,timestamp){
+    const c=this.c,remaining=this.chase&&!this.chase.overdue?this.chase.deadline-timestamp:c.trackingMaxMs;
+    const maximum=Math.max(1,Math.min(remaining,this.chase&&this.chase.start===timestamp?c.maxInitialMs:remaining));
+    const minimum=Math.min(c.trackingHorizonMs,maximum),durations=[];
+    for(let ms=minimum;ms<maximum;ms+=c.candidateStepMs)durations.push(ms);
+    durations.push(maximum);
+    const limits=[c.preferredSpeedDegS+c.motionAllowance*Math.abs(this.velocity),c.preferredAccelerationDegS2,c.preferredJerkDegS3];
+    let chosen=null;
+    for(const ms of durations){
+      const base=physicalDerivatives(this.physical,this.tau);
+      const future=physicalStep(this.physical,this.rawMotion,ms/1000,this.tau);
+      const end=clamp(target+this.rawMotion*ms/1000,c.minAngle,c.maxAngle);
+      const futureState=physicalDerivatives(future,this.tau);
+      const atBoundary=end===c.minAngle||end===c.maxAngle;
+      const terminal=[end-future[0],...futureState.slice(1).map(v=>atBoundary?-v:0)];
+      const curve=trajectory(this.state.map((v,i)=>v-base[i]),terminal,ms/1000),peaks=curve.peaks();
+      const score=Math.max(...peaks.map((p,i)=>(p/limits[i])**(1/(i+1))));
+      const candidate={curve,peaks,score,start:timestamp,end:timestamp+ms,target,velocity:this.rawMotion};
+      if(!chosen||score<chosen.score)chosen=candidate;
+      if(score<=1){chosen=candidate;break;}
     }
+    this.plan=chosen;this.peaks=chosen.peaks;this.comfortExceeded=chosen.score>1+1e-6;
+  }
+  update(target,motion,timestamp,observation=null){
+    if(!Number.isFinite(timestamp))throw new Error('Invalid controller timestamp');
+    if(this.time!==null&&timestamp<=this.time)return this.snapshot();
+    const elapsed=this.time===null?0:timestamp-this.time;
+    const current=Number.isFinite(target);
+    if(current)this.lastMeasurement={angle:target,timestampMs:observation?.timestampMs??timestamp};
+    const age=this.lastMeasurement?timestamp-this.lastMeasurement.timestampMs:Infinity;
+    this.targetHeld=!current&&age>=0&&age<=this.c.displayHoldMs;
+    if((!current&&!this.targetHeld)||elapsed>this.c.staleMs){
+      // Freeze across a genuine gap, but never grant an existing chase a new deadline.
+      if(this.chase&&timestamp>=this.chase.deadline&&!this.chase.overdue){
+        this.chase.overdue=true;this.lastChase={...this.chase,completed:false,reason:'stale-input',ended:timestamp};
+      }
+      this.state=[this.angle,0,0,0];this.physical=[this.angle,0,0,0];this.rawMotion=0;this.time=timestamp;
+      this.velocity=0;this.plan=null;this.mode='STALE';this.target=null;this.peaks=[0,0,0];this.comfortExceeded=false;this.targetHeld=false;
+      return this.snapshot();
+    }
+    this.advance(timestamp,elapsed);this.time=timestamp;this.rawMotion=Number.isFinite(motion)?motion:0;
+    const aligned=clamp(this.lastMeasurement.angle+this.velocity*Math.max(0,age)/1000,this.c.minAngle,this.c.maxAngle);
+    const error=aligned-this.angle;this.target=aligned;
+    const base=physicalDerivatives(this.physical,this.tau);
+    const settled=Math.abs(error)<=this.c.toleranceDeg&&(timestamp>=this.plan?.end||
+      Math.abs(this.state[1]-this.velocity)<.2&&Math.abs(this.state[2]-base[2])<.5&&Math.abs(this.state[3]-base[3])<1);
+    if(this.chase&&current&&settled){
+      this.lastChase={...this.chase,ended:timestamp,errorDeg:error,completed:true,deadlineMet:timestamp<=this.chase.deadline};this.chase=null;
+    }else if(this.chase&&timestamp>=this.chase.deadline&&!this.chase.overdue){
+      this.chase.overdue=true;this.lastChase={...this.chase,ended:timestamp,errorDeg:error,completed:false,reason:'deadline-missed'};
+    }
+    if(!this.chase&&current&&Math.abs(error)>this.c.toleranceDeg)this.chase={start:timestamp,deadline:timestamp+this.c.deadlineMs,overdue:false};
+    this.mode=this.chase?'CHASING':'TRACKING';
+    const predicted=this.plan?this.plan.target+this.plan.velocity*(timestamp-this.plan.start)/1000:null;
+    if(!this.plan||timestamp>=this.plan.end||Math.abs(aligned-predicted)>this.c.replanAngleDeg
+      ||Math.abs(this.rawMotion-this.plan.velocity)>this.c.replanVelocityDegS){this.makePlan(aligned,timestamp);}
     return this.snapshot();
   }
-  snapshot(){return {displayAngleDeg:this.angle,motionVelocityDegS:this.velocity,displayVelocityDegS:this.displayVelocity,
-    displaySpeedBoundDegS:(1+this.c.motionAllowance)*Math.abs(this.velocity)+this.c.restCorrectionDegS};}
+  snapshot(){return {displayAngleDeg:this.angle,motionVelocityDegS:this.velocity,displayVelocityDegS:this.state[1],
+    displayAccelerationDegS2:this.state[2],displayJerkDegS3:this.state[3],controllerState:this.mode,
+    correctionErrorDeg:this.target===null?null:this.target-this.angle,
+    correctionElapsedMs:this.chase?this.time-this.chase.start:0,correctionRemainingMs:this.chase?Math.max(0,this.chase.deadline-this.time):0,
+    correctionDeadlineMs:this.chase?.deadline??null,correctionOverdue:this.chase?.overdue??false,
+    displayTargetHeld:this.targetHeld,displayTargetAgeMs:this.lastMeasurement?this.time-this.lastMeasurement.timestampMs:null,comfortExceeded:this.comfortExceeded,lastCorrection:this.lastChase,
+    plannedCorrectionPeaks:this.peaks,displaySpeedBoundDegS:Math.abs(this.velocity)+this.peaks[0]};}
 }
 
 export function robustVelocity(samples,config) {
@@ -62,7 +137,7 @@ export class FusionEngine {
     let motion=null,motionSource='unavailable';
     if(source==='keyboard'&&!held){motion=robustVelocity(this.history,this.c.selection);if(motion!==null)motionSource='keyboard';}
     if(motion===null&&fresh(l)&&Number.isFinite(l.motion?.velocityDegS)){motion=l.motion.velocityDegS;motionSource='scene';}
-    const output=this.controller.update(selected?.angleDeg??null,motion,now);
+    const output=this.controller.update(selected?.angleDeg??null,motion,now,selected?{timestampMs:selected.timestampMs,key:`${source}:${selected.frameId}:${selected.modelGeneration??0}`}:null);
     if(selected)this.lastValid={angleDeg:selected.angleDeg,timestampMs:selected.timestampMs,source};
     return {...output,timestampMs:now,measurementAngleDeg:selected?.angleDeg??null,source,state,held,
       measurementTimestampMs:selected?.timestampMs??null,measurementAgeMs:selected?now-selected.timestampMs:null,

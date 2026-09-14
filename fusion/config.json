@@ -1,9 +1,81 @@
 {
   "port": 1820,
-  "services": {"keyboard": "http://127.0.0.1:1819", "lighting": "http://127.0.0.1:1818"},
-  "camera": {"width": 640, "height": 480, "horizontalFovDegrees": 60, "fps": 15},
-  "network": {"maxBodyBytes": 2000000, "requestTimeoutMs": 20000, "healthTimeoutMs": 1500, "pairCacheSize": 256, "retryMs": 3000, "leaseIdleMs": 30000},
-  "selection": {"keyboardGraceMs": 200, "staleMs": 500, "velocityWindowMs": 250, "velocityMinSpanMs": 100, "velocityMinSamples": 3, "maxVelocityDegS": 120},
-  "display": {"minAngle": 10, "maxAngle": 120, "initialAngle": 120, "motionAllowance": 0.2, "restCorrectionDegS": 1, "errorGain": 2, "motionTauMs": 120, "correctionTauMs": 80, "maxStepMs": 8, "staleMs": 500},
-  "output": {"fps": 60, "publishMs": 16, "maxTimelineRecords": 60000}
+  "services": {
+    "keyboard": "http://127.0.0.1:1819",
+    "lighting": "http://127.0.0.1:1818"
+  },
+  "camera": {
+    "width": 640,
+    "height": 480,
+    "horizontalFovDegrees": 60,
+    "fps": 15
+  },
+  "network": {
+    "maxBodyBytes": 2000000,
+    "requestTimeoutMs": 20000,
+    "healthTimeoutMs": 1500,
+    "pairCacheSize": 256,
+    "retryMs": 3000,
+    "leaseIdleMs": 30000
+  },
+  "selection": {
+    "keyboardGraceMs": 200,
+    "staleMs": 500,
+    "velocityWindowMs": 250,
+    "velocityMinSpanMs": 100,
+    "velocityMinSamples": 3,
+    "maxVelocityDegS": 120
+  },
+  "display": {
+    "minAngle": 10,
+    "maxAngle": 120,
+    "initialAngle": 120,
+    "motionAllowance": 0.2,
+    "motionTauMs": 120,
+    "maxStepMs": 8,
+    "staleMs": 500,
+    "trackingHorizonMs": 250,
+    "trackingMaxMs": 1000,
+    "preferredSpeedDegS": 4,
+    "preferredAccelerationDegS2": 15,
+    "preferredJerkDegS3": 60,
+    "maxInitialMs": 950,
+    "deadlineMs": 1000,
+    "toleranceDeg": 1,
+    "candidateStepMs": 250,
+    "replanVelocityDegS": 0.15,
+    "replanAngleDeg": 0.05,
+    "displayHoldMs": 500
+  },
+  "output": {
+    "fps": 60,
+    "publishMs": 16,
+    "maxTimelineRecords": 60000
+  },
+  "calibration": {
+    "holdMs": 800,
+    "maxGapMs": 500,
+    "minSamples": 8,
+    "minSpanDeg": 10,
+    "smallAngleExclusive": 25,
+    "upperAngle": 120,
+    "paceTolerance": 0.2,
+    "boundaryMs": 300,
+    "stationarySpanDeg": 0.6,
+    "stationaryRotationDegS": 1,
+    "movingRotationDegS": 2,
+    "departureDeg": 1,
+    "maxDurationMs": 180000,
+    "maxRecords": 10000,
+    "jobPollMs": 1000
+  },
+  "startup": {
+    "keyboardDirectory": "../keyboard",
+    "lightingDirectory": "../light-track",
+    "readyTimeoutMs": 20000,
+    "probeTimeoutMs": 1500,
+    "initialProbeMs": 100,
+    "maxProbeMs": 1000,
+    "shutdownTimeoutMs": 5000
+  }
 }

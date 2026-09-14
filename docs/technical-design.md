@@ -4,30 +4,21 @@
 
 The keyboard service's valid angle is the accurate measurement by product contract. The coordinator uses it without brightness weighting. A displayed value is a separate continuous state, so it can temporarily differ from the accurate measurement while following the requested motion constraint.
 
-The brightness service uses its existing 499 lighting features and frozen Extra Trees model: `z = f0(features)`. A session-specific affine output correction produces `theta = a*z + b`. At startup a 1–3 second settling window anchors an assumed 120° with `a = 1, b = 120 - median(z)`. A single assumed point cannot identify scale or establish a physical illumination model.
+The brightness service uses its existing 499 lighting features and frozen Extra Trees model: `z = f0(features)`. A session-specific affine output correction produces `theta = a*z + b`. Fusion now initializes a selected profile from its model output (`a = 1, b = 0`), then admits exact keyboard anchors. The legacy standalone service bootstrap can still use a provisional 120-degree settling anchor. Neither initialization establishes a physical illumination model.
 
 Keyboard labels supply exact matched-frame supervision. Representatives are balanced across 2° angle bins, stored only in memory, and bounded to 256 samples. At most two fits per second use Huber-weighted regression; scale is regularized toward one. The assumed startup anchor is low-weight; keyboard-derived initial anchors are not duplicated as assumed labels. Scale fitting needs at least three bins, 10° label span, and 5° baseline prediction span. Degenerate or extreme scales are rejected. The service exposes a provisional state and reason rather than claiming that more samples resolve non-identifying lighting.
 
-Weak light suspends the measurement. Recovery and detected environmental changes clear the temporary dataset and carry the last estimate as a provisional prior; only an explicit new session assumes 120° again. Camera mode changes, stationary relative-motion lighting jumps, and lighting changes at a keyboard-confirmed stationary angle trigger segmentation. These detectors cannot identify every environmental change.
+Weak light suspends the measurement. Recovery and detected environmental changes clear the temporary dataset and carry the last estimate as a provisional prior; selected Fusion profiles do not assume a 120-degree starting angle. Camera mode changes, stationary relative-motion lighting jumps, and lighting changes at a keyboard-confirmed stationary angle trigger segmentation. These detectors cannot identify every environmental change.
 
 Affine output calibration is deliberately small. The original source model can fail outside its source environment, including collapsing different openings to the same prediction. A fitted correction cannot recover information absent from that output. Additional keyboard labels at 10–44° do not certify the response curve at 45–120°.
 
-## Motion and display dynamics
+## Motion and smooth correction
 
-Infer physical velocity from Theil–Sen slopes over a contiguous 250 ms keyboard history whenever available. Otherwise use calibrated frame-to-frame rotations from Light Track's shared distributed-corner, LK forward/backward, and robust rotation/homography/essential-matrix primitives. The relative-motion worker requires no absolute geometric reference at runtime. Its signed axis/scale comes from continuous training-recording intervals spanning at least 20° between known angle labels. Missing motion breaks the interval; the source fit never uses test recordings.
+The current controller separates physical motion feedforward from position-error correction. Three exact first-order stages filter physical velocity with a combined 120 ms mean delay while preserving velocity, acceleration, and jerk continuity. Keyboard robust slopes have priority; calibrated scene motion is the fallback. Source/model changes never become physical-velocity derivatives.
 
-For display angle `d`, selected measurement `m`, filtered physical velocity `w`, and bounded correction state `u`:
+Seventh-degree correction trajectories match position, velocity, acceleration, and jerk at both ends. Candidate durations begin at 250 ms, initially end within 0.95 seconds, and are tested against preferred correction speed `4 + 0.2 * abs(physical velocity)` degrees/second, acceleration 15 degrees/second², and jerk 60 degrees/second³. Polynomial derivative roots locate extrema analytically. The first comfortable duration wins; otherwise the planner minimizes normalized exceedance before the immutable one-second deadline. Normal updates and source/profile changes do not reset that deadline.
 
-```text
-e = m - d
-C = 1 degree/second + 0.20 * abs(w)
-du/dt = (tanh(2 * e / C) - u) / 0.080 seconds
-dd/dt = w + C * u
-```
-
-Physical velocity uses a 120 ms low-pass time constant. Since `abs(u) <= 1`, `abs(dd/dt) <= 1.2 * abs(w) + 1 degree/second`. Neither source changes nor adapter updates reset the controller. No derivative is taken across those target discontinuities. At rest the small correction budget permits convergence without fabricating a measured physical velocity.
-
-The bound refers to inferred velocity, not unknowable ground-truth motion. Whole-laptop rotation can look like hinge movement in a screen-mounted camera. Keep the base fixed while relying on scene motion; use independent hardware measurements to evaluate velocity bias and display response.
+Comfort limits may be exceeded after late discrepancies; the deadline takes priority. Brief missing measurements retain the display target for up to 500 ms; longer gaps freeze movement while retaining the original deadline. Expired corrections are reported without restarting the countdown. Physical-range clamping and stale freezing remain continuity exceptions. Unpredictable target changes exactly at an expired deadline cannot be corrected retroactively and are reported as a miss. See `fusion/docs/sweep-validation.md` for deterministic evidence and its hardware limits.
 
 ## Sources
 
@@ -46,4 +37,4 @@ These papers and projects motivate individual methods. None certifies this lapto
 
 Source training uses complete recording partitions with identical capture settings and full angle coverage. Cross-environment acceptance stays false for a source-only model. Online replay predicts before admitting each keyboard label; teacher labels never score their own accuracy. Independent references score raw/adapted brightness and actual/replayed display separately, including missing-read coverage.
 
-Provisional goals remain 95% within 5°, stationary jitter at most 1° RMS, and ordinary motion delay at most 0.5 seconds. Large discrepancy corrections follow the velocity budget and have no fixed deadline. Real camera/reference synchronization, live processing delay, changed room lighting, display changes, occlusion, and base movement still require hardware evaluation.
+Provisional goals remain 95% within 5°, stationary jitter at most 1° RMS, and ordinary motion delay at most 0.5 seconds. Large discrepancy corrections keep an original one-second deadline, independently of the ordinary-motion delay goal. Real camera/reference synchronization, live processing delay, changed room lighting, display changes, occlusion, and base movement still require hardware evaluation.

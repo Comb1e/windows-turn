@@ -1,20 +1,35 @@
-# Hinge Fusion 0.1.0
+# Hinge Fusion 0.2.0
 
 The coordinator uses the two independent loopback services through HTTP. It owns no keyboard detector or brightness model. The camera stream is acquired once in the browser and sent as identical unmirrored RGBA frames to both services. It requests the keyboard model's exact resolution without aspect-ratio stretching.
 
 ## Start
 
-Start the keyboard service and Light Track as described in the workspace README, then:
+Run this from the Fusion directory to start all three services:
 
 ```powershell
 npm start
 ```
 
+The launcher reuses healthy existing services and starts missing ones in their own project directories. It does not merge the projects. Ctrl+C stops only services it launched. `npm run start:coordinator` starts Fusion alone. `KEYBOARD_PYTHON` selects a Python executable; otherwise the keyboard project virtual environment is used. `npm start -- --config path.json` selects startup and service settings. `npm start -- --model ../light-track/artifacts/source/model.json` supplies a CLI model when launching a new Light Track process; an already running service retains its existing model. Saved profiles still work without `--model`.
+
 Open http://localhost:1820 and start the camera. `PORT` overrides the coordinator's port; `node server.js --config path.json` selects another coordinator configuration. Ports, service URLs, capture settings, stale/grace intervals, controller parameters, queue bounds, and recording limits live in `config.json`.
 
-The current raw angle always equals a valid keyboard reading, regardless of brightness disagreement. The display is deliberately independent: it follows inferred velocity and applies a slowly changing bounded correction. At rest it converges at up to 1°/s; in motion its rate is bounded by 1.2 × the filtered inferred speed + 1°/s. There is no fixed switching duration. A 60° discrepancy at rest can take about a minute to remove.
+The current raw angle always equals a valid keyboard reading. Displayed movement is separate: filtered physical motion supplies feedforward, and a seventh-degree correction trajectory preserves position, velocity, acceleration, and jerk during replanning. Each chase has an original 1-second deadline that source/profile changes do not restart. Late large discrepancies can exceed the preferred correction speed, acceleration, and jerk; the page reports this explicitly.
 
-When the keyboard is visible, velocity comes from robust slopes of its recent raw angles. When hidden, Light Track supplies calibrated relative motion. Before motion calibration, or with an untrackable scene, the velocity estimate decays toward zero and the display uses the slow correction allowance. Approximate scene velocity cannot distinguish every whole-laptop pitch from a hinge rotation; keep the base fixed.
+## Calibrate with one opening and closing sweep
+
+1. Start all three services and open Fusion at http://localhost:1820. Light Track needs no `--model` for this workflow. Leave the standalone camera pages stopped.
+2. Start the camera. Optionally edit setup details and the profile name, then click **Start sweep calibration**.
+3. Hold a keyboard-visible angle below 25° for 0.8 seconds. Open evenly to approximately 120°, maintaining the speed measured during the initial keyboard-visible movement.
+4. Hold near 120° for automatic stop detection. If tracking cannot establish the stop, click **Holding at 120°** and remain still. This records your approximate endpoint; the camera does not independently prove it.
+5. When prompted, close at the indicated pace. If motion tracking is unavailable, click **Start closing now** as you begin. Stop below 25° and hold; the final keyboard angle can differ from the initial angle.
+6. Accepted sweeps train automatically, save a profile, and activate it. Select saved profiles in **Saved calibration → Use calibration**. **Export profile** downloads model, recording, calibration parameters, and diagnostics together.
+
+Opening and closing pace checks tolerate 20% difference by default. Insufficient keyboard coverage, reversed movement, long frame gaps, or changed camera/lighting conditions require another sweep. Failed recordings remain downloadable through the advanced recording export; **Cancel calibration** restores the previous selected profile. Models have actual coverage such as 18–120°, not fabricated 10° examples.
+
+Both services receive identical 640×480 RGBA frames. The old standalone 640×360 model is incompatible, but it does not prevent collection in feature-only mode. Profiles store their capture binding, model ID, label provenance, pace measurements, and timestamps under Light Track's `data/profiles`. Selection persists across restarts. Online adaptation remains temporary and never edits a saved model.
+
+Hidden-angle labels assume constant speed between keyboard and upper-hold anchors. Boundary regions are excluded, and inferred labels have lower training weight. Opening/closing agreement is only a diagnostic; this single sweep does not independently validate wide-angle accuracy or environmental transfer. Keep the base stationary and display/lighting stable. Calibration can work without scene-motion calibration; hidden-angle physical velocity then degrades to a decay toward zero.
 
 ## Collect the source-environment baseline
 
@@ -39,11 +54,7 @@ Source-environment validation is separate from the original cross-environment ac
 
 ## New environments
 
-Start a new session at approximately 120°. The system assumes that value without prompting and waits 1–3 seconds for a usable settled brightness baseline. It initially changes only the output offset. Accurate keyboard labels progressively improve the temporary adapter; scale fitting requires three 2° bins, at least 10° of label coverage, and at least 5° of baseline-prediction variation.
-
-The frozen source model is never rewritten. At most 256 representative anchors are retained in memory. Reset/stop removes them. **Export adaptation** saves an explicit research snapshot. Model/adapter updates never reset display position or become a motion derivative.
-
-A mid-session environmental change carries the last provisional estimate rather than assuming 120° again. Weak or clipped signals suppress measurement output. A camera resolution change requires a new session and a compatible baseline. Cross-environment affine correction may fail when the original model collapses multiple angles to one prediction; narrow-range keyboard anchors cannot certify wide-angle accuracy.
+Choose a profile collected under similar conditions or collect a new sweep. A selected profile starts from its own model output; keyboard labels supply temporary offset/affine correction without assuming the current angle is 120°. Exposure/lighting changes invalidate temporary adaptation and carry only a provisional prior. Small-angle anchors do not validate large-angle transfer.
 
 ## API and recording output
 
@@ -72,12 +83,23 @@ Recording export includes lighting features, raw/adapted values, keyboard label 
 
 ```powershell
 npm test
+node research/controller-validation.mjs
 node research/smoke.mjs
 npm run replay -- data/recording.json data/report.json
 ```
 
 The smoke command starts all three real services on temporary ports with generated synthetic inputs, then closes only its own child processes. It produces ignored software fixtures and a replay report under `data/smoke/`. The saved synthetic model is deliberately not a deployment model.
 
-Replay calls the adapter's public `restore/observe/add` functions from the neighboring Light Track checkout; pass its module path as the third argument if located elsewhere. It scores the current prediction before admitting its keyboard label. Accuracy uses independent checkpoint/reference labels, excluding keyboard teachers. Reports distinguish raw brightness, adapted brightness, recorded adaptation, replay display, and actual recorded display; missing predictions reduce coverage. Dynamic delay needs synchronized moving labels. Display discontinuity corrections are not subject to a fixed latency deadline.
+Replay calls the adapter's public `restore/observe/add` functions from the neighboring Light Track checkout; pass its module path as the third argument if located elsewhere. It scores the current prediction before admitting its keyboard label. Accuracy uses independent checkpoint/reference labels, excluding keyboard teachers. Reports distinguish raw brightness, adapted brightness, recorded adaptation, replay display, and actual recorded display; missing predictions reduce coverage. Dynamic delay needs synchronized moving labels. Recorded correction trajectories carry deadlines and completion status; ordinary motion delay is reported separately.
 
 Software verification does not establish real laptop angle accuracy, reference synchronization, or live camera latency. Those measurements require real recordings with independent references.
+
+## Calibration and profile APIs
+
+All mutation requests include the coordinator `sessionId` while a session is active. `POST /api/calibration` starts a sweep with optional `metadata`; `GET /api/calibration` reports state, pace, and endpoints; `DELETE /api/calibration` cancels; `POST /api/calibration/action` accepts `action: upper` or `closing`. `GET /api/calibration/export` exports calibration timing, and `/api/recording` exports the matching lighting data. `/api/events` adds a `calibration` event and includes calibration status in angle events.
+
+`GET /api/profiles` lists saved profiles. `POST /api/profile` selects a `profileId`, and `GET /api/profiles/:id/export` downloads the complete bundle. Selection is only accepted outside an active sweep. Profile/model generation identifiers prevent delayed old-model frames and anchors from replacing current state.
+
+The controller output additionally exposes `displayAccelerationDegS2`, `displayJerkDegS3`, `controllerState`, `correctionErrorDeg`, `correctionElapsedMs`, `correctionRemainingMs`, `correctionDeadlineMs`, `comfortExceeded`, `plannedCorrectionPeaks`, and `lastCorrection`. `displaySpeedBoundDegS` describes the current planned correction peak plus physical speed; it is no longer the old 1°/s-at-rest ceiling. Brief missing readings retain the last display target for up to 500 ms; longer stale gaps freeze position and keep the deadline. Expired chases remain visibly overdue and recover without a new countdown. Physical-range clamping and stale-input freezing remain explicit boundary exceptions to derivative continuity.
+
+The one-second countdown belongs to the active correction, not to individual readings. Brightness/keyboard switches and missing-result events do not reset it. `displayTargetHeld` identifies short retained-target intervals; `correctionOverdue` and `lastCorrection.deadlineMet` distinguish deadline misses from timely convergence. Current `measurementAngleDeg` is still null when neither service supplies usable fresh input.
