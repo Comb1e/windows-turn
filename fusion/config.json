@@ -1,0 +1,9 @@
+{
+  "port": 1820,
+  "services": {"keyboard": "http://127.0.0.1:1819", "lighting": "http://127.0.0.1:1818"},
+  "camera": {"width": 640, "height": 480, "horizontalFovDegrees": 60, "fps": 15},
+  "network": {"maxBodyBytes": 2000000, "requestTimeoutMs": 20000, "healthTimeoutMs": 1500, "pairCacheSize": 256, "retryMs": 3000, "leaseIdleMs": 30000},
+  "selection": {"keyboardGraceMs": 200, "staleMs": 500, "velocityWindowMs": 250, "velocityMinSpanMs": 100, "velocityMinSamples": 3, "maxVelocityDegS": 120},
+  "display": {"minAngle": 10, "maxAngle": 120, "initialAngle": 120, "motionAllowance": 0.2, "restCorrectionDegS": 1, "errorGain": 2, "motionTauMs": 120, "correctionTauMs": 80, "maxStepMs": 8, "staleMs": 500},
+  "output": {"fps": 60, "publishMs": 16, "maxTimelineRecords": 60000}
+}

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hinge Fusion</title><link rel="stylesheet" href="/style.css"></head>
+<body><main>
+  <header><div><p class="eyebrow">CAMERA · KEYBOARD · LIGHT</p><h1>Hinge Fusion</h1><p class="muted">Keyboard accuracy. Motion that follows the screen.</p></div><span id="state" class="badge">Stopped</span></header>
+  <section class="dashboard">
+    <div class="reading"><p class="eyebrow">SCREEN OPENING</p><div class="angle"><span id="angle">—</span><span class="unit">°</span></div><p id="source">Start the camera to begin.</p><p id="quality" class="muted">A new session starts with a provisional 120° assumption.</p><div class="metrics"><div><span>Measured angle</span><strong id="measurement">—</strong></div><div><span>Inferred velocity</span><strong id="velocity">—</strong></div><div><span>Reading age</span><strong id="age">—</strong></div></div></div>
+    <div class="preview"><video id="video" autoplay playsinline muted hidden></video><canvas id="preview" width="640" height="480"></canvas><p id="camera-note">One unmirrored camera stream is shared with both services.</p></div>
+  </section>
+  <section class="controls"><select id="camera" aria-label="Camera"><option value="">Default front camera</option></select><button id="refresh">Refresh cameras</button><button id="start" class="primary">Start camera</button><button id="stop" disabled>Stop</button><button id="preview-toggle">Hide preview</button></section>
+  <p id="message" role="status"></p>
+  <section class="status-grid"><article><h2>Keyboard</h2><p id="keyboard-status">Checking service…</p></article><article><h2>Brightness</h2><p id="lighting-status">Checking service…</p></article><article><h2>Temporary adaptation</h2><p id="adaptation-status">No session anchors.</p><button id="export-adaptation" disabled>Export adaptation</button></article></section>
+  <details><summary>Baseline calibration and recordings</summary><p>Record separate opening and closing sweeps in the same environment. Hold independently measured angles above keyboard visibility. Keep the base fixed. Training and testing use separate recordings.</p>
+    <div class="fields"><label>Laptop<input id="device" placeholder="My laptop"></label><label>Environment<input id="location" placeholder="Office daylight"></label><label>Position<input id="position" value="desk"></label><label>Lighting<input id="lighting" placeholder="Window and ceiling lamp"></label><label>Display content<input id="display" placeholder="Fixed brightness, document"></label></div>
+    <div class="controls"><button id="record" disabled>Start recording</button><button id="end-record" disabled>End recording</button><button id="download" disabled>Download recording</button></div>
+    <div class="controls"><label>Measured opening <input id="reference-angle" type="number" min="10" max="120" step="0.1" value="120"> °</label><button id="checkpoint" disabled>Capture 2-second hold</button><span id="record-status"></span></div>
+    <p class="muted">Keyboard labels are attached automatically to matching frames. To evaluate moving accuracy, import an independently synchronized CSV after ending the recording.</p>
+    <div class="controls"><input id="reference-file" type="file" accept=".csv"><label>Clock offset (ms) <input id="reference-offset" type="number" value="0"></label><button id="import-reference" disabled>Import reference</button></div>
+  </details>
+</main><script type="module" src="/app.js"></script></body></html>

@@ -1,0 +1,7 @@
+/keyboard/
+/light-track/
+**/node_modules/
+**/data/
+**/test-results/
+**/*.log
+**/__pycache__/

@@ -1,0 +1,8 @@
+{
+  "name": "hinge-fusion",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {"start": "node server.js", "test": "node --test", "replay": "node research/replay.mjs"},
+  "engines": {"node": ">=20"}
+}
