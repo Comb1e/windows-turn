@@ -162,10 +162,13 @@ const server=createServer(async(req,res)=>{
         if(s.calibration?.active()||s.calibration?.state==='TRAINING'||s.recording)fail('A recording or calibration is already active',409);
         const metadata={device:'My laptop',location:'Current environment',position:'desk',lighting:'Current lighting',display:'Fixed display',...data.metadata};
         for(const k of ['device','location','position','lighting','display'])if(typeof metadata[k]!=='string'||!metadata[k].trim())fail('Complete calibration setup metadata');
+        const keyboard=s.clients.keyboard;
+        if(!keyboard.id&&!await keyboard.connect())fail('Keyboard service is unavailable',409);
+        const calibration=new SweepCalibration(config.calibration,metadata,keyboard.info);
         await s.clients.lighting.activate(null);s.engine.invalidate('lighting');s.pairs.clear();
         const timestampMs=performance.now()-s.clockOffset;
         await s.clients.lighting.call('recording',{metadata,timestampMs,epochMs:Date.now()});
-        s.calibration=new SweepCalibration(config.calibration,metadata);s.trainingStarted=false;s.trainingJob=null;s.timeline=[];s.recording=true;
+        s.calibration=calibration;s.trainingStarted=false;s.trainingJob=null;s.timeline=[];s.recording=true;
         send(200,s.calibration.status());return;
       }
       if(path==='/api/calibration'&&req.method==='DELETE'){

@@ -15,6 +15,7 @@ test('Fusion sweep trains through Light Track, saves a profile and restores it i
   const root=fileURLToPath(new URL('../../light-track/',import.meta.url));
   const config=JSON.parse(await readFile(new URL('../config.json',import.meta.url)));
   const lightConfig=JSON.parse(await readFile(join(root,'config.json'))),settings=JSON.parse(await readFile(join(root,'service-config.json')));
+  const keyboardModel={modelId:'keyboard-fixture',angleRange:[10,46]};
   const temporary=await mkdtemp(join(tmpdir(),'fusion-sweep-api-')),rows=new Map();let keyboardSession=0,currentMotion={};
   const worker={pending:null,request:async command=>command==='reset'?{}:currentMotion,close(){}};
   const light=new LightingServer(root,lightConfig,{...settings,maxBodyBytes:640*480*4+100,profiles:{...settings.profiles,directory:join(temporary,'profiles')}},null,{motionWorker:worker});
@@ -22,8 +23,8 @@ test('Fusion sweep trains through Light Track, saves a profile and restores it i
   const keyboard=createServer(async(req,res)=>{
     const chunks=[];for await(const c of req)chunks.push(c);
     let result={};
-    if(req.url==='/v1/health')result={ready:true,camera:config.camera,angleRange:[10,44]};
-    else if(req.url==='/v1/sessions')result={sessionId:'keyboard-'+(++keyboardSession)};
+    if(req.url==='/v1/health')result={ready:true,camera:config.camera,...keyboardModel};
+    else if(req.url==='/v1/sessions')result={sessionId:'keyboard-'+(++keyboardSession),...keyboardModel};
     else if(req.url.endsWith('/frames')){const id=Number(req.headers['x-frame-id']),row=rows.get(id);result={...row.keyboard,sessionId:'keyboard-'+keyboardSession,quality:{}};}
     res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(result));
   }).listen(0,'127.0.0.1');await once(keyboard,'listening');
@@ -47,7 +48,7 @@ test('Fusion sweep trains through Light Track, saves a profile and restores it i
     session=await api('/api/start',{});
     await upload({angle:18,keyboard:{frameId:0,timestampMs:0,angleDeg:18,valid:true},lighting:{motion:{}}});
     await api('/api/calibration',{metadata:{device:'synthetic-test-laptop',location:'software-fixture',position:'desk',lighting:'synthetic',display:'fixed',name:'Software fixture only'}});
-    const frames=sweep().frames;
+    const frames=sweep({keyboardMax:46}).frames;
     for(const input of frames){
       const row=structuredClone(input);row.keyboard.timestampMs+=100;row.lighting.motion.fromTimestampMs+=100;
       await upload(row);if(row.state==='TRAINING')break;
@@ -59,6 +60,15 @@ test('Fusion sweep trains through Light Track, saves a profile and restores it i
     assert.equal(exported.model.trainingMode,'provisional-sweep');assert.equal(exported.model.validation.passed,false);
     assert.ok(exported.profile.coverage[0]<25);assert.equal(exported.profile.coverage[1],120);assert.ok(exported.recording.fusion);
     assert.ok(exported.recording.records.some(r=>r.label?.source==='constant-speed-inferred'));
+    assert.deepEqual(exported.sweep.keyboardModel,keyboardModel);
+    assert.deepEqual(exported.recording.keyboardModel,keyboardModel);
+    assert.deepEqual(exported.profile.keyboardLabelValidation,exported.report.keyboardLabelValidation);
+    assert.deepEqual(exported.profile.keyboardLabelValidation.angleRange,[10,46]);
+    assert.equal(exported.profile.keyboardLabelValidation.modelId,keyboardModel.modelId);
+    for(const row of frames.filter(r=>r.keyboard.valid&&r.keyboard.angleDeg>44)){
+      const record=exported.recording.records.find(r=>r.frameId===row.keyboard.frameId);
+      assert.equal(record.label.source,'keyboard');assert.equal(record.label.angle,row.keyboard.angleDeg);
+    }
     await api('/api/stop',{});session=await api('/api/start',{});assert.equal(session.profileId,ready.job.profileId);
     await upload({angle:20,keyboard:{frameId:0,timestampMs:0,angleDeg:20,valid:true},lighting:{motion:{}}});
     assert.equal(light.session.profileId,ready.job.profileId);assert.equal(light.session.adapter.origin,'model-output');

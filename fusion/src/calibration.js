@@ -4,7 +4,12 @@ const span=s=>Math.max(...s.map(p=>p.angleDeg))-Math.min(...s.map(p=>p.angleDeg)
 
 /** The coordinator owns timing decisions; Light Track owns features and training. */
 export class SweepCalibration {
-  constructor(config,metadata={}){
+  constructor(config,metadata={},keyboardModel=null){
+    if(keyboardModel!==null&&(!keyboardModel||typeof keyboardModel.modelId!=='string'||!keyboardModel.modelId.trim()
+      ||!Array.isArray(keyboardModel.angleRange)||keyboardModel.angleRange.length!==2
+      ||!keyboardModel.angleRange.every(Number.isFinite)||keyboardModel.angleRange[0]>=keyboardModel.angleRange[1]))
+      throw new Error('Keyboard service must report its model identity and supported angle range before calibration.');
+    this.keyboardModel=keyboardModel===null?null:structuredClone({modelId:keyboardModel.modelId,angleRange:keyboardModel.angleRange});
     this.c=config;this.metadata=metadata;this.state='WAIT_SMALL_ANGLE';this.samples=[];this.window=[];
     this.opening=[];this.closing=[];this.events={};this.reason=null;this.referenceSpeed=null;this.last=null;
   }
@@ -36,6 +41,7 @@ export class SweepCalibration {
   push(keyboard,lighting){
     if(!this.active())return this.status();
     if(keyboard.frameId!==lighting.frameId||keyboard.timestampMs!==lighting.timestampMs)throw new Error('Calibration requires identical frame IDs and timestamps');
+    if(this.keyboardModel&&keyboard.modelId!==this.keyboardModel.modelId)return this.fail('Keyboard model changed during calibration; retry the sweep.');
     const t=keyboard.timestampMs;
     if(this.last&&t<=this.last.timestampMs)return this.status();
     if(this.last&&t-this.last.timestampMs>this.c.maxGapMs)return this.fail('Camera or service frame gap; retry the sweep.');
@@ -86,7 +92,7 @@ export class SweepCalibration {
     openingSpeedDegS:this.openingSpeed??null,closingSpeedDegS:this.closingSpeed??null,
     initialAngleDeg:this.events.start?.angleDeg??null,finalAngleDeg:this.events.end?.angleDeg??null,
     matchedFrames:this.samples.length,manualUpperPending:this.manualUpper!==null&&this.manualUpper!==undefined};}
-  export(){return {schemaVersion:1,kind:'fusion-sweep-calibration',metadata:this.metadata,config:this.c,
+  export(){return {schemaVersion:1,kind:'fusion-sweep-calibration',metadata:this.metadata,config:this.c,keyboardModel:this.keyboardModel,
     events:this.events,samples:this.samples,opening:this.opening,closing:this.closing,
     referenceSpeedDegS:this.referenceSpeed,openingSpeedDegS:this.openingSpeed,closingSpeedDegS:this.closingSpeed,
     closingKeyboardSpeedDegS:this.closingKeyboardSpeed,...this.status()};}

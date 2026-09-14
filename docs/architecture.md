@@ -133,3 +133,29 @@ stateDiagram-v2
 ```
 
 `OVERDUE` is exposed as a flag on the persistent chase rather than a new source-selection state. A correction starts with a 1000 ms deadline; its first trajectory is at most 950 ms. Repeated missing results do not restart its trajectory or countdown. The display may follow a separately aged target for at most 500 ms, while the selected raw measurement remains unavailable. Longer gaps freeze movement but retain the original deadline. This fixes stationary stagnation caused by discarding the curve repeatedly. The actual monotonic clock remains authoritative; overdue work is never represented as a new full countdown.
+
+## Automatic keyboard limits for calibration — 2026-09-15
+
+```mermaid
+flowchart LR
+  Session[Keyboard session response: model ID and supported angle range] --> Bind[Fusion snapshots the active model at sweep start]
+  Frames[Keyboard frame result and model ID] --> Pair[Exact frame and timestamp matching]
+  Bind --> Pair
+  Pair --> Identity{Same keyboard model?}
+  Identity -->|No| Retry[RETRY: collect with one consistent model]
+  Identity -->|Yes| Export[Sweep export with keyboardModel and unchanged raw labels]
+  Export --> Validate[Shared Light Track keyboard label validator]
+  Legacy[Legacy sweep without model metadata] --> Fallback[Configured operating range only; model range unknown]
+  Fallback --> Validate
+  Validate --> Train[Weighted sweep training]
+  Train --> Trees[Export trees: repair endpoint roundoff only]
+  Trees --> Profile[Validate and publish immutable selectable profile]
+```
+
+Fusion obtains `modelId` and `angleRange` from the active keyboard session API; it does not read the keyboard project's configuration or model files. The range is already the keyboard model's supported range intersected with its configured operating limits (currently 10–46 degrees). The sweep captures this contract once, checks the model ID on subsequent matched frames, and supplies it automatically to training. A model change requires a new sweep. Future model ranges need no Light Track code edits.
+
+The sweep trainer and shared source-recording loader use one validator. Recorded model limits are intersected with the lighting operating range from configuration; malformed contracts or out-of-range labels fail with the frame, angle, and accepted limits. Labels remain exact. The recording, model, report, and profile preserve `keyboardLabelValidation` with the model ID, reported range, accepted range, and range source.
+
+Older exports never recorded keyboard model metadata. They retain matching-frame provenance and use the configured lighting operating range, explicitly marked `legacy-operating-range-only`; the current model is not retroactively claimed as the original model. This compatibility path does not certify the missing historical model range. Independent accuracy gates remain unchanged.
+
+The shared tree exporter corrects only floating-point endpoint roundoff (for example, 120.00000000000006 to 120). It rejects materially out-of-range predictions and does not alter source labels or fitted trees. Runtime model validation remains strict.
