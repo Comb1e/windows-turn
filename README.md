@@ -10,6 +10,8 @@ Three independently runnable components share one front-camera stream:
 
 `keyboard/` and `light-track/` retain their own Git repositories and standalone applications. This root repository contains the coordinator and integration documentation, and ignores those two repositories. All three use branch `main`. No estimator source is copied into the coordinator.
 
+Light Track also provides [screenshot annotation](http://localhost:1818/annotate): each session is one lighting group with arbitrary angles and image count. Repeated lighting is allowed across groups. Its screenshot trainer fits multiple groups into a provisional lighting model. The standalone uncalibrated camera defaults are independently configured in `light-track/config.json` as 640×480/60°, matching the keyboard scheme without reading its configuration. See the Light Track README for training commands.
+
 ## Run
 
 From `fusion`, one command starts or reuses all three services:

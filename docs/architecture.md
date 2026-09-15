@@ -2,6 +2,21 @@
 
 The three independently runnable components communicate over loopback HTTP. The root Git repository manages the fusion coordinator and integration documentation; the existing repositories manage their own APIs and estimators. All use `main`.
 
+Light Track's standalone annotation workspace saves still-image labels independently of the Fusion video research paths. Its own camera configuration uses 640×480/60° uncalibrated defaults; no Keyboard configuration is read. Lighting artifacts carry their own capture requirements.
+
+```mermaid
+flowchart LR
+    Stills[Captured or uploaded screenshots] --> Session[One session equals one lighting group]
+    Measured[Individual measured angle labels] --> Session
+    Session --> Store[Persistent PNG images and group manifest]
+    Store --> Train[Group-balanced screenshot trainer]
+    Train --> Diagnostic[Whole-group exclusion diagnostics]
+    Train --> Artifact[Provisional lighting model with capture binding]
+    Artifact --> Lighting[Existing Light Track inference]
+```
+
+Groups have no fixed angle schedule or screenshot count. Repeating a lighting setup still creates a new group. The final model fits all labeled ended groups; diagnostic partitions keep groups together and never imply unseen-lighting independence merely from a new session ID. Screenshots do not replace the synchronized motion references needed by Fusion's motion and latency evaluation.
+
 ```mermaid
 flowchart LR
     Camera[Browser front camera] --> Frames[RGBA8 bytes and capture timestamp]
