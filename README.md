@@ -12,6 +12,8 @@ Three independently runnable components share one front-camera stream:
 
 Light Track also provides [screenshot annotation](http://localhost:1818/annotate): each session is one lighting group with arbitrary angles and image count. **Start automatic collection** saves exact keyboard-labeled screenshots every 0.5 seconds at visible small angles, including repeated angles; stop it to add manual larger-angle labels. **Train model** trains all ended labeled groups from the page and provides model/report downloads. Its standalone camera defaults remain independently configured as 640×480/60°. See the Light Track README for setup, provenance and optional CLI commands.
 
+The [Light Track live page](http://localhost:1818/) provides **Choose model** and defaults to the newest successfully completed annotation model. Older annotation models, an optional server startup model, and local JSON files can be selected while the camera is stopped. The annotation result's **Use newest model** link opens measurement directly, without a server restart.
+
 ## Run
 
 From `fusion`, one command starts or reuses all three services:

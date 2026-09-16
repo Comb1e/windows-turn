@@ -1,5 +1,20 @@
 # Workspace architecture
 
+## Light Track model selection — 2026-09-16
+
+```mermaid
+flowchart LR
+  Jobs[Published annotation training jobs] --> Latest[Newest successful completion by default]
+  Jobs --> Choice[Choose older model on the page]
+  Startup[Optional CLI startup model] --> Choice
+  Local[Local JSON file in browser memory] --> Validate[Shared feature and camera validation]
+  Latest --> Validate
+  Choice --> Validate
+  Validate --> Estimator[Fresh lighting estimator and next-session camera binding]
+```
+
+Selection belongs to the standalone browser page and reuses existing annotation/model endpoints. It does not alter Fusion profiles or replace source artifacts. The page locks selection during capture, validates candidates before installing them, preserves the current model on failure, and chooses the latest annotation again on reload. Manual choices are retained by Refresh models. Local JSON files are not uploaded.
+
 The three independently runnable components communicate over loopback HTTP. The root Git repository manages the fusion coordinator and integration documentation; the existing repositories manage their own APIs and estimators. All use `main`.
 
 Light Track's standalone annotation workspace saves still-image labels independently of the Fusion video research paths. Optional automatic collection owns a Keyboard API session and labels the exact same pixels using its model-reported angle range. Its own camera configuration uses 640×480/60° uncalibrated defaults; no Keyboard configuration is read. Lighting artifacts carry their own capture requirements.

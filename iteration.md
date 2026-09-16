@@ -1,5 +1,11 @@
 # Iteration history
 
+## 2026-09-16 — Select Light Track models in the browser
+
+Page-based training previously ended at model downloads, leaving users to supply a CLI path and restart the server before measurement. Light Track now lists completed annotation models on its live page, selects the newest successful completion by default, supports older/startup models and local JSON files, and links training results directly to measurement. Model changes are validated before installation, reset old readings/filter state, and apply saved camera settings to the next session. Manual choices survive list refresh; page reload returns to the newest annotation default.
+
+Validation: 59 Light Track Node tests and 32-module syntax checks pass. Browser inspection verified the newest 83-image model as the automatic lighting default and availability of the older 11-image model. These checks establish software selection behavior, not physical angle accuracy.
+
 ## 2026-09-16 — Keyboard-assisted screenshot collection and page training
 
 Light Track's previous screenshot workflow duplicated manual angle entry where Keyboard already supplied accurate small-angle measurements, and required CLI commands for training. Its annotation page now collects exact matching screenshots with keyboard labels every 500 ms, including repeated angles, and pauses saving when Keyboard cannot measure. Users stop collection to review/correct labels or add larger-angle manual measurements. Service/model identity, camera compatibility, revision checks, explicit states and lease cleanup preserve frame correspondence.
