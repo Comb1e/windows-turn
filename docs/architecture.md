@@ -2,7 +2,24 @@
 
 The three independently runnable components communicate over loopback HTTP. The root Git repository manages the fusion coordinator and integration documentation; the existing repositories manage their own APIs and estimators. All use `main`.
 
-Light Track's standalone annotation workspace saves still-image labels independently of the Fusion video research paths. Its own camera configuration uses 640×480/60° uncalibrated defaults; no Keyboard configuration is read. Lighting artifacts carry their own capture requirements.
+Light Track's standalone annotation workspace saves still-image labels independently of the Fusion video research paths. Optional automatic collection owns a Keyboard API session and labels the exact same pixels using its model-reported angle range. Its own camera configuration uses 640×480/60° uncalibrated defaults; no Keyboard configuration is read. Lighting artifacts carry their own capture requirements.
+
+```mermaid
+flowchart LR
+  Annotation[Light Track annotation camera] --> Frame[Exact RGBA frame and timestamp]
+  Frame --> KeyboardAPI[Keyboard API: model-bound raw angle]
+  KeyboardAPI --> Gate[Match identity and save valid frames at 500 ms cadence]
+  Frame --> Gate
+  Gate --> Group[PNG, lighting features and keyboard provenance]
+  Manual[Manual larger-angle labels] --> Group
+  Group --> Ended[Ended groups]
+  TrainButton[Train model in annotation page] --> Job[Background screenshot trainer]
+  Ended --> Job
+  Job --> Parity[Model and prediction parity validation]
+  Parity --> Download[Immutable model and report downloads]
+```
+
+Automatic collection pauses on invalid visibility, retains repeated angles, and requires a restart after service, model, camera or revision failures. Stop settles any active save and releases only its own Keyboard session; idle leases recover abandoned browser sessions. The existing Fusion launcher starts all services, but Fusion's camera must be stopped while annotation owns Keyboard. Page training retains the group boundaries and provisional status of CLI training. See the Light Track architecture for API and state-machine details.
 
 ```mermaid
 flowchart LR
