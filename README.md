@@ -14,6 +14,8 @@ Light Track also provides [screenshot annotation](http://localhost:1818/annotate
 
 The [Light Track live page](http://localhost:1818/) provides **Choose model** and defaults to the newest successfully completed annotation model. Older annotation models, an optional server startup model, and local JSON files can be selected while the camera is stopped. The annotation result's **Use newest model** link opens measurement directly, without a server restart.
 
+Light Track 0.13.0 compares regularized color forests using complete annotation groups and reports a nested comparison with the original trainer. It reuses saved features and preserves annotation and model formats; no relabeling or migration is required. The existing four development groups show a 14.21% reduction in mean group error, with substantial larger-angle error still present. See `light-track/docs/annotation-model-research.md` for papers, methods, and evaluation limits.
+
 ## Run
 
 From `fusion`, one command starts or reuses all three services:

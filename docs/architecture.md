@@ -1,5 +1,19 @@
 # Workspace architecture
 
+## Compatible annotation model improvement — 2026-09-16
+
+```mermaid
+flowchart LR
+  Existing[Unchanged Light Track annotation groups] --> Select[Group-based selection of configured color forests]
+  Select --> Fit[Equal-group fit using all labels]
+  Fit --> Export[Existing v1 tree model and camera contract]
+  Export --> Live[Existing browser and service inference]
+  Existing --> Nested[Nested whole-group comparison with original trainer]
+  Nested --> Report[Training page and downloadable report]
+```
+
+Light Track 0.13.0 reuses existing color-ratio features, selects regularization on complete groups, and maps forest split indices into the original feature schema. No migration of groups, PNGs, labels, keyboard provenance, or historical models is needed. Small or inconclusive datasets retain the original trainer. Independent validation flags remain false, and the report separates tuning from nested development-data diagnostics. Keyboard and Fusion interfaces remain compatible. Detailed research sources and measured limitations live in Light Track's `docs/annotation-model-research.md`.
+
 ## Light Track model selection — 2026-09-16
 
 ```mermaid

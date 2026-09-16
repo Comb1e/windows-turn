@@ -1,5 +1,13 @@
 # Iteration history
 
+## 2026-09-16 — Improve Light Track annotation training without data migration
+
+The fixed all-feature annotation forest fit its own labels closely but transferred poorly between sessions. Light Track 0.13.0 now selects regularized color forests using existing stored features and whole-group tuning, compares the selection procedure with the original method using nested group diagnostics, and exposes results through the training page. Research sources and method limitations are documented in the Light Track repository. Original groups, PNGs, labels, keyboard provenance, old model files, and Fusion/Keyboard APIs retain their formats and usability.
+
+The four local development groups (212 images) show nested mean group error of 17.094° versus 19.926° originally. Large-angle transfer remains weak, one keyboard group's mean error worsens slightly, and these development results are not independent physical validation. The final model retains all labeled data and the existing runtime format; prior models remain selectable.
+
+Validation: 59 Light Track Node tests, 45 Python tests, syntax checks, page-triggered publication, reload/default model selection, and original-group reopening pass. All 216 source annotation files match their initial hashes. The idle services were refreshed through the Fusion launcher; its camera remains stopped.
+
 ## 2026-09-16 — Select Light Track models in the browser
 
 Page-based training previously ended at model downloads, leaving users to supply a CLI path and restart the server before measurement. Light Track now lists completed annotation models on its live page, selects the newest successful completion by default, supports older/startup models and local JSON files, and links training results directly to measurement. Model changes are validated before installation, reset old readings/filter state, and apply saved camera settings to the next session. Manual choices survive list refresh; page reload returns to the newest annotation default.
