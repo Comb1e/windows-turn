@@ -21,7 +21,7 @@ struct Telemetry {
     uint64_t captures=0,renders=0,presents=0,dropped=0;
     bool fresh=true,hdr=false,presentStatsAvailable=false;
 };
-struct RenderOptions {Monitor monitor;bool preview=true,synthetic=false;double durationSeconds=0;std::filesystem::path report;bool benchmark=false;};
+struct RenderOptions {Monitor monitor;bool preview=true,synthetic=false;double durationSeconds=0;std::filesystem::path report;bool benchmark=false;HWND controls=nullptr;};
 class Renderer {
     mutable std::mutex mutex_;
     Settings settings_;

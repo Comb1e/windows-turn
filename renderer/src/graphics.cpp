@@ -1,6 +1,7 @@
 #include "graphics.h"
 #include "settings.h"
 #include "cursor.h"
+#include "window_layer.h"
 #include <d3d11.h>
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
@@ -149,14 +150,14 @@ public:
                 q.pending=false;if(!disjoint.Disjoint&&disjoint.Frequency)last=double(end-begin)*1000/disjoint.Frequency;
             }}return last;
     }
-    void render(const Settings& s,double angle,const Monitor& monitor,double elapsed,UINT syncInterval=1){
+    void render(const Settings& s,double angle,const Monitor& monitor,double elapsed,UINT syncInterval=1,bool nativePointer=false){
         auto& query=queries[queryIndex];bool measure=!query.pending;if(measure){context->Begin(query.disjoint.get());context->End(query.begin.get());}
         Constants p{};auto map=projection(s,angle);for(int row=0;row<3;++row)for(int col=0;col<3;++col)p.rows[row][col]=static_cast<float>(map.h[row*3+col]);
         p.sizes[0]=static_cast<float>(width);p.sizes[1]=static_cast<float>(height);p.sizes[2]=static_cast<float>(source.width);p.sizes[3]=static_cast<float>(source.height);
         p.effect[0]=static_cast<float>(frosting(angle,s.referenceAngle,s.frostResponse));p.effect[1]=static_cast<float>(s.blurPixels);p.effect[2]=hdr||synthetic?0.f:1.f;p.effect[3]=hdr?1.f:0.f;
         p.direction[3]=static_cast<float>(elapsed);
         if(synthetic){draw(pattern.get(),source.rtv.get(),source.width,source.height,p,nullptr);++captures;captureTime=qpcMs();}
-        double cursorStart=nowMs();cursor->update(monitor.rect);cursorMs=nowMs()-cursorStart;std::copy(cursor->rectangle.begin(),cursor->rectangle.end(),p.cursorRect);p.cursorInfo[0]=cursor->visible?1.f:0.f;
+        double cursorStart=nowMs();cursor->update(monitor.rect);cursorMs=nowMs()-cursorStart;std::copy(cursor->rectangle.begin(),cursor->rectangle.end(),p.cursorRect);p.cursorInfo[0]=cursor->visible&&!nativePointer?1.f:0.f;
         draw(lightShader.get(),lightField.rtv.get(),1,1,p,source.srv.get());
         draw(warp.get(),projected.rtv.get(),width,height,p,source.srv.get());
         float reducedRadius=static_cast<float>(s.blurPixels*p.effect[0]*smallA.width/width);
@@ -255,7 +256,9 @@ void Renderer::run(std::stop_token stop,HWND window,RenderOptions options){
                 }
                 const bool shouldShow=options.preview||angle<settings.referenceAngle;
                 if(shouldShow!=shown){PostMessageW(window,WM_GLASS_VISIBILITY,shouldShow,0);shown=shouldShow;}
-                POINT mouse{};GetCursorPos(&mouse);pipeline.cursor->hide(!options.preview&&shouldShow&&PtInRect(&options.monitor.rect,mouse));
+                POINT mouse{};GetCursorPos(&mouse);
+                bool nativePointer=pointerUsesControls(options.controls,window,mouse);
+                pipeline.cursor->hide(!options.preview&&shouldShow&&!nativePointer&&PtInRect(&options.monitor.rect,mouse));
                 if(life.state!=State::Active){life.transition(State::Active);stats.message=options.synthetic?L"Synthetic moving pattern":L"Live capture; input unchanged";publish();}
                 double cap=std::min(settings.maxFps,options.monitor.hz),period=1000/cap;
                 double ratio=options.monitor.hz/cap;UINT sync=static_cast<UINT>(std::clamp(std::round(ratio),1.,4.));
@@ -268,7 +271,9 @@ void Renderer::run(std::stop_token stop,HWND window,RenderOptions options){
                 double frameAt=nowMs();if(lastFrame)frameTimes.push_back(frameAt-lastFrame);lastFrame=frameAt;
                 value=options.benchmark&&measureStart>0?benchmarkSweep.sample(frameAt):(source?source->sample(frameAt):AngleSample{});
                 if(value.valid&&std::isfinite(value.angle)&&(value.fresh||!haveAngle)){angle=value.angle;haveAngle=true;}stats.angle=angle;stats.fresh=value.fresh;
-                double renderAt=nowMs();pipeline.render(settings,angle,options.monitor,(frameAt-totalStart)/1000,sync);++stats.renders;
+                GetCursorPos(&mouse);nativePointer=pointerUsesControls(options.controls,window,mouse);
+                pipeline.cursor->hide(!options.preview&&shouldShow&&!nativePointer&&PtInRect(&options.monitor.rect,mouse));
+                double renderAt=nowMs();pipeline.render(settings,angle,options.monitor,(frameAt-totalStart)/1000,sync,nativePointer);++stats.renders;
                 stats.cpuRenderMs=.9*stats.cpuRenderMs+.1*(nowMs()-renderAt);stats.cpuCursorMs=.9*stats.cpuCursorMs+.1*pipeline.cursorMs;stats.presentWaitMs=.9*stats.presentWaitMs+.1*pipeline.presentMs;
                 double gpu=pipeline.collect();if(gpu>=0){stats.gpuMs=gpu;gpuTimes.push_back(gpu);}
                 DXGI_FRAME_STATISTICS fs{};if(SUCCEEDED(pipeline.swap->GetFrameStatistics(&fs))){stats.presentStatsAvailable=true;stats.presents=presentBase+fs.PresentCount;}
@@ -291,7 +296,7 @@ void Renderer::run(std::stop_token stop,HWND window,RenderOptions options){
                     if(options.synthetic&&!options.report.empty()){auto imagePath=options.report;imagePath.replace_extension(L".png");pipeline.snapshot(imagePath);}
                     auto measured=stats;measured.renders-=warmRenders;measured.presents-=warmPresents;measured.captures-=warmCaptures;
                     writeReport(options.report,measured,options,settings,(frameAt-timingStart)/1000);SetThreadExecutionState(ES_CONTINUOUS);
-                    PostMessageW(GetWindow(window,GW_OWNER),WM_CLOSE,0,0);return;
+                    PostMessageW(options.controls,WM_CLOSE,0,0);return;
                 }
             }
             pipeline.cursor->hide(false);PostMessageW(window,WM_GLASS_VISIBILITY,FALSE,0);SetThreadExecutionState(ES_CONTINUOUS);

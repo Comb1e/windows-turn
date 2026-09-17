@@ -2,6 +2,7 @@
 #include "settings.h"
 #include "angle.h"
 #include "cursor.h"
+#include "window_layer.h"
 #include <windows.h>
 #include <commctrl.h>
 #include <wtsapi32.h>
@@ -84,7 +85,8 @@ struct App {
         if(restart&&running)start(preview);
     }
     Monitor selected(){auto i=SendMessageW(widgets[MonitorChoice],CB_GETCURSEL,0,0);if(i<0||size_t(i)>=displays.size())throw std::runtime_error("No monitor available");return displays[i];}
-    void disable(){running=false;renderer.stop();if(output)ShowWindow(output,SW_HIDE);}
+    void updateControlLayer(){keepControlsAccessible(controls,output,running&&!preview&&IsWindowVisible(output));}
+    void disable(){running=false;renderer.stop();if(output)ShowWindow(output,SW_HIDE);updateControlLayer();}
     void start(bool inPreview){
         disable();preview=inPreview;readControls(false);auto monitor=selected();
         if(output){DestroyWindow(output);output=nullptr;}
@@ -95,12 +97,13 @@ struct App {
         if(!preview){ex|=WS_EX_NOACTIVATE|WS_EX_LAYERED|WS_EX_TRANSPARENT|WS_EX_TOPMOST;style=WS_POPUP;x=monitor.rect.left;y=monitor.rect.top;w=monitor.rect.right-x;h=monitor.rect.bottom-y;}
         else{RECT client{0,0,w,h};AdjustWindowRectEx(&client,style,FALSE,ex);w=client.right-client.left;h=client.bottom-client.top;
             x=std::max<int>(monitor.rect.left,std::min<int>(x,monitor.rect.right-w));}
-        output=CreateWindowExW(ex,L"HingeGlassOutput",L"Hinge Glass — preview",style,x,y,w,h,controls,nullptr,GetModuleHandleW(nullptr),this);
+        output=CreateWindowExW(ex,L"HingeGlassOutput",preview?L"Hinge Glass — preview":L"Hinge Glass — screen effect",style,x,y,w,h,
+            renderWindowOwner(controls,preview),nullptr,GetModuleHandleW(nullptr),this);
         if(!output)winrt::throw_last_error();
         if(!preview&&!SetLayeredWindowAttributes(output,0,255,LWA_ALPHA))winrt::throw_last_error();
         if(!SetWindowDisplayAffinity(output,WDA_EXCLUDEFROMCAPTURE))throw std::runtime_error("Cannot exclude output from capture; stopping to prevent feedback");
         renderer.configure(settings,angle);running=true;
-        RenderOptions options{monitor,preview,synthetic,duration,report,benchmark};renderer.start(output,options);
+        RenderOptions options{monitor,preview,synthetic,duration,report,benchmark,controls};renderer.start(output,options);
     }
     void sweep(bool closing){
         readControls(false);auto current=angle->sample(nowMs());double from=current.valid?current.angle:settings.manualAngle;
@@ -108,6 +111,7 @@ struct App {
         angle=sweep;sweepClosing=closing;SendMessageW(widgets[Source],CB_SETCURSEL,0,0);renderer.configure(settings,angle);
     }
     void status(){
+        updateControlLayer();
         auto t=renderer.status();std::wostringstream text;text<<stateName(t.state)<<L" · "<<std::fixed<<std::setprecision(1)<<t.angle<<L"° · "<<(t.fresh?L"live angle":L"angle stale / held")<<L"\r\n";
         text<<(t.adapter.empty()?L"GPU not started":t.adapter)<<L" · display "<<t.refreshHz<<L" Hz · "<<(t.hdr?L"HDR / scRGB":L"SDR")<<L"\r\n";
         text<<L"Capture "<<t.captureFps<<L" fps · render "<<t.renderFps<<L" fps · presented ";
@@ -123,7 +127,7 @@ LRESULT CALLBACK outputProc(HWND hwnd,UINT message,WPARAM w,LPARAM l){
     auto app=reinterpret_cast<App*>(GetWindowLongPtrW(hwnd,GWLP_USERDATA));
     if(message==WM_NCCREATE){app=static_cast<App*>(reinterpret_cast<CREATESTRUCTW*>(l)->lpCreateParams);SetWindowLongPtrW(hwnd,GWLP_USERDATA,reinterpret_cast<LONG_PTR>(app));}
     if(app)switch(message){
-    case WM_GLASS_VISIBILITY:ShowWindow(hwnd,w&&app->running?SW_SHOWNOACTIVATE:SW_HIDE);return 0;
+    case WM_GLASS_VISIBILITY:ShowWindow(hwnd,w&&app->running?SW_SHOWNOACTIVATE:SW_HIDE);app->updateControlLayer();return 0;
     case WM_MOUSEACTIVATE:if(!app->preview)return MA_NOACTIVATE;break;
     case WM_NCHITTEST:if(!app->preview)return HTTRANSPARENT;break;
     case WM_CLOSE:app->disable();return 0;
@@ -188,7 +192,7 @@ int runApplication(){
     WNDCLASSEXW wc{sizeof(wc)};wc.hInstance=GetModuleHandleW(nullptr);wc.lpfnWndProc=controlProc;wc.lpszClassName=L"HingeGlassControls";
     wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.hbrBackground=reinterpret_cast<HBRUSH>(COLOR_WINDOW+1);RegisterClassExW(&wc);
     wc.lpfnWndProc=outputProc;wc.lpszClassName=L"HingeGlassOutput";wc.hbrBackground=nullptr;RegisterClassExW(&wc);
-    float dpi=GetDpiForSystem()/96.f;HWND window=CreateWindowExW(0,L"HingeGlassControls",L"Hinge Glass 0.1.2 — live hinge animation",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,
+    float dpi=GetDpiForSystem()/96.f;HWND window=CreateWindowExW(0,L"HingeGlassControls",L"Hinge Glass 0.1.3 — live hinge animation",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,
         CW_USEDEFAULT,CW_USEDEFAULT,int(740*dpi),int(922*dpi),nullptr,nullptr,GetModuleHandleW(nullptr),&app);
     if(!window)winrt::throw_last_error();if(!SetWindowDisplayAffinity(window,WDA_EXCLUDEFROMCAPTURE))throw std::runtime_error("Cannot exclude controls from screen capture");
     if(!RegisterHotKey(window,1,MOD_CONTROL|MOD_ALT|MOD_NOREPEAT,VK_F12))throw std::runtime_error("Ctrl+Alt+F12 is already registered. Close the conflicting app before enabling Hinge Glass.");
