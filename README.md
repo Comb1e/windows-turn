@@ -2,6 +2,8 @@
 
 The independent **Hinge Glass** native renderer is now in [`renderer/`](renderer/README.md). Run `./renderer/build.ps1 -Test`, then `./renderer/start.ps1`. It supports manual angle debugging, an adjustable reference angle (110° initially), a fixed bottom edge, live desktop capture, distance-based frosting (stronger at the top), and an optional Fusion angle source. The controls stay above the effect; **Show calibration grid** lets you compare grid and live output with the same angle and projection. Tests default to 60 Hz; the render cap can be raised to 240 Hz. Ctrl+Alt+F12 disables the overlay.
 
+To use camera angles, start Fusion's camera and run **`./renderer/start.ps1 -Fusion`**, or select **Fusion** in the renderer's **Angle source** list. The received angle and connection status appear before rendering is enabled. **Fusion address** lets you match a custom coordinator port. Hinge Glass 0.1.5 fixes buffered angle events and reconnects automatically.
+
 Three independently runnable components share one front-camera stream:
 
 | Project | Function | Default address |

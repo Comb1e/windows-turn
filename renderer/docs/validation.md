@@ -1,6 +1,15 @@
 # Hinge Glass validation — 2026-09-17
 
-## Current version: 0.1.4, distance frosting and single rotation
+## Current version: 0.1.5, Fusion connection
+
+- Release build succeeds. Core geometry/source/configuration, 30 native window checks and 641,501 actual-HLSL checks pass; the new fourth CTest suite contains **five native HTTP integration tests**. Existing Fusion tests remain **28/28 passing**. Fusion and estimator source code are unchanged.
+- The small-event regression was run first against the old worker. A complete 72° SSE publication with no following bytes remained unavailable (`valid: false`, status “Connecting to Fusion”). Querying available bytes before reading passes the same deadline, without weakening it.
+- The production WinHTTP worker is checked against real loopback sockets for snapshot startup/status, a fragmented event, 10°/120° boundaries, silent/stale input, invalid/reordered data, retired sessions across reconnection, explicit camera stop, service startup after the renderer, stream EOF and service restart on the same port.
+- Integration with the **actual Fusion coordinator and display controller** covers camera-start API, RGBA upload, changing displayed angle, stale controller output, camera stop/restart and a second native client connecting after the camera is active. Independent measurement services and RGBA camera frames are simulated; this checks the application connection, not physical camera accuracy. Test ports are ephemeral and existing services are not restarted.
+- Live desktop preview using `--fusion --smoke --fps 60 --seconds 8 --no-preferences` followed a local streamed sweep from 110° to **75°**, using one SSE subscription. The report records 355 renders / 351 presents / 345 captures over 8.0095 seconds, 960×600, RTX 4070 Laptop GPU, GPU p95 **0.229376 ms**, frame-interval p99 **16.9008 ms**. The 44.32 fps overall average includes initialization and shader startup; this short smoke run is not sustained 60 Hz acceptance. Report: `renderer/out/fusion-live-60.json` (ignored). Live desktop pixels were not saved.
+- All application rendering was capped at **60 fps**; Windows' display reported 60 Hz and its refresh settings were not modified. Physical camera/lid, new-effect 240 Hz, HDR and game-load checks remain pending. The controls' new address/status UI is compiled and launched; direct interaction with that field has not been automated.
+
+## Previous version: 0.1.4, distance frosting and single rotation
 
 - Release build and **3/3 CTest suites pass**: 166,827 core checks, 30 native window checks and 641,501 shader checks. Shader correctness runs offscreen on WARP and is not reported as hardware performance.
 - Independent 3D closest-point controls validate image-to-glass distance. Independent forward rotations and ray intersections validate the retained projection across reference angles, viewing distances, screen heights, edge-on/back-face conditions and reversal. Fixed-bottom and aspect-ratio regressions remain covered.

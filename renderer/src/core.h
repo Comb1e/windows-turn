@@ -64,7 +64,7 @@ public:
     void start(double now,double from,double to,double seconds);
     AngleSample sample(double now) override;
 };
-// Latest-only session gate; retired sessions cannot return until a new connection.
+// Latest-only session gate; reconnecting never revives a retired camera session.
 class AngleGate {
     AngleSample last_;
     std::vector<std::string> retired_;
@@ -72,6 +72,7 @@ class AngleGate {
 public:
     void connection();
     void disconnect();
+    void endSession();
     bool ingest(const AngleSample& value);
     AngleSample sample(double now,double staleMs,double predictionMs) const;
 };

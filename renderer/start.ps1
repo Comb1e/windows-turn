@@ -1,3 +1,4 @@
+param([switch]$Fusion)
 $ErrorActionPreference = 'Stop'
 $rendererExecutable = Join-Path $PSScriptRoot 'build/Release/HingeGlass.exe'
 if (-not (Test-Path -LiteralPath $rendererExecutable)) {
@@ -5,4 +6,5 @@ if (-not (Test-Path -LiteralPath $rendererExecutable)) {
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 # This is the interactive application the user explicitly launches.
-Start-Process -FilePath $rendererExecutable
+if ($Fusion) { Start-Process -FilePath $rendererExecutable -ArgumentList '--fusion' }
+else { Start-Process -FilePath $rendererExecutable }

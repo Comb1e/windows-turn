@@ -16,6 +16,14 @@ Reviewed 2026-09-17. Project code was written independently; no Magpie implement
 
 Robert Kooima's generalized-perspective article was located during planning, but its original server could not be read securely in this environment; it is not claimed as a directly read implementation source.
 
+## References used for 0.1.5 — Fusion transport — 2026-09-17
+
+| Reference actually read | Role in this change | Limit |
+| --- | --- | --- |
+| [Microsoft WinHttpQueryDataAvailable](https://learn.microsoft.com/en-us/windows/win32/api/winhttp/nf-winhttp-winhttpquerydataavailable), remarks and example | Explicit guidance to query available data before reading when processing partial responses promptly; motivated the SSE transport fix | Availability does not define an SSE message boundary; the existing incremental parser remains necessary |
+| [Microsoft WinHttpReadData](https://learn.microsoft.com/en-us/windows/win32/api/winhttp/nf-winhttp-winhttpreaddata), synchronous read semantics | Bounded reads, buffer-filling behavior and zero-byte EOF handling | Documentation alone does not establish actual latency; the native HTTP regression first failed on the old code and passed with the fix |
+| This repository's [Fusion server](../../fusion/server.js), [controller](../../fusion/src/controller.js) and [HTTP contract test](../../fusion/tests/server.test.js) | Verify snapshot/SSE payloads, stopped/requesting states, displayed angle/velocity and session changes; run the real coordinator as an integration control | Measurement services and camera uploads in this test are simulated; no estimator implementation was copied or changed |
+
 ## Additional references used for 0.1.3–0.1.4 — 2026-09-17
 
 | Reference actually read | Role in this change | Limit |

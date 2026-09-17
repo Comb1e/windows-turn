@@ -22,8 +22,15 @@ void Settings::validate() const {
     range(sweepSeconds,.25,120,"sweep duration");range(staleMs,50,5000,"stale timeout");
     range(predictionMs,0,50,"prediction horizon");range(retryMs,100,30000,"retry interval");
     range(captureTimeoutMs,1000,30000,"capture timeout");range(blurScale,.125,.5,"blur scale");
-    if(!fusionUrl.starts_with("http://127.0.0.1:")&&!fusionUrl.starts_with("http://localhost:"))
-        throw std::runtime_error("Fusion URL must use loopback HTTP");
+    // Only a loopback origin is supported; credentials, paths and queries would
+    // otherwise be silently discarded by the fixed /api endpoint requests.
+    std::string port;
+    for(auto prefix:{"http://127.0.0.1:","http://localhost:"})
+        if(fusionUrl.starts_with(prefix))port=fusionUrl.substr(std::char_traits<char>::length(prefix));
+    if(port.ends_with('/'))port.pop_back();
+    if(port.empty()||port.size()>5||!std::all_of(port.begin(),port.end(),[](char c){return c>='0'&&c<='9';})
+       ||std::stoi(port)<1||std::stoi(port)>65535)
+        throw std::runtime_error("Fusion address must be http://127.0.0.1:PORT or http://localhost:PORT (1–65535)");
 }
 double nowMs(){return std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now().time_since_epoch()).count();}
 PixelSize fitPreview(int sourceWidth,int sourceHeight,int maxWidth,int maxHeight){
@@ -102,14 +109,19 @@ AngleSample SweepAngle::sample(double now){
     double p=t*t*t*(10+t*(-15+6*t)),v=30*t*t*(1-t)*(1-t)*(to_-from_)*1000/duration_;
     return {from_+(to_-from_)*p,v,now,now,true,true,"sweep","sweep"};
 }
-void AngleGate::connection(){connected_=true;retired_.clear();last_.session.clear();last_.valid=false;last_.fresh=false;}
+void AngleGate::connection(){connected_=true;last_.fresh=false;}
 void AngleGate::disconnect(){connected_=false;last_.fresh=false;}
+void AngleGate::endSession(){
+    disconnect();
+    if(!last_.session.empty()&&std::find(retired_.begin(),retired_.end(),last_.session)==retired_.end())retired_.push_back(last_.session);
+}
 bool AngleGate::ingest(const AngleSample& v){
-    if(v.session.empty()||!std::isfinite(v.angle)||v.angle<0||v.angle>180||!std::isfinite(v.velocity)
-       ||!std::isfinite(v.sourceMs)||!std::isfinite(v.receivedMs))return false;
+    if(!v.valid||v.session.empty()||!std::isfinite(v.angle)||v.angle<0||v.angle>180||!std::isfinite(v.velocity)
+       ||!std::isfinite(v.sourceMs)||v.sourceMs<0||!std::isfinite(v.receivedMs)||v.receivedMs<0)return false;
     if(std::find(retired_.begin(),retired_.end(),v.session)!=retired_.end())return false;
     if(v.session==last_.session&&v.sourceMs<=last_.sourceMs)return false;
-    if(v.session!=last_.session&&!last_.session.empty())retired_.push_back(last_.session);
+    if(v.session!=last_.session&&!last_.session.empty()
+       &&std::find(retired_.begin(),retired_.end(),last_.session)==retired_.end())retired_.push_back(last_.session);
     // A retained display is usable but is never reported as a fresh measurement.
     last_=v;connected_=true;return true;
 }

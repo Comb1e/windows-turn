@@ -15,7 +15,7 @@
 namespace hinge {
 namespace {
 constexpr int Manual=100,Source=101,MonitorChoice=102,GpuChoice=103,Slider=104,Status=105;
-constexpr int GridChoice=107;
+constexpr int GridChoice=107,FusionUrl=108;
 constexpr int Preview=201,Enable=202,Disable=203,CloseSweep=204,OpenSweep=205,Reverse=206,Apply=207,Power=208;
 struct Field {int id;const wchar_t* label;double Settings::* member;};
 const Field fields[]={
@@ -29,7 +29,7 @@ struct App {
     HWND controls=nullptr,output=nullptr;HFONT font=nullptr;Settings settings;Renderer renderer;
     std::shared_ptr<IAngleSource> angle;std::vector<Monitor> displays;std::vector<Adapter> gpus;
     std::map<int,HWND> widgets;bool running=false,preview=true,constructing=true,sweepClosing=true,automatic=false,noPreferences=false;
-    bool synthetic=false,benchmark=false;double duration=0,deadline=0;int exitCode=0;std::filesystem::path report;float scale=1;
+    bool synthetic=false,benchmark=false,startWithFusion=false;double duration=0,deadline=0;int exitCode=0;std::filesystem::path report;float scale=1;
     App(Settings s):settings(s){}
     int px(int n)const{return static_cast<int>(n*scale);}
     HWND widget(const wchar_t* kind,const wchar_t* text,DWORD style,int x,int y,int w,int h,int id){
@@ -46,8 +46,9 @@ struct App {
         widget(L"STATIC",L"Live desktop rotating around its bottom edge. Ctrl + Alt + F12 disables the effect.",0,20,48,700,36,0);
         widget(L"STATIC",L"Angle source",0,20,92,125,22,0);widget(WC_COMBOBOXW,L"",CBS_DROPDOWNLIST|WS_TABSTOP,150,88,545,120,Source);
         for(auto label:{L"Manual / debug",L"Fusion (current measurement range: 10–120 degrees)"})SendMessageW(widgets[Source],CB_ADDSTRING,0,reinterpret_cast<LPARAM>(label));
-        SendMessageW(widgets[Source],CB_SETCURSEL,0,0);
-        widget(L"STATIC",L"Grid and live desktop use the same bottom-anchored rotation.",0,20,132,675,22,0);
+        SendMessageW(widgets[Source],CB_SETCURSEL,startWithFusion?1:0,0);
+        widget(L"STATIC",L"Fusion address",0,20,132,125,22,0);
+        widget(L"EDIT",winrt::to_hstring(settings.fusionUrl).c_str(),WS_TABSTOP|ES_AUTOHSCROLL,150,128,545,25,FusionUrl);
         widget(L"STATIC",L"Manual test angle: 0° closed  ←  drag to rotate  →  180° open",0,20,164,675,22,0);
         widget(TRACKBAR_CLASSW,L"",WS_TABSTOP|TBS_AUTOTICKS,20,188,675,38,Slider);
         SendMessageW(widgets[Slider],TBM_SETRANGE,TRUE,MAKELPARAM(0,1800));SendMessageW(widgets[Slider],TBM_SETPOS,TRUE,LPARAM(settings.manualAngle*10));
@@ -67,16 +68,20 @@ struct App {
         int x=20;for(auto [id,label]:{std::pair{Preview,L"Preview"},{Enable,L"Enable screen"},{Disable,L"Disable"},{Apply,L"Apply / save"}}){widget(L"BUTTON",label,WS_TABSTOP|BS_PUSHBUTTON,x,650,160,32,id);x+=174;}
         x=20;for(auto [id,label]:{std::pair{CloseSweep,L"Close sweep"},{OpenSweep,L"Open sweep"},{Reverse,L"Reverse sweep"},{Power,L"Lid setup"}}){widget(L"BUTTON",label,WS_TABSTOP|BS_PUSHBUTTON,x,692,160,32,id);x+=174;}
         widget(L"STATIC",L"Disabled. Start with Preview, then Enable screen. Viewing geometry uses millimetres.",0,20,740,680,120,Status);
-        manualSource();renderer.configure(settings,angle);constructing=false;
+        if(startWithFusion)angle=std::make_shared<FusionAngle>(settings);else manualSource();
+        renderer.configure(settings,angle);constructing=false;
     }
     void readControls(bool save){
         Settings candidate=settings;
+        wchar_t url[2048];GetWindowTextW(widgets[FusionUrl],url,2048);candidate.fusionUrl=winrt::to_string(url);
         for(auto& field:fields){wchar_t value[128];GetWindowTextW(widgets[field.id],value,128);wchar_t* end=nullptr;
             double number=wcstod(value,&end);if(end==value||*end)throw std::runtime_error("Enter a valid number for each setting");candidate.*(field.member)=number;}
         auto m=SendMessageW(widgets[MonitorChoice],CB_GETCURSEL,0,0);if(m<0||size_t(m)>=displays.size())throw std::runtime_error("Select an available monitor");candidate.monitor=winrt::to_string(displays[m].name);
         auto gpu=SendMessageW(widgets[GpuChoice],CB_GETCURSEL,0,0);candidate.adapter=gpu>0&&size_t(gpu)<=gpus.size()?gpus[gpu-1].id:"auto";
         candidate.validate();bool restart=candidate.adapter!=settings.adapter||candidate.monitor!=settings.monitor;
+        bool reconnect=candidate.fusionUrl!=settings.fusionUrl;
         settings=candidate;if(save&&!noPreferences)saveSettings(settings);
+        if(reconnect&&dynamic_cast<FusionAngle*>(angle.get()))angle=std::make_shared<FusionAngle>(settings);
         if(SendMessageW(widgets[Source],CB_GETCURSEL,0,0)==0&&dynamic_cast<ManualAngle*>(angle.get()))manualSource();
         renderer.configure(settings,angle);SendMessageW(widgets[Slider],TBM_SETPOS,TRUE,LPARAM(settings.manualAngle*10));
         if(restart&&running)start(preview);
@@ -109,13 +114,18 @@ struct App {
     }
     void status(){
         updateControlLayer();
-        auto t=renderer.status();std::wostringstream text;text<<stateName(t.state)<<L" · "<<std::fixed<<std::setprecision(1)<<t.angle<<L"° · "<<(t.fresh?L"live angle":L"angle stale / held")
+        auto t=renderer.status();auto current=angle->sample(nowMs());
+        std::wostringstream text;text<<stateName(t.state)<<L" · "<<std::fixed<<std::setprecision(1);
+        if(current.valid)text<<current.angle<<L"° · "<<(current.fresh?L"live angle":L"angle stale / held");
+        else text<<L"waiting for angle";
+        text
             <<L" · "<<(synthetic?L"Grid":L"Live desktop")<<L"\r\n";
         text<<(t.adapter.empty()?L"GPU not started":t.adapter)<<L" · display "<<t.refreshHz<<L" Hz · "<<(t.hdr?L"HDR / scRGB":L"SDR")<<L"\r\n";
         text<<L"Capture "<<t.captureFps<<L" fps · render "<<t.renderFps<<L" fps · presented ";
         if(t.presentStatsAvailable)text<<t.presentFps<<L" fps";else text<<L"unavailable";
         text<<L"\r\nGPU "<<t.gpuMs<<L" ms · frame age "<<t.frameAgeMs<<L" ms · capture delivery "<<t.captureDeliveryMs<<L" ms · dropped "<<t.dropped<<L"\r\n";
-        if(auto fusion=dynamic_cast<FusionAngle*>(angle.get()))text<<winrt::to_hstring(fusion->status()).c_str();else text<<t.message;
+        if(auto fusion=dynamic_cast<FusionAngle*>(angle.get()))text<<winrt::to_hstring(fusion->status()).c_str();
+        else text<<L"Manual / debug angle. Select Fusion above to use camera measurements. "<<t.message;
         SetWindowTextW(widgets[Status],text.str().c_str());
         if(automatic&&(t.state==State::Faulted||nowMs()>deadline)){exitCode=t.state==State::Faulted||t.renders==0?1:0;PostMessageW(controls,WM_CLOSE,0,0);}
     }
@@ -179,6 +189,7 @@ int runApplication(){
     for(int i=1;i<count;++i){std::wstring_view a=argv[i];
         if(a==L"--smoke"||a==L"--benchmark"){app.automatic=true;app.benchmark=a==L"--benchmark";app.duration=app.benchmark?60:8;}
         else if(a==L"--synthetic")app.synthetic=true;
+        else if(a==L"--fusion")app.startWithFusion=true;
         else if(a==L"--overlay")startPreview=false;
         else if(a==L"--seconds"&&i+1<count)app.duration=wcstod(argv[++i],nullptr);
         else if(a==L"--report"&&i+1<count)app.report=argv[++i];
@@ -191,7 +202,7 @@ int runApplication(){
     WNDCLASSEXW wc{sizeof(wc)};wc.hInstance=GetModuleHandleW(nullptr);wc.lpfnWndProc=controlProc;wc.lpszClassName=L"HingeGlassControls";
     wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.hbrBackground=reinterpret_cast<HBRUSH>(COLOR_WINDOW+1);RegisterClassExW(&wc);
     wc.lpfnWndProc=outputProc;wc.lpszClassName=L"HingeGlassOutput";wc.hbrBackground=nullptr;RegisterClassExW(&wc);
-    float dpi=GetDpiForSystem()/96.f;HWND window=CreateWindowExW(0,L"HingeGlassControls",L"Hinge Glass 0.1.4 — live hinge animation",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,
+    float dpi=GetDpiForSystem()/96.f;HWND window=CreateWindowExW(0,L"HingeGlassControls",L"Hinge Glass 0.1.5 — live hinge animation",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,
         CW_USEDEFAULT,CW_USEDEFAULT,int(740*dpi),int(922*dpi),nullptr,nullptr,GetModuleHandleW(nullptr),&app);
     if(!window)winrt::throw_last_error();if(!SetWindowDisplayAffinity(window,WDA_EXCLUDEFROMCAPTURE))throw std::runtime_error("Cannot exclude controls from screen capture");
     if(!RegisterHotKey(window,1,MOD_CONTROL|MOD_ALT|MOD_NOREPEAT,VK_F12))throw std::runtime_error("Ctrl+Alt+F12 is already registered. Close the conflicting app before enabling Hinge Glass.");

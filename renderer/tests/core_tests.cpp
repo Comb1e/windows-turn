@@ -137,6 +137,14 @@ int main(){try{
     check(near(closure(80,110),closure(80,110)),"Reversal must be path independent");
     s.referenceAngle=0;bool rejected=false;try{s.validate();}catch(...){rejected=true;}check(rejected,"Zero reference accepted");
     s=Settings{};s.eyeY=0;rejected=false;try{s.validate();}catch(...){rejected=true;}check(rejected,"Zero viewing distance accepted");
+    for(auto url:{"http://127.0.0.1:0","http://localhost:65536","http://127.0.0.1:1820@remote.test",
+                  "http://localhost:1820/path","http://localhost:1820?q=x","https://localhost:1820","http://remote.test:1820"}){
+        s=Settings{};s.fusionUrl=url;rejected=false;try{s.validate();}catch(...){rejected=true;}check(rejected,"Invalid Fusion origin accepted");
+    }
+    for(auto url:{"http://127.0.0.1:1820","http://localhost:1820/","http://localhost:1","http://localhost:65535"}){
+        s=Settings{};s.fusionUrl=url;s.validate();
+    }
+    s=Settings{};
     SweepAngle sweep;sweep.start(1000,110,0,6);check(near(sweep.sample(1000).angle,110)&&near(sweep.sample(7000).angle,0),"Sweep endpoints");
     double mid=sweep.sample(3500).angle;sweep.start(3500,mid,110,6);check(near(sweep.sample(3500).angle,mid),"Reversal position jumped");
     AngleGate gate;gate.connection();AngleSample a{10,30,100,1000,true,true,"one","fusion"};check(gate.ingest(a),"Valid sample rejected");
@@ -144,10 +152,22 @@ int main(){try{
     check(!gate.sample(1600,500,17).fresh&&near(gate.sample(1600,500,17).angle,10),"Stale geometry not retained");
     check(!gate.ingest(a),"Duplicate timestamp accepted");a.session="two";a.sourceMs=1;a.angle=20;check(gate.ingest(a),"New session clock rejected");
     a.session="one";a.sourceMs=101;check(!gate.ingest(a),"Retired session revived");gate.disconnect();check(!gate.sample(1001,500,17).fresh,"Disconnect reported fresh");
-    gate.connection();check(gate.ingest(a),"Reconnect failed");a.sourceMs=102;a.angle=std::numeric_limits<double>::quiet_NaN();check(!gate.ingest(a),"NaN accepted");
+    gate.connection();check(!gate.ingest(a),"Reconnect revived a retired session");
+    a.session="two";a.sourceMs=2;check(gate.ingest(a),"Reconnect failed to accept a newer current sample");
+    gate.endSession();a.sourceMs=3;check(!gate.ingest(a),"Stopped session returned");
+    a.session="three";a.sourceMs=1;check(gate.ingest(a),"Restarted camera clock rejected");
+    a.sourceMs=2;a.valid=false;check(!gate.ingest(a),"Invalid reading accepted");a.valid=true;
+    a.angle=std::numeric_limits<double>::quiet_NaN();check(!gate.ingest(a),"NaN accepted");
     auto parsed=parseFusion(R"({"sessionId":"live","timestampMs":1,"displayAngleDeg":10,"displayVelocityDegS":2,"controllerState":"TRACKING"})",5);
     check(parsed&&parsed->angle==10&&parsed->fresh,"Fusion sample changed small angle to closure");
     check(!parseFusion(R"({"sessionId":null,"displayAngleDeg":null})",1),"Stopped Fusion accepted");
+    for(auto json:{R"({"sessionId":"x","timestampMs":1,"displayAngleDeg":0})",
+                   R"({"sessionId":"x","timestampMs":1,"displayAngleDeg":121})",
+                   R"({"sessionId":"x","timestampMs":-1,"displayAngleDeg":80})",
+                   R"({"sessionId":"","timestampMs":1,"displayAngleDeg":80})",
+                   R"({"sessionId":"x","timestampMs":1,"displayAngleDeg":80,"controllerState":"bad"})",
+                   R"({"sessionId":"x","timestampMs":1,"displayAngleDeg":80,"displayVelocityDegS":"bad"})"})
+        check(!parseFusion(json,5),"Invalid Fusion payload accepted");
     int events=0;EventParser parser;auto cb=[&](std::string event,std::string data){check(event=="angle"&&data=="{\"x\":1}","SSE parse mismatch");++events;};
     for(char c:std::string("event: angle\r\ndata: {\"x\":1}\r\n\r\n"))parser.append(std::string(1,c),cb);check(events==1,"Chunked SSE lost event");
     Lifecycle life;life.transition(State::Starting);life.transition(State::Active);life.transition(State::Recovering);life.transition(State::Starting);life.transition(State::Suspended);life.transition(State::Starting);life.transition(State::Faulted);life.transition(State::Disabled);

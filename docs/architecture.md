@@ -1,5 +1,20 @@
 # Workspace architecture
 
+## Hinge Glass 0.1.5 — Fusion connection — 2026-09-17
+
+```mermaid
+flowchart LR
+  Camera[Fusion camera and existing estimator] --> API[Snapshot and angle SSE]
+  API --> Read[WinHTTP reads immediately available bytes]
+  Read --> Gate[Validate range / timestamp / camera session]
+  Gate --> Controls[Live angle and connection status even when rendering is disabled]
+  Gate --> Render[Existing rotation and distance frosting]
+  Address[Fusion address / selected source] --> Read
+  Retry[Automatic reconnect] --> Read
+```
+
+The renderer previously requested fixed 8 KiB reads from a continuous event stream. WinHTTP buffered small publications while its control panel continued to say it was connecting. Reading available bytes delivers events immediately. `/api/angle` and `/api/events` now use the same acceptance/status path, and reconnects retain obsolete-session protection. Network state is distinct from angle freshness and the renderer lifecycle. Camera ownership, publication format and Fusion estimation are unchanged. `start.ps1 -Fusion` selects the source at launch; the manual slider remains an explicit switch to debug input. See the [connection state diagram](../renderer/docs/architecture.md#fusion-connection-and-angle-freshness).
+
 ## Hinge Glass 0.1.4 — 2026-09-17
 
 ```mermaid

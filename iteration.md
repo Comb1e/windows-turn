@@ -1,5 +1,17 @@
 # Iteration history
 
+## 0.1.5 — Restore live Fusion angle reception — 2026-09-17
+
+**Previous issues:** Starting Fusion and its camera could leave Hinge Glass showing no received angle or stuck at “Connecting to Fusion.” The controls used renderer telemetry, so connection progress and angles were not visible while rendering was disabled.
+
+**Method root causes:** The native HTTP client called `WinHttpReadData` with a fixed 8 KiB buffer on a continuous SSE response. Small complete events could remain buffered while WinHTTP waited for additional bytes. Existing coverage tested the parser but never exercised actual WinHTTP streaming. A valid initial snapshot also failed to update the connection message. Reconnection cleared session ordering history, allowing obsolete sessions to return.
+
+**Improvements:** Read only immediately available HTTP bytes, retain incremental event parsing, share snapshot/event acceptance, and retry on stream closure. Add explicit Fusion connection states with independent sample freshness. Preserve retired-session and timestamp rejection across reconnects and camera stops; reject malformed/out-of-range measurements. Show the angle from the source while rendering is disabled, expose the saved Fusion address in controls, and provide `start.ps1 -Fusion` / `--fusion`. Manual slider behavior, geometry, frosting, camera ownership and Fusion estimation remain unchanged. Microsoft WinHTTP references and the actual Fusion contract used are recorded in `renderer/docs/research.md`.
+
+**Verification:** A native HTTP regression reproduced the original failure: a single small angle event left the source invalid and its status connecting. It passes after the transport fix. Renderer core, window and shader suites pass alongside five native HTTP tests covering snapshot initialization, fragmented events, stale input, invalid/reordered samples, obsolete sessions across reconnects, service startup/disconnection/restart, and the actual Fusion coordinator's camera start/stop/restart with simulated measurements. All 28 existing Fusion tests pass. An eight-second live desktop preview with a 60 fps cap followed the streamed angle to 75°, recorded 355 renders and GPU p95 0.229376 ms on the RTX 4070; its 44.32 fps overall average includes startup and is not sustained-performance acceptance. No OS refresh settings changed.
+
+**Remaining issues:** Physical camera/lid acceptance still requires the user's live setup. Idle Fusion streams can time out and reconnect while waiting for camera frames; this is automatic. No new 240 Hz, HDR or game-load claim is made. Prior geometry and physical-panel limitations remain as documented.
+
 ## 0.1.4 — Distance-based frosting and one rotation path — 2026-09-17
 
 **Previous issues:** Frosting increased uniformly across the whole image, so points near the glass lost as much detail as distant points. The user again saw stretching during a live test after the grid looked correct. The old full-screen benchmark report confirmed `projectionMode: physical` while the stationary grid used rotation.

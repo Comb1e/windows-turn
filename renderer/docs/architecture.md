@@ -30,6 +30,35 @@ The UI thread owns Win32 controls, emergency hotkey and session/power notificati
 
 The GPU can differ from the display's adapter; Windows performs the capture/presentation transfer. Telemetry reports capture delivery latency separately from GPU shader duration. GPU query results are read asynchronously from a bounded query ring. Pixel readback exists only in explicit synthetic PNG diagnostics after measurement.
 
+## Fusion connection and angle freshness
+
+```mermaid
+stateDiagram-v2
+  [*] --> Connecting: select Fusion / launch with --fusion
+  Connecting --> WaitingForCamera: snapshot says STOPPED
+  Connecting --> WaitingForAngle: requesting / no valid reading
+  Connecting --> Streaming: valid snapshot
+  WaitingForCamera --> Streaming: valid angle event
+  WaitingForAngle --> Streaming: valid angle event
+  Streaming --> WaitingForCamera: camera stopped
+  Streaming --> WaitingForAngle: invalid payload
+  Streaming --> Retrying: HTTP error / stream closed
+  WaitingForCamera --> Retrying: timeout / connection lost
+  WaitingForAngle --> Retrying: timeout / connection lost
+  Connecting --> Retrying: connection failed
+  Retrying --> WaitingForCamera: snapshot says STOPPED
+  Retrying --> WaitingForAngle: requesting / no valid reading
+  Retrying --> Streaming: accepted snapshot / event
+```
+
+The WinHTTP worker calls `WinHttpQueryDataAvailable` before `WinHttpReadData`, using a bounded reusable buffer. A direct 8 KiB read tried to fill the buffer across SSE publications and could withhold a small complete angle event until later data or timeout. The parser still handles fragmented JSON, CRLF and comments. Snapshot and event payloads share one acceptance function and update connection status immediately. EOF is a reconnect condition. Idle streams may time out; retries resnapshot the coordinator and subscribe again without requiring a source toggle or renderer restart.
+
+Freshness is separate from the network state: a Streaming connection can carry `STALE` controller output or stop publishing angles. Both hold geometry while capture continues. A valid reading requires the Fusion 10–120° range, finite displayed velocity/timestamps, a nonempty session and a recognized controller state. The gate rejects duplicate/reordered timestamps and retired camera sessions even across network reconnections; an explicit camera stop retires the last session. Prediction uses only the existing displayed velocity and bounded interval.
+
+Controls sample `IAngleSource` directly, so **Disabled** rendering still shows a received angle and its freshness. The editable loopback **Fusion address** is persisted with other preferences and reconnects an active Fusion source when changed. Connection status includes this address. **Manual / debug** remains the normal launch default, while `start.ps1 -Fusion` / `--fusion` select Fusion immediately. Slider movement deliberately selects manual input. No camera or estimator control is performed by the renderer.
+
+The network regression suite runs the production C++ worker against real chunked HTTP sockets and the actual Fusion coordinator with simulated RGBA camera uploads and measurement services. This covers transport behavior that parser-only tests missed; it does not establish physical camera accuracy.
+
 ## Geometry
 
 ```mermaid

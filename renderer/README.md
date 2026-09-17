@@ -1,10 +1,10 @@
-# Hinge Glass 0.1.4
+# Hinge Glass 0.1.5
 
 A native Windows animation that captures a monitor continuously and rotates its live image around a fixed bottom edge, with frosting that grows with distance from the glass. The reference angle defaults to **110° and is adjustable**. It works without a camera or angle service.
 
 ## Build and run
 
-Requires Windows 10 2004 or newer, a Direct3D 11 GPU, Visual Studio 2022 C++ build tools, Windows SDK 10.0.26100.0 and CMake 3.24+. No downloaded libraries or game injection are required.
+Requires Windows 10 2004 or newer, a Direct3D 11 GPU, Visual Studio 2022 C++ build tools, Windows SDK 10.0.26100.0, CMake 3.24+ and Node.js 20+ for the native Fusion connection tests. No downloaded libraries or game injection are required.
 
 ```powershell
 ./renderer/build.ps1 -Test
@@ -28,7 +28,15 @@ The cursor is drawn into the virtual content before projection and frosting. Act
 
 ## Angle service
 
-Choose **Fusion** to subscribe to `http://127.0.0.1:1820/api/events`; `/api/angle` initializes each connection. Start Fusion's camera through its existing UI. This application does not own or start the camera.
+Start Fusion (`npm start` in `fusion/`), open its page, and select **Start camera**. Then run:
+
+```powershell
+./renderer/start.ps1 -Fusion
+```
+
+This selects **Fusion** as the angle source. With the ordinary `./renderer/start.ps1` command, choose **Fusion** in the **Angle source** list; its default is **Manual / debug**. The controls show the received angle even before **Preview** or **Enable screen** is pressed. Moving the manual slider deliberately switches back to manual input.
+
+**Fusion address** defaults to `http://127.0.0.1:1820`. If Fusion uses a custom port, enter that same address here; changes reconnect immediately and **Apply / save** remembers it. The renderer subscribes to `/api/events` and uses `/api/angle` to initialize each connection. Status distinguishes waiting for the camera, waiting for a valid measurement, live/stale angles, and connection errors, and includes the address being used. Either application may start first; lost connections retry automatically. An idle SSE connection can time out and reconnect while waiting for camera frames. This application does not own or start the camera.
 
 `IAngleSource::sample(now)` returns angle, angular velocity, source and reception timestamps, session identity, validity, and freshness. Manual and scripted sources implement the same interface. Fusion uses the already-smoothed `displayAngleDeg` / `displayVelocityDegS`, predicts for at most the configured 17 ms publication interval, and freezes geometry on stale input while video remains live. Old session data cannot revive a retired session. All network access is loopback HTTP, with bounded messages and connection timeouts.
 
@@ -67,6 +75,6 @@ For a brief live preview check:
 ./renderer/build/Release/HingeGlass.exe --smoke --seconds 8 --angle 85 --no-preferences --report ./renderer/out/smoke.json
 ```
 
-Configuration is validated before changes take effect. `--config path` selects defaults; `--no-preferences` ignores and does not save user settings. `--preview` opens an interactive preview immediately. `--fps`, `--angle`, `--synthetic`, `--overlay`, `--benchmark`, `--seconds`, and `--report` support reproducible diagnostics. The removed `--projection` option is rejected; the benchmark no longer accepts `-Projection`. Legacy `projectionMode`, eye lateral/height and hinge-offset settings are ignored and omitted when saving preferences. Older files without `frostDistanceMm` use its default.
+Configuration is validated before changes take effect. `--config path` selects defaults; `--no-preferences` ignores and does not save user settings. `--preview` opens an interactive preview immediately and `--fusion` selects the Fusion angle source. `--fps`, `--angle`, `--synthetic`, `--overlay`, `--benchmark`, `--seconds`, and `--report` support reproducible diagnostics. The removed `--projection` option is rejected; the benchmark no longer accepts `-Projection`. Legacy `projectionMode`, eye lateral/height and hinge-offset settings are ignored and omitted when saving preferences. Older files without `frostDistanceMm` use its default.
 
 See [architecture](docs/architecture.md), [research](docs/research.md), and [validation](docs/validation.md).
