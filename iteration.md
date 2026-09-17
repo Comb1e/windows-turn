@@ -1,5 +1,17 @@
 # Iteration history
 
+## Light Track 0.14.0 — Rich image features and scene calibration — 2026-09-17
+
+**Previous issues:** Lighting/color features handled changed scenes poorly, with 19.59° mean held-group error on the current 253 screenshots. Existing annotations needed to remain usable while investigating stronger features.
+
+**Method root causes:** Exposure-sensitive photometric statistics contain limited scene structure; sparse manual larger-angle labels limit inference and independent validation. Training fit or random-image evaluation can hide poor scene transfer.
+
+**Improvements:** The separate Light Track repository now compares richer lighting statistics, normalized texture, camera metadata, frozen DINOv2 and relative-depth features using nested group/lighting-description evaluation. Strict gates selected a DINOv2/ridge model, available through Light Track and Fusion's selectors. A shared local worker preserves bounded queues and explicit backend reporting. A ten-reference scene guide saves a separate annotation group and immutable affine calibration profile. Sources, experiments and architecture diagrams are recorded in Light Track; original annotations/models and Fusion keyboard priority are preserved.
+
+**Verification:** All 259 annotation files retain their hashes. Nested mean group error improves 19.59° → 6.69°; lighting-description holdout error improves 31.24° → 11.58°. GPU warm inference P95 is 10.11 ms; complete service P95 is 52.24 ms for 900 valid frames in 60.01 seconds while Hinge Glass runs at a 60 fps cap. Existing and new software regression results are in Light Track's validation document. New model job/profile: `9bf96cbc-c9a0-4129-8a4a-04fe71313b16`.
+
+**Remaining issues:** These are development diagnostics, not independent physical accuracy. Ten-reference splits lack separate high-angle queries, so experimental residual calibration is not deployed. CPU misses the latency target; occasional frame deadlines and game/full-screen GPU contention remain. No Windows refresh setting or renderer geometry changed.
+
 ## Fusion 0.2.2 — Use the available keyboard angle as the target — 2026-09-17
 
 **Previous issues:** Fusion could report an authoritative keyboard measurement while the displayed angle stayed far away. A 60 Hz counterexample with 25° keyboard readings every 300 ms and conflicting scene motion displayed 59.153958° after three seconds.

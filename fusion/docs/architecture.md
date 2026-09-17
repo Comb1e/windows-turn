@@ -74,6 +74,8 @@ The capture clock is aligned once to coordinator monotonic time on the first upl
 
 The `/api/events` stream contains session-bound angle and source events. Slow SSE readers are closed to prevent an unbounded network buffer and can reconnect. `/api/angle` supplies the same latest output for local applications. Recording and adaptation exports are explicit and bounded; stopping the session clears server-side state.
 
+Light Track 0.14 adds `image-model` and `scene-calibration` profile kinds behind the existing profile APIs. Fusion passes the selected ID through unchanged; the Light Track frame service owns versioned image inference and returns the same raw/adapted angle fields. `inference` additionally reports backend and processing time in lighting service events. Image profiles remain provisional. An HTTP integration test exercises profile listing/selection/export, real Python inference, and keyboard target reacquisition without changing Fusion's estimator or renderer-facing output.
+
 ```mermaid
 flowchart LR
     Source[Separate full-range recordings] --> Split[Training / validation / test recording IDs]

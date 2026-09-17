@@ -2,6 +2,8 @@
 
 ## 0.2.2 — Keyboard angle is the correction target — 2026-09-17
 
+Light Track 0.14 integration addendum: documented promoted image models and immutable measured-reference scene profiles in the existing selector. Added a real-coordinator/real-worker regression for profile selection, fallback angle reception, profile export and immediate keyboard target priority. Fusion's public angle schema and estimator behavior are unchanged; all original 32 tests plus the new profile test pass.
+
 **Previous issues:** An available keyboard angle could be reported correctly while the displayed angle diverged. With 25° readings every 300 ms and +60°/s scene motion, the old controller displayed 59.153958° after three seconds at a 60 Hz update rate.
 
 **Method root causes:** An unavailable keyboard velocity estimate silently selected scene motion, even though the target came from the keyboard. Age extrapolation and future trajectory endpoints inherited that motion. The old tests checked raw source selection but lacked conflicting motion with sparse keyboard samples.

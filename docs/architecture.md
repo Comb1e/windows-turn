@@ -1,5 +1,24 @@
 # Workspace architecture
 
+## Light Track 0.14.0 — Scene robustness — 2026-09-17
+
+```mermaid
+flowchart LR
+  Existing[Original labeled PNGs] --> Features[Versioned local image features]
+  Features --> Compare[Nested scene diagnostics and runtime gate]
+  Compare --> Model[Promoted frozen DINOv2 plus ridge model]
+  Model --> Worker[Shared local image inference worker]
+  Camera[Standalone or Fusion camera owner] --> Worker
+  Worker --> Angle[Timestamped lighting angle and backend timing]
+  Angle --> Fusion[Fusion: keyboard target priority]
+  Fusion --> Renderer[Hinge Glass existing angle interface]
+  References[Separate measured scene references] --> Profile[Immutable affine scene profile]
+  Model --> Profile
+  Profile --> Worker
+```
+
+Light Track's original v1 features/models and annotation files remain unchanged. New models use a versioned image predictor and shared offline/live extraction; they enter the selectors only after grouped accuracy, export parity and backend runtime checks. The 253-image development set favors frozen DINOv2 features over extra photometric values or relative depth. An optional scene guide reuses screenshot storage with actual keyboard/manual labels, then publishes a separately selected affine profile. Detailed data flow, state transitions and limitations are in `light-track/docs/architecture.md` and `light-track/docs/scene-model-research.md` in the independent Light Track repository. Fusion and renderer angle protocols are unchanged, and graphics testing remains capped at 60 fps.
+
 ## Fusion 0.2.2 — Keyboard target priority — 2026-09-17
 
 ```mermaid
