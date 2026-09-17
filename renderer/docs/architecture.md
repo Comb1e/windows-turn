@@ -8,8 +8,7 @@ flowchart LR
   Sweep[Timed closing / opening / reversal] --> Source
   Fusion[Fusion snapshot and SSE] --> Gate[Session ordering and freshness gate]
   Gate --> Source
-  Source --> Geometry[Mode-specific plane geometry / shared homography]
-  Mode[Slider test or physical lid] --> Geometry
+  Source --> Geometry[Single bottom-anchored rotation / homography]
   Settings[Validated config / user preferences] --> Geometry
   Desktop[Windows composed monitor] --> WGC[GPU capture / latest frame only]
   WGC --> Light[1-pixel ambient light reduction]
@@ -17,9 +16,12 @@ flowchart LR
   Cursor[Cursor shape and original position] --> Warp
   Geometry --> Warp
   Light --> Warp
-  Warp --> Blur[Reduced-resolution horizontal / vertical blur]
+  Geometry --> Gap[Distance of each image point to finite glass]
+  Gap --> Warp
+  Warp --> Blur[Four reduced-resolution Gaussian levels]
   Blur --> Compose[Linear-light glass composition]
   Warp --> Compose
+  Gap --> Compose
   Compose --> Present[Waitable flip swapchain / bounded 2-frame queue]
   Present --> Overlay[Excluded nonactivating click-through window]
 ```
@@ -32,23 +34,21 @@ The GPU can differ from the display's adapter; Windows performs the capture/pres
 
 ```mermaid
 flowchart LR
-  Slider[Explicit slider-test view mode] --> R[Stationary output / rigid source plane rotates]
-  Physical[Explicit physical-lid view mode] --> P[Moving physical output / source plane remains fixed]
+  Angle[Angle and reference] --> R[Stationary output / rigid source plane rotates]
   R --> Shared[Shared eye-ray / source-plane projection]
-  P --> Shared
   Shared --> Bottom[Fixed active bottom edge]
-  Shared --> Blur[Increasing frosting with closure]
+  Shared --> Blur[Frost radius from local image-to-glass distance]
 ```
 
-The two modes describe different physical arrangements. `rotation` is a stationary-screen inspection of relative plane rotation. It applies a true rotation to the source rectangle (width/height unchanged), with a centered pinhole camera `(0, screenHeight/2, -eyeY)` and fixed destination plane. The rotation is `referenceAngle − physicalAngle`. It culls the exact edge-on singularity and back faces. This avoids the magnified source strip produced when using physical compensation for a stationary-slider test.
+There is one projection: a true rotation of the source rectangle (width/height unchanged), with a centered pinhole camera `(0, screenHeight/2, -eyeY)` and fixed destination plane. The rotation is `referenceAngle − angle`. It culls the exact edge-on singularity and back faces.
 
-`physical` is the actual product effect: the source plane and eye stay fixed in the keyboard frame and the destination plane follows the lid. Only the explicit **View mode** selector changes this choice. **Preview** and **Enable screen** select the output surface without changing projection. Synthetic and live sources use the same projection, cursor composition and frosting passes. The mode is independent of manual/Fusion angle selection. This prevents a successful grid test from using a different transformation than the live full-screen effect.
+The former physical-lid compensation path and all selectors were removed at the user's request after a benchmark forced that path and reproduced the reported stretch. `Settings` has no mode member, configuration does not load or save one, and the old CLI selector is rejected. **Preview**, **Enable screen**, synthetic grid, live capture and benchmarks all call the same geometry. Angle sources remain independent; Fusion cannot choose a different projection. This version does not claim world-space image anchoring as the real panel moves.
 
 ```mermaid
 flowchart TB
-  H[Stationary active bottom edge / keyboard frame] --> P[Physical pixel P at current lid angle]
-  H --> V[Virtual plane at configurable reference angle]
-  E[Calibrated eye E] --> Ray[Ray through physical pixel P]
+  H[Stationary active bottom edge] --> P[Pixel P on fixed output plane]
+  H --> V[Virtual image plane rotated by reference minus angle]
+  E[Centered eye E] --> Ray[Ray through output pixel P]
   P --> Ray
   Ray --> Q[Intersect ray with virtual plane at Q]
   V --> Q
@@ -56,15 +56,47 @@ flowchart TB
   UV --> Clip[Clip finite desktop bounds / use ambient glass outside]
 ```
 
-Coordinates are millimetres: x is right, y points forward across the keyboard, z points upward. A plane's upward direction is `(0, cos(angle), sin(angle))`. The **visual pivot is the complete active bottom edge**, fixed at `hingeOffset * referenceUp` in keyboard coordinates. Subtract that constant origin from the eye before forming the homography. Never rotate the hinge offset with the physical angle: doing so moved the bottom edge in 0.1.0. At angle 0 the visual panel lies over the keyboard. At the reference angle projection is identity; larger angles show the native desktop.
+Coordinates are millimetres: x is right, y runs upward along the output plane, and z recedes from it. The source plane's upward direction is `(0, cos(tilt), sin(tilt))`. The **visual pivot is the complete active bottom edge**, fixed at y=z=0. At the reference angle projection is identity; larger angles show the native desktop. Unused eye-height/lateral/hinge-offset controls were removed with the alternative geometry.
 
-For eye E, physical pixel P, and virtual-plane normal n, the intersection is `Q = E - dot(n,E) / dot(n,P-E) * (P-E)`. Expanding this into a 3×3 homography avoids matrix inversions per pixel. Near-parallel or behind-eye rays produce ambient glass. The independent CPU test uses ray intersection directly rather than this expansion.
+For eye E, output pixel P, and virtual-plane normal n, the intersection is `Q = E - dot(n,E) / dot(n,P-E) * (P-E)`. Expanding this into a 3×3 homography avoids matrix inversions per pixel. Near-parallel or behind-eye rays produce ambient glass. The independent CPU test uses ray intersection directly rather than this expansion.
 
-In stationary tests the same intersection helper uses a rotated source plane and fixed destination. Additional independent tests start with known source points, rigidly rotate them in 3D, project them forward, and check that inverse GPU sampling recovers the original texture coordinates. Physical-mode controls instead hold the world position of each image point constant while changing the destination angle. Neither path rescales a projected bounding box to fill the window. `fitPreview` uses one uniform scale for both window dimensions so non-16:10 monitors are not stretched.
+Additional independent tests start with known source points, rigidly rotate them in 3D, project them forward, and check that inverse sampling recovers the original texture coordinates. A projected bounding box is never rescaled to fill the window. `fitPreview` uses one uniform scale for both window dimensions so non-16:10 monitors are not stretched.
 
-Closure `c` is `smoothstep(0,1,clamp((reference-angle)/reference,0,1))`. Frost amount is `a = 1-(1-c)^frostResponse`, default response 3. Blur radius is `maxBlurPixels*a` (default maximum 64), and blurred-image weight is `1-(1-a)^2`. These curves increase monotonically, remain clear at reference and reach full frosting at closure. Rendering is a function of the current angle, so reopening retraces the geometry without a separate animation history. Frosting operates in physical-screen coordinates after projection. No black shutdown fade is used.
+For a visible source point at height `h = (1-sourceV)*screenHeight` above the fixed bottom, the shortest distance to the finite glass rectangle is `d = h*sin(min(max(reference-angle,0),90°))`. This follows by projecting that point onto the glass and clamping the closest point to the active rectangle. Beyond 90° of relative rotation, the nearest point is the bottom edge; using the infinite plane would incorrectly reduce frosting during further closure. Perspective determines which source point a pixel sees, so the shader uses the projected source coordinate rather than an arbitrary output-row gradient. Outside the image, the softly lit background uses the reciprocal glass-point distance to the finite source rectangle. Grazing and behind-eye rays never supply invalid texture coordinates to this calculation.
 
-The separable Gaussian kernel samples consecutive texels at reduced resolution with sigma equal to one third of its radius. The radius expands with requested blur strength. This replaces sparse, widely spaced taps that produced duplicated-edge bands at the stronger setting. The bounded config (100-pixel maximum, reduced scale at most 0.5) bounds each pass to at most 101 taps, without full-resolution Gaussian passes.
+Local frost amount is `a = 1-exp(-frostResponse*d/frostDistanceMm)`, with defaults 3 and 150 mm. Radius is `maxBlurPixels*a` (default maximum 64). Exactly on the hinge or at/above reference, `a=0`; maximum blur zero also disables tint. For a given image point, separation and radius grow monotonically with closure, remain bounded at exact closure, and retrace on reopening. Small reference angles produce a smaller physical separation and therefore less frosting, rather than forcing every closure to the same blur. This models image-to-glass distance, not depth within a captured video or game: the captured desktop is one virtual plane.
+
+The projected FP16 texture stores linear RGB and local frost amount in alpha. Four Gaussian levels use radii 1/8, 1/4, 1/2 and 1 of the configured maximum; each uses dense horizontal/vertical samples, sigma radius/3, and reduced resolution. Composition interpolates adjacent levels by squared radius (variance), including the original full-resolution image for the smallest radii. Thus blur footprint varies spatially without leaving a sharp ghost under heavily frosted areas. Fixed kernels also avoid a variable vertical pass importing the wrong horizontal radius near the hinge. The 100-pixel maximum and 0.5 maximum reduced scale bound each pass to 101 taps. Tint uses the same local amount. No closing fade to black is used.
+
+```mermaid
+flowchart LR
+  UV[Projected source point] --> Distance[Closest point on finite glass rectangle]
+  Distance --> Amount[Exponential distance response]
+  Amount --> Radius[Local blur radius / alpha]
+  Projected[Projected linear image] --> Levels[Four dense Gaussian levels]
+  Projected --> Mix[Interpolate adjacent radii by variance]
+  Levels --> Mix
+  Radius --> Mix
+  Mix --> Tint[Local glass tint then SDR or HDR output]
+```
+
+## Debug controls and comparisons
+
+```mermaid
+flowchart TD
+  Controls[Angle / reference / distance controls] --> Settings[One settings snapshot]
+  Grid[Grid checkbox] --> Input{Image source only}
+  Input --> Pattern[Generated calibration image]
+  Input --> Capture[Live GPU capture]
+  Pattern --> Shared[Same projection and frosting pipeline]
+  Capture --> Shared
+  Settings --> Shared
+  Shared --> Output[Preview or independent full-screen window]
+  Output --> Layer[Controls above visible full-screen output]
+  Layer --> Pointer[Native pointer over controls / transformed cursor elsewhere]
+```
+
+The full-screen output is unowned; making it owned by the controls put it permanently above its owner under Win32 ordering rules. `keepControlsAccessible` keeps the controls above the visible output with `SWP_NOACTIVATE`, releases topmost when hidden/disabled, and respects deliberate minimization. Preview ownership is unchanged. Controls and output remain capture-excluded. `pointerUsesControls` includes children, owned dialogs, popup lists and mouse capture during drags. The grid checkbox restarts only the image source at the same output size and preserves the angle source. Benchmark scripts have no projection selector; reports identify the sole geometry as rotation.
 
 ## State and recovery
 

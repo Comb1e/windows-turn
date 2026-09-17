@@ -15,3 +15,13 @@ Reviewed 2026-09-17. Project code was written independently; no Magpie implement
 | [Microsoft Projection Transform](https://learn.microsoft.com/en-us/windows/win32/direct3d9/projection-transform), reread for 0.1.2 | Distinguish rigid geometry from perspective and viewport scaling; preserve aspect ratio in slider previews | A rotating-plane test is not a substitute for the physical-lid compensation required to anchor the image in the room |
 
 Robert Kooima's generalized-perspective article was located during planning, but its original server could not be read securely in this environment; it is not claimed as a directly read implementation source.
+
+## Additional references used for 0.1.3–0.1.4 — 2026-09-17
+
+| Reference actually read | Role in this change | Limit |
+| --- | --- | --- |
+| [NVIDIA GPU Gems 3, Chapter 28: Practical Post-Process Depth of Field](https://developer.nvidia.com/gpugems/gpugems3/part-iv-image-effects/chapter-28-practical-post-process-depth-field) | Per-pixel blur radius, reduced-resolution Gaussian images, and blending multiple blur levels; motivates spatially varying footprints instead of a uniform blur/opacity mix | Uses camera depth of field; our independently derived distance is between the virtual desktop and finite glass, not the thin-lens CoC formula or scene depth |
+| [Microsoft Window Features: Owned Windows](https://learn.microsoft.com/en-us/windows/win32/winmsg/window-features) | Explains why the full-screen owned overlay always covered the controls and disappeared when the owner minimized | Window ordering does not alone establish end-to-end capture correctness |
+| [Microsoft SetWindowPos](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowpos) | Keep controls above output without activating them; release topmost after disable | Verified separately with native fixture windows |
+
+Distance is derived by closest-point projection onto a finite rectangle sharing the hinge axis. Gaussian levels are interpolated by variance. No project source or shader implementation was copied.

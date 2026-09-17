@@ -2,6 +2,7 @@
 #include "settings.h"
 #include "cursor.h"
 #include "window_layer.h"
+#include "shader_parameters.h"
 #include <d3d11.h>
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
@@ -40,9 +41,7 @@ struct Target {
         check_hresult(device->CreateShaderResourceView(texture.get(),nullptr,srv.put()));
     }
 };
-struct alignas(16) Constants {
-    float rows[3][4]{};float sizes[4]{};float effect[4]{};float direction[4]{};float cursorRect[4]{};float cursorInfo[4]{};
-};
+using Constants=ShaderParameters;
 struct Query {com_ptr<ID3D11Query> disjoint,begin,end;bool pending=false;};
 double percentile(std::vector<double> values,double p){if(values.empty())return 0;std::sort(values.begin(),values.end());return values[static_cast<size_t>((values.size()-1)*p)];}
 class Pipeline {
@@ -51,7 +50,8 @@ public:
     com_ptr<IDCompositionDevice> composition;com_ptr<IDCompositionTarget> compositionTarget;com_ptr<IDCompositionVisual> visual;
     com_ptr<ID3D11VertexShader> vs;com_ptr<ID3D11PixelShader> warp,blur,composite,pattern,lightShader;
     com_ptr<ID3D11Buffer> constants;com_ptr<ID3D11SamplerState> sampler;
-    Target source,projected,smallA,smallB,lightField;
+    Target source,projected,smallA,lightField;
+    std::array<Target,frostRadii.size()> frosted;
     com_ptr<ID3D11RenderTargetView> back;
     GraphicsCaptureItem item{nullptr};Direct3D11CaptureFramePool pool{nullptr};GraphicsCaptureSession session{nullptr};
     event_token arrived{},closed{};std::shared_ptr<Signal> signal=std::make_shared<Signal>();std::shared_ptr<std::atomic<bool>> captureClosed=std::make_shared<std::atomic<bool>>(false);
@@ -94,7 +94,8 @@ public:
         check_hresult(device->CreateBuffer(&bd,nullptr,constants.put()));D3D11_SAMPLER_DESC ss{};ss.Filter=D3D11_FILTER_MIN_MAG_MIP_LINEAR;
         ss.AddressU=ss.AddressV=ss.AddressW=D3D11_TEXTURE_ADDRESS_CLAMP;ss.MaxLOD=D3D11_FLOAT32_MAX;check_hresult(device->CreateSamplerState(&ss,sampler.put()));
         projected.create(device.get(),width,height);smallA.create(device.get(),std::max(1U,UINT(width*settings.blurScale)),std::max(1U,UINT(height*settings.blurScale)));
-        smallB.create(device.get(),smallA.width,smallA.height);lightField.create(device.get(),1,1);
+        for(auto& image:frosted)image.create(device.get(),smallA.width,smallA.height);
+        lightField.create(device.get(),1,1);
         for(auto& q:queries){D3D11_QUERY_DESC d{D3D11_QUERY_TIMESTAMP_DISJOINT,0};check_hresult(device->CreateQuery(&d,q.disjoint.put()));d.Query=D3D11_QUERY_TIMESTAMP;
             check_hresult(device->CreateQuery(&d,q.begin.put()));check_hresult(device->CreateQuery(&d,q.end.put()));}
         cursor=std::make_unique<CursorLayer>(device.get());
@@ -134,13 +135,15 @@ public:
         delivery=std::max(0.,qpcMs()-captureTime);++captures;latest.Close();return true;
     }
     void draw(ID3D11PixelShader* shader,ID3D11RenderTargetView* output,UINT w,UINT h,Constants& p,ID3D11ShaderResourceView* input,ID3D11ShaderResourceView* second=nullptr){
-        ID3D11ShaderResourceView* empty[5]{};context->PSSetShaderResources(0,5,empty);context->OMSetRenderTargets(1,&output,nullptr);
+        ID3D11ShaderResourceView* empty[8]{};context->PSSetShaderResources(0,8,empty);context->OMSetRenderTargets(1,&output,nullptr);
         D3D11_VIEWPORT vp{0,0,static_cast<float>(w),static_cast<float>(h),0,1};context->RSSetViewports(1,&vp);
         D3D11_MAPPED_SUBRESOURCE mapped{};check_hresult(context->Map(constants.get(),0,D3D11_MAP_WRITE_DISCARD,0,&mapped));memcpy(mapped.pData,&p,sizeof(p));context->Unmap(constants.get(),0);
         auto cb=constants.get();context->PSSetConstantBuffers(0,1,&cb);context->VSSetShader(vs.get(),nullptr,0);context->PSSetShader(shader,nullptr,0);
-        auto samplerPtr=sampler.get();context->PSSetSamplers(0,1,&samplerPtr);ID3D11ShaderResourceView* views[]={input,second,cursor->color.get(),cursor->mask.get(),shader==warp.get()?lightField.srv.get():nullptr};
-        context->PSSetShaderResources(0,5,views);context->IASetInputLayout(nullptr);context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);context->Draw(3,0);
-        context->PSSetShaderResources(0,5,empty);context->OMSetRenderTargets(0,nullptr,nullptr);
+        bool composing=shader==composite.get();
+        auto samplerPtr=sampler.get();context->PSSetSamplers(0,1,&samplerPtr);ID3D11ShaderResourceView* views[]={input,second,cursor->color.get(),cursor->mask.get(),shader==warp.get()?lightField.srv.get():nullptr,
+            composing?frosted[1].srv.get():nullptr,composing?frosted[2].srv.get():nullptr,composing?frosted[3].srv.get():nullptr};
+        context->PSSetShaderResources(0,8,views);context->IASetInputLayout(nullptr);context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);context->Draw(3,0);
+        context->PSSetShaderResources(0,8,empty);context->OMSetRenderTargets(0,nullptr,nullptr);
     }
     double collect(){double last=-1;
         for(auto& q:queries)if(q.pending){D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjoint{};UINT64 begin=0,end=0;
@@ -154,19 +157,24 @@ public:
         auto& query=queries[queryIndex];bool measure=!query.pending;if(measure){context->Begin(query.disjoint.get());context->End(query.begin.get());}
         Constants p{};auto map=projection(s,angle);for(int row=0;row<3;++row)for(int col=0;col<3;++col)p.rows[row][col]=static_cast<float>(map.h[row*3+col]);
         p.sizes[0]=static_cast<float>(width);p.sizes[1]=static_cast<float>(height);p.sizes[2]=static_cast<float>(source.width);p.sizes[3]=static_cast<float>(source.height);
-        p.effect[0]=static_cast<float>(frosting(angle,s.referenceAngle,s.frostResponse));p.effect[1]=static_cast<float>(s.blurPixels);p.effect[2]=hdr||synthetic?0.f:1.f;p.effect[3]=hdr?1.f:0.f;
+        p.effect[0]=static_cast<float>(glassSeparationAtTop(s,angle));p.effect[1]=static_cast<float>(s.blurPixels);p.effect[2]=hdr||synthetic?0.f:1.f;p.effect[3]=hdr?1.f:0.f;
+        p.frosting[0]=static_cast<float>(s.frostDistanceMm);p.frosting[1]=static_cast<float>(s.frostResponse);
+        std::copy(frostRadii.begin(),frostRadii.end(),p.blurRadii);
         p.direction[3]=static_cast<float>(elapsed);
         if(synthetic){draw(pattern.get(),source.rtv.get(),source.width,source.height,p,nullptr);++captures;captureTime=qpcMs();}
         double cursorStart=nowMs();cursor->update(monitor.rect);cursorMs=nowMs()-cursorStart;std::copy(cursor->rectangle.begin(),cursor->rectangle.end(),p.cursorRect);p.cursorInfo[0]=cursor->visible&&!nativePointer?1.f:0.f;
         draw(lightShader.get(),lightField.rtv.get(),1,1,p,source.srv.get());
         draw(warp.get(),projected.rtv.get(),width,height,p,source.srv.get());
-        float reducedRadius=static_cast<float>(s.blurPixels*p.effect[0]*smallA.width/width);
-        p.direction[0]=1.f/smallA.width;p.direction[1]=0;p.direction[2]=std::ceil(reducedRadius);p.direction[3]=reducedRadius/3;
-        draw(blur.get(),smallA.rtv.get(),smallA.width,smallA.height,p,projected.srv.get());
-        reducedRadius=static_cast<float>(s.blurPixels*p.effect[0]*smallA.height/height);
-        p.direction[0]=0;p.direction[1]=1.f/smallA.height;p.direction[2]=std::ceil(reducedRadius);p.direction[3]=reducedRadius/3;
-        draw(blur.get(),smallB.rtv.get(),smallB.width,smallB.height,p,smallA.srv.get());
-        draw(composite.get(),back.get(),width,height,p,projected.srv.get(),smallB.srv.get());
+        for(size_t i=0;i<frosted.size();++i){
+            float radius=static_cast<float>(s.blurPixels*frostRadii[i]);
+            float reducedRadius=radius*smallA.width/width;
+            p.direction[0]=1.f/smallA.width;p.direction[1]=0;p.direction[2]=std::ceil(reducedRadius);p.direction[3]=reducedRadius/3;
+            draw(blur.get(),smallA.rtv.get(),smallA.width,smallA.height,p,projected.srv.get());
+            reducedRadius=radius*smallA.height/height;
+            p.direction[0]=0;p.direction[1]=1.f/smallA.height;p.direction[2]=std::ceil(reducedRadius);p.direction[3]=reducedRadius/3;
+            draw(blur.get(),frosted[i].rtv.get(),smallA.width,smallA.height,p,smallA.srv.get());
+        }
+        draw(composite.get(),back.get(),width,height,p,projected.srv.get(),frosted[0].srv.get());
         if(measure){context->End(query.end.get());context->End(query.disjoint.get());query.pending=true;queryIndex=(queryIndex+1)%queries.size();}
         double presentStart=nowMs();check_hresult(swap->Present(syncInterval,0));presentMs=nowMs()-presentStart;
     }
@@ -195,8 +203,10 @@ void writeReport(const std::filesystem::path& path,const Telemetry& t,const Rend
     auto previewSize=fitPreview(options.monitor.rect.right-options.monitor.rect.left,options.monitor.rect.bottom-options.monitor.rect.top);
     num(L"seconds",seconds);num(L"renderWidth",options.preview?previewSize.width:options.monitor.rect.right-options.monitor.rect.left);
     num(L"renderHeight",options.preview?previewSize.height:options.monitor.rect.bottom-options.monitor.rect.top);num(L"monitorRefreshHz",options.monitor.hz);
-    o.Insert(L"projectionMode",JsonValue::CreateStringValue(to_hstring(settings.projectionMode)));
+    o.Insert(L"projectionMode",JsonValue::CreateStringValue(L"rotation"));
     num(L"maxBlurPixels",settings.blurPixels);num(L"frostResponse",settings.frostResponse);num(L"finalAngle",t.angle);
+    num(L"frostDistanceMm",settings.frostDistanceMm);
+    o.Insert(L"frostModel",JsonValue::CreateStringValue(L"distance-to-glass"));
     num(L"requestedCap",settings.maxFps);num(L"captures",double(t.captures));num(L"renders",double(t.renders));num(L"presents",double(t.presents));
     num(L"averageRenderFps",seconds>0?t.renders/seconds:0);num(L"gpuP95Ms",t.p95GpuMs);num(L"frameIntervalP99Ms",t.p99FrameMs);num(L"droppedCaptures",double(t.dropped));
     num(L"cpuCaptureMs",t.cpuCaptureMs);num(L"cpuRenderMs",t.cpuRenderMs);num(L"cpuCursorMs",t.cpuCursorMs);num(L"presentWaitMs",t.presentWaitMs);num(L"pacingWaitMs",t.pacingWaitMs);

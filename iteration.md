@@ -1,5 +1,29 @@
 # Iteration history
 
+## 0.1.4 — Distance-based frosting and one rotation path — 2026-09-17
+
+**Previous issues:** Frosting increased uniformly across the whole image, so points near the glass lost as much detail as distant points. The user again saw stretching during a live test after the grid looked correct. The old full-screen benchmark report confirmed `projectionMode: physical` while the stationary grid used rotation.
+
+**Method root causes:** One angle-derived scalar drove a single Gaussian radius and global sharp/blur mix. It had no per-point distance to the glass. Separately, the benchmark script forced the alternative physical compensation transformation despite the interactive default. A successful grid in a different geometry could not validate that live run.
+
+**Improvements:** Frost radius now follows the closest distance from each projected image point to the finite glass rectangle. It is zero at the hinge and grows toward the top; clamping the nearest point to the finite glass prevents distance decreasing beyond 90° of relative rotation. Added an adjustable `frostDistanceMm` scale (150 mm default), exponential response, four dense Gaussian levels and interpolation by variance after projection in linear light. The physical-lid mode has been deleted from the implementation, UI, configuration and benchmark scripts at the user's request. The removed CLI option is explicitly rejected. Legacy mode and obsolete calibration values are ignored and dropped on save. All output uses the corrected bottom-anchored rotation. A grid checkbox switches only the image source for direct comparison with live capture, preserving angle and output size. The existing visible-controls fix remains in place.
+
+**Verification:** Release build and all three CTest suites pass: 166,827 core checks, 30 native-window checks and 641,501 actual-HLSL checks. Independent forward projection and ray-plane controls cover the retained rotation; closest-point controls verify distance, configurable references/heights, near-parallel geometry, closure and reversal. The stripe regression retains 99.9195% of near-hinge contrast while the upper region retains 0.0180%. Zero blur and reference-angle output remain unchanged. A legacy physical preference cannot alter geometry or be saved again. Existing Fusion tests remain 28/28 passing. All application render tests use a 60 fps cap. Final live timing and UI checks are recorded in `renderer/docs/validation.md`.
+
+**Remaining issues:** User visual acceptance of the live desktop remains separate from numeric projection correctness. Removing physical compensation means this version no longer provides the former world-space image anchoring for a moving real panel. Frosting models distance to a flat captured desktop, not per-object depth inside games/videos. HDR, game-specific compatibility, physical lid power behavior and new-effect 240 Hz acceptance remain pending.
+
+## 0.1.3 — Keep debug controls accessible — 2026-09-17
+
+**Previous issues:** The Hinge Glass debug page disappeared behind full-screen rendering, preventing angle adjustment; cursor suppression also hid the native pointer over the panel.
+
+**Method root causes:** The full-screen overlay was owned by the controls. Win32 keeps owned windows above their owner, and minimizing an owner hides its owned windows. Global cursor suppression did not distinguish the control panel from transformed content.
+
+**Improvements:** Made full-screen output independent/unowned; a reusable window-layer helper keeps the controls above visible output without activating them, releases topmost on disable and respects minimization. A shared pointer helper covers controls, child widgets, dialogs, popups and drag capture. Native pointer visibility is restored over controls; transformed cursor rendering is omitted there. Preview ownership and capture exclusion remain intact. Benchmark completion targets the controls directly instead of relying on an owner relationship.
+
+**Verification:** Release build and 30 native window checks pass, including ownership, z-order, no focus steal, slider use, mouse capture, recovery/show-hide, minimization/restoration, dialogs, capture exclusion and cleanup. Existing geometry and source tests remain passing. Microsoft ownership and positioning documentation used for the fix is recorded in the renderer research notes.
+
+**Remaining issues:** Real hardware display/session recovery and crash-recovery cursor fault injection still require dedicated checks. The separate stretch report was not resolved by this window-layer change.
+
 ## 0.1.2 — Correct slider projection and strengthen frosting — 2026-09-17
 
 **Previous issues:** Lowering the slider on a stationary screen stretched a narrow strip of the desktop across the output. The previous documentation instructed a stationary slider test while using projection intended for a physically moving lid. Preview windows also assumed a 16:10 aspect ratio for every monitor. Frosting was too weak, and increasing the old kernel's radius exposed visible repeated-edge bands.

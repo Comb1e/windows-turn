@@ -15,16 +15,15 @@
 namespace hinge {
 namespace {
 constexpr int Manual=100,Source=101,MonitorChoice=102,GpuChoice=103,Slider=104,Status=105;
-constexpr int ProjectionChoice=106;
+constexpr int GridChoice=107;
 constexpr int Preview=201,Enable=202,Disable=203,CloseSweep=204,OpenSweep=205,Reverse=206,Apply=207,Power=208;
 struct Field {int id;const wchar_t* label;double Settings::* member;};
 const Field fields[]={
     {Manual,L"Physical angle (degrees)",&Settings::manualAngle},{110,L"Reference angle (degrees)",&Settings::referenceAngle},
     {111,L"Maximum blur (pixels)",&Settings::blurPixels},{112,L"Sweep duration (seconds)",&Settings::sweepSeconds},
-    {113,L"Eye distance from hinge (mm)",&Settings::eyeY},{114,L"Eye height above keyboard (mm)",&Settings::eyeZ},
-    {115,L"Eye lateral offset (mm)",&Settings::eyeX},{116,L"Maximum frame rate (Hz)",&Settings::maxFps},
+    {113,L"Viewing distance (mm)",&Settings::eyeY},{116,L"Maximum frame rate (Hz)",&Settings::maxFps},
     {117,L"Active screen width (mm)",&Settings::screenWidth},{118,L"Active screen height (mm)",&Settings::screenHeight},
-    {119,L"Hinge to active display (mm)",&Settings::hingeOffset}
+    {120,L"Frost distance scale (mm)",&Settings::frostDistanceMm}
 };
 struct App {
     HWND controls=nullptr,output=nullptr;HFONT font=nullptr;Settings settings;Renderer renderer;
@@ -41,15 +40,14 @@ struct App {
     void manualSource(){auto manual=std::make_shared<ManualAngle>();manual->angle=settings.manualAngle;angle=manual;}
     void populate(){
         scale=GetDpiForWindow(controls)/96.f;LOGFONTW lf{};lf.lfHeight=-px(14);wcscpy_s(lf.lfFaceName,L"Segoe UI");font=CreateFontIndirectW(&lf);
-        widget(L"STATIC",L"Hinge Glass",0,20,14,600,28,0);
-        widget(L"STATIC",L"Live desktop on a fixed virtual plane. Ctrl + Alt + F12 immediately disables the effect.",0,20,48,700,36,0);
+        widget(L"STATIC",L"Hinge Glass",0,20,14,300,28,0);
+        widget(L"BUTTON",L"Show calibration grid",WS_TABSTOP|BS_AUTOCHECKBOX,450,14,245,28,GridChoice);
+        SendMessageW(widgets[GridChoice],BM_SETCHECK,synthetic?BST_CHECKED:BST_UNCHECKED,0);
+        widget(L"STATIC",L"Live desktop rotating around its bottom edge. Ctrl + Alt + F12 disables the effect.",0,20,48,700,36,0);
         widget(L"STATIC",L"Angle source",0,20,92,125,22,0);widget(WC_COMBOBOXW,L"",CBS_DROPDOWNLIST|WS_TABSTOP,150,88,545,120,Source);
         for(auto label:{L"Manual / debug",L"Fusion (current measurement range: 10–120 degrees)"})SendMessageW(widgets[Source],CB_ADDSTRING,0,reinterpret_cast<LPARAM>(label));
         SendMessageW(widgets[Source],CB_SETCURSEL,0,0);
-        widget(L"STATIC",L"View mode",0,20,132,125,22,0);widget(WC_COMBOBOXW,L"",CBS_DROPDOWNLIST|WS_TABSTOP,150,128,545,120,ProjectionChoice);
-        for(auto label:{L"Slider test only — rotating plane on stationary screen",L"Physical lid — image anchored at the reference angle"})
-            SendMessageW(widgets[ProjectionChoice],CB_ADDSTRING,0,reinterpret_cast<LPARAM>(label));
-        SendMessageW(widgets[ProjectionChoice],CB_SETCURSEL,settings.projectionMode=="physical"?1:0,0);
+        widget(L"STATIC",L"Grid and live desktop use the same bottom-anchored rotation.",0,20,132,675,22,0);
         widget(L"STATIC",L"Manual test angle: 0° closed  ←  drag to rotate  →  180° open",0,20,164,675,22,0);
         widget(TRACKBAR_CLASSW,L"",WS_TABSTOP|TBS_AUTOTICKS,20,188,675,38,Slider);
         SendMessageW(widgets[Slider],TBM_SETRANGE,TRUE,MAKELPARAM(0,1800));SendMessageW(widgets[Slider],TBM_SETPOS,TRUE,LPARAM(settings.manualAngle*10));
@@ -73,7 +71,6 @@ struct App {
     }
     void readControls(bool save){
         Settings candidate=settings;
-        candidate.projectionMode=SendMessageW(widgets[ProjectionChoice],CB_GETCURSEL,0,0)==1?"physical":"rotation";
         for(auto& field:fields){wchar_t value[128];GetWindowTextW(widgets[field.id],value,128);wchar_t* end=nullptr;
             double number=wcstod(value,&end);if(end==value||*end)throw std::runtime_error("Enter a valid number for each setting");candidate.*(field.member)=number;}
         auto m=SendMessageW(widgets[MonitorChoice],CB_GETCURSEL,0,0);if(m<0||size_t(m)>=displays.size())throw std::runtime_error("Select an available monitor");candidate.monitor=winrt::to_string(displays[m].name);
@@ -112,7 +109,8 @@ struct App {
     }
     void status(){
         updateControlLayer();
-        auto t=renderer.status();std::wostringstream text;text<<stateName(t.state)<<L" · "<<std::fixed<<std::setprecision(1)<<t.angle<<L"° · "<<(t.fresh?L"live angle":L"angle stale / held")<<L"\r\n";
+        auto t=renderer.status();std::wostringstream text;text<<stateName(t.state)<<L" · "<<std::fixed<<std::setprecision(1)<<t.angle<<L"° · "<<(t.fresh?L"live angle":L"angle stale / held")
+            <<L" · "<<(synthetic?L"Grid":L"Live desktop")<<L"\r\n";
         text<<(t.adapter.empty()?L"GPU not started":t.adapter)<<L" · display "<<t.refreshHz<<L" Hz · "<<(t.hdr?L"HDR / scRGB":L"SDR")<<L"\r\n";
         text<<L"Capture "<<t.captureFps<<L" fps · render "<<t.renderFps<<L" fps · presented ";
         if(t.presentStatsAvailable)text<<t.presentFps<<L" fps";else text<<L"unavailable";
@@ -154,9 +152,10 @@ LRESULT CALLBACK controlProc(HWND hwnd,UINT message,WPARAM w,LPARAM l){
             if(SendMessageW(app->widgets[Source],CB_GETCURSEL,0,0)==1)app->angle=std::make_shared<FusionAngle>(app->settings);else app->manualSource();
             app->renderer.configure(app->settings,app->angle);return 0;
         }
-        if(id==ProjectionChoice&&notification==CBN_SELCHANGE){app->readControls(false);return 0;}
         if(notification!=BN_CLICKED)return 0;
         switch(id){case Preview:app->start(true);break;case Enable:app->start(false);break;case Disable:app->disable();break;
+        case GridChoice:app->synthetic=SendMessageW(app->widgets[GridChoice],BM_GETCHECK,0,0)==BST_CHECKED;
+            if(app->running)app->start(app->preview);break;
         case CloseSweep:app->sweep(true);break;case OpenSweep:app->sweep(false);break;case Reverse:app->sweep(!app->sweepClosing);break;case Apply:app->readControls(true);break;
         case Power:MessageBoxW(hwnd,L"To continue operating when closing the lid:\n\n1. Open Control Panel > Power Options > Choose what closing the lid does.\n2. Select Do nothing for the power modes you intend to use.\n3. Test a slow closure and reopen. Some firmware still powers down the internal panel.\n\nHinge Glass prevents idle sleep only while enabled. It does not change your power plan or override explicit sleep.\n\nWhen Windows disables the panel, visible rendering cannot continue; the renderer reconnects on resume.",L"Closed-lid operation",MB_OK|MB_ICONINFORMATION);break;}
         return 0;}
@@ -185,14 +184,14 @@ int runApplication(){
         else if(a==L"--report"&&i+1<count)app.report=argv[++i];
         else if(a==L"--fps"&&i+1<count)app.settings.maxFps=wcstod(argv[++i],nullptr);
         else if(a==L"--angle"&&i+1<count)app.settings.manualAngle=wcstod(argv[++i],nullptr);
-        else if(a==L"--projection"&&i+1<count)app.settings.projectionMode=winrt::to_string(argv[++i]);
+        else if(a==L"--projection")throw std::runtime_error("--projection was removed. All output now uses the same bottom-anchored rotation. Remove this option.");
         else if(a==L"--preview")openPreview=true;
     }
     LocalFree(argv);app.settings.validate();INITCOMMONCONTROLSEX cc{sizeof(cc),ICC_BAR_CLASSES|ICC_STANDARD_CLASSES};InitCommonControlsEx(&cc);
     WNDCLASSEXW wc{sizeof(wc)};wc.hInstance=GetModuleHandleW(nullptr);wc.lpfnWndProc=controlProc;wc.lpszClassName=L"HingeGlassControls";
     wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.hbrBackground=reinterpret_cast<HBRUSH>(COLOR_WINDOW+1);RegisterClassExW(&wc);
     wc.lpfnWndProc=outputProc;wc.lpszClassName=L"HingeGlassOutput";wc.hbrBackground=nullptr;RegisterClassExW(&wc);
-    float dpi=GetDpiForSystem()/96.f;HWND window=CreateWindowExW(0,L"HingeGlassControls",L"Hinge Glass 0.1.3 — live hinge animation",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,
+    float dpi=GetDpiForSystem()/96.f;HWND window=CreateWindowExW(0,L"HingeGlassControls",L"Hinge Glass 0.1.4 — live hinge animation",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,
         CW_USEDEFAULT,CW_USEDEFAULT,int(740*dpi),int(922*dpi),nullptr,nullptr,GetModuleHandleW(nullptr),&app);
     if(!window)winrt::throw_last_error();if(!SetWindowDisplayAffinity(window,WDA_EXCLUDEFROMCAPTURE))throw std::runtime_error("Cannot exclude controls from screen capture");
     if(!RegisterHotKey(window,1,MOD_CONTROL|MOD_ALT|MOD_NOREPEAT,VK_F12))throw std::runtime_error("Ctrl+Alt+F12 is already registered. Close the conflicting app before enabling Hinge Glass.");

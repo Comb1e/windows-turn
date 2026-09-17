@@ -1,6 +1,6 @@
-# Hinge Glass 0.1.2
+# Hinge Glass 0.1.4
 
-A native Windows animation that captures a monitor continuously, places its live image on a virtual plane fixed relative to the keyboard, and views it through the moving, frosted lid. The reference angle defaults to **110° and is adjustable**. It works without a camera or angle service.
+A native Windows animation that captures a monitor continuously and rotates its live image around a fixed bottom edge, with frosting that grows with distance from the glass. The reference angle defaults to **110° and is adjustable**. It works without a camera or angle service.
 
 ## Build and run
 
@@ -13,16 +13,16 @@ Requires Windows 10 2004 or newer, a Direct3D 11 GPU, Visual Studio 2022 C++ bui
 
 The executable is `renderer/build/Release/HingeGlass.exe`. Ship it with the adjacent `config.json` and `glass.hlsl`. The Microsoft Visual C++ runtime must be installed.
 
-1. Start with **Preview**, using the default **Slider test only** view mode. Move the physical-angle slider through 0–180° while the laptop stays stationary. This test renders a rigid plane, preserving the complete image as it tilts around the bottom edge.
+1. Start with **Preview**. Move the angle slider through 0–180° while the laptop stays stationary. The image tilts as a rigid plane around the bottom edge.
 2. Adjust **Reference angle** (1–179°), blur, and viewing geometry. Numeric edits apply when focus leaves the field. **Apply / save** persists them under `%LOCALAPPDATA%/HingeGlass/preferences.json`.
-3. **Enable screen** displays the same selected projection over the real desktop. It never changes the view mode. To test actual lid movement, explicitly select **Physical lid** in **View mode**; that mode keeps the image anchored to the adjustable reference plane while the physical screen moves. The effect appears only below the reference angle. **Ctrl+Alt+F12** immediately disables it.
+3. **Enable screen** displays the same rotation over the real desktop. The controls stay above the effect with a normal pointer, so the slider remains usable. **Show calibration grid** switches between grid and live desktop without changing the angle, geometry or output size. The status line identifies the source. You can minimize the controls deliberately and restore them later. The effect appears only below the reference angle. **Ctrl+Alt+F12** immediately disables it.
 4. **Close sweep**, **Open sweep**, and **Reverse sweep** exercise repeatable motion. A manual edit returns to manual control.
 
-The stronger frosting defaults to a **64-pixel maximum blur**. It increases earlier in the closing movement and reduces the sharp image's contribution as closure grows. **Maximum blur** remains adjustable; `frostResponse` in the config controls the buildup (default 3, range 1–8). Both modes are completely clear at or above the reference angle.
+Frosting depends on each image point's **distance from the glass**. The bottom edge touches the glass and stays clear; the top becomes much more blurred as the planes separate. The **64-pixel maximum blur** remains adjustable. **Frost distance scale (mm)** controls how quickly blur builds with distance: smaller values give stronger frosting (default 150 mm). At the default 110° reference and an 85° test angle, the top uses about 53 pixels of blur radius, versus about 1 pixel at 1% of the image height above the hinge. `frostResponse` in the config controls the response (default 3, range 1–8). The image is completely clear at or above the reference angle; maximum blur zero disables frosting. Numeric edits apply when focus leaves the field; **Apply / save** persists them.
 
-The **entire active bottom edge stays fixed**, including both corners. Eye distance is forward from the mechanical hinge over the keyboard; height is above the keyboard; lateral offset is positive right. Screen dimensions describe the active panel; hinge offset locates its bottom edge at the reference angle. That origin remains fixed while the visual plane rotates; the offset is never rotated with the image. Defaults are approximate and should be calibrated to the viewer. The illusion is correct for that fixed viewpoint, not for unrestricted head movement or both eyes independently.
+The **entire active bottom edge stays fixed**, including both corners. Viewing distance controls the centered perspective; screen dimensions describe the active panel. The plane rotates by `referenceAngle − angle` with no width/height resizing. Back-facing geometry is hidden without flipping it. Preview windows preserve the selected monitor's aspect ratio, including 16:9 and portrait displays.
 
-**View mode matters when testing.** A stationary slider test and a moving physical lid need different projections. `rotation` keeps the output screen stationary and rotates a rigid textured rectangle away by `referenceAngle − angle`. Its centered test camera uses the configured eye distance; back-facing geometry is hidden without flipping it. This is a visual test only. `physical` holds the virtual image stationary and projects it through the changing physical screen from the calibrated eye. Looking at that compensation on a stationary screen can resemble magnification, particularly near a grazing viewing angle; removing it from physical mode would move the apparent image. Both modes increase frosting with closure and preserve the bottom edge. Preview windows retain the selected monitor's aspect ratio, including 16:9 and portrait displays.
+**Physical lid mode has been removed.** Grid, live desktop, preview, full-screen output and benchmarks all use one bottom-anchored rotation. Old preferences cannot restore the removed mode. This version does not provide the former world-space lid compensation.
 
 The cursor is drawn into the virtual content before projection and frosting. Actual input coordinates, clicks, focus, and game mouse movement remain unchanged. The overlay is an animation, not a replacement desktop hit-testing system. A small companion process restores system-cursor visibility if the renderer crashes. It exits when the renderer exits.
 
@@ -57,7 +57,7 @@ Some firmware still turns the panel off when closed. Software cannot display lig
 ./renderer/benchmark.ps1 -Fps 60 -Live
 ```
 
-Each benchmark warms up for two seconds after the first frame, then measures a 60-second closing sweep. JSON reports are written under `renderer/out/`. Synthetic benchmarks also export the final rendered PNG; live desktop frames are never saved. Synthetic screenshot readback is outside the measured rendering loop.
+Each benchmark warms up for two seconds after the first frame, then measures a 60-second closing sweep. Both commands use the same bottom-anchored rotation as the interactive controls. JSON reports under `renderer/out/` include `rotation` in their names and metadata. Synthetic benchmarks also export the final rendered PNG; live desktop frames are never saved. Synthetic screenshot readback is outside the measured rendering loop.
 
 The acceptance target is at least 237 presented fps at 2560×1600/240 Hz with RTX 4070 GPU processing p95 below 4.17 ms. JSON distinguishes source, render and compositor-present counts. These are software measurements, not an independent optical motion-to-photon measurement. Game-load contention and hardware lid response require separate acceptance runs.
 
@@ -67,6 +67,6 @@ For a brief live preview check:
 ./renderer/build/Release/HingeGlass.exe --smoke --seconds 8 --angle 85 --no-preferences --report ./renderer/out/smoke.json
 ```
 
-Configuration is validated before changes take effect. `--config path` selects defaults; `--no-preferences` ignores and does not save user settings. `--preview` opens an interactive preview immediately using the selected mode. `--projection rotation|physical` selects a projection for automated runs; the benchmark script defaults explicitly to `physical`. `--fps`, `--angle`, `--synthetic`, `--overlay`, `--benchmark`, `--seconds`, and `--report` support reproducible diagnostics. The new `projectionMode` preference is optional in older configuration files; its default is the stationary slider test. Preview, synthetic grid, and full-screen live rendering all preserve the selected projection; only the explicit view-mode selector changes it.
+Configuration is validated before changes take effect. `--config path` selects defaults; `--no-preferences` ignores and does not save user settings. `--preview` opens an interactive preview immediately. `--fps`, `--angle`, `--synthetic`, `--overlay`, `--benchmark`, `--seconds`, and `--report` support reproducible diagnostics. The removed `--projection` option is rejected; the benchmark no longer accepts `-Projection`. Legacy `projectionMode`, eye lateral/height and hinge-offset settings are ignored and omitted when saving preferences. Older files without `frostDistanceMm` use its default.
 
 See [architecture](docs/architecture.md), [research](docs/research.md), and [validation](docs/validation.md).

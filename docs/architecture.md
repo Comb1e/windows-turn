@@ -1,5 +1,22 @@
 # Workspace architecture
 
+## Hinge Glass 0.1.4 — 2026-09-17
+
+```mermaid
+flowchart LR
+  Source[Grid or captured desktop] --> Projection[Shared projection / fixed bottom edge]
+  Angle[Angle and adjustable reference] --> Projection
+  Projection --> Gap[Per-pixel image distance to finite glass]
+  Gap --> Radius[Distance response / local blur radius]
+  Projection --> Levels[Four Gaussian blur levels]
+  Radius --> Mix[Choose and interpolate local blur levels]
+  Levels --> Mix
+  Mix --> Output[Preview or full-screen output]
+  Output --> Controls[Independent controls kept above the effect]
+```
+
+Frosting now depends on separation from the glass: the hinge remains clear and the top loses more detail as it recedes. `frostDistanceMm` calibrates the buildup and is editable during rendering. GPU-only linear-light processing uses per-pixel radius, four reduced-resolution Gaussian levels and variance interpolation. Independent double-precision closest-point controls and actual HLSL tests cover distance, projection, closure, clear boundaries and spatial detail loss. The debug controls stay above the unowned full-screen overlay, with a native pointer over the panel. Physical-lid mode and its UI/config/CLI/script selectors have been removed at the user's request. Grid, live, preview, full-screen and benchmarks now have only the bottom-anchored rotation path; legacy settings cannot restore another projection. Renderer states and Fusion angle estimation remain unchanged. See [renderer architecture](../renderer/docs/architecture.md) for geometry, data flow and lifecycle diagrams. The versioned sections below describe historical designs.
+
 ## Hinge Glass 0.1.2 — 2026-09-17
 
 ```mermaid

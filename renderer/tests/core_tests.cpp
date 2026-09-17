@@ -7,6 +7,7 @@
 #include <numbers>
 #include <filesystem>
 #include <limits>
+#include <fstream>
 using namespace hinge;
 int assertions=0;
 void check(bool value,const char* reason){++assertions;if(!value)throw std::runtime_error(reason);}
@@ -14,13 +15,13 @@ bool near(double a,double b,double tolerance=1e-8){return std::abs(a-b)<toleranc
 // Independent control: geometric ray/plane intersection, without the production homography.
 std::optional<std::array<double,2>> reference(const Settings& s,double angle,double u,double v){
     if(angle>=s.referenceAngle)return std::array<double,2>{u,v};
-    const double rad=std::numbers::pi/180,physical=angle*rad,virt=s.referenceAngle*rad;
-    Vec3 E{s.eyeX,s.eyeY,s.eyeZ},U{0,std::cos(virt),std::sin(virt)},N{0,-std::sin(virt),std::cos(virt)};
-    Vec3 B=U*s.hingeOffset; // World-space stationary active bottom edge.
-    double h=(1-v)*s.screenHeight;Vec3 P=B+Vec3{(u-.5)*s.screenWidth,h*std::cos(physical),h*std::sin(physical)};
+    const double tilt=(s.referenceAngle-angle)*std::numbers::pi/180;
+    Vec3 E{0,s.screenHeight/2,-s.eyeY},U{0,std::cos(tilt),std::sin(tilt)},N{0,-std::sin(tilt),std::cos(tilt)};
+    if(dot(N,E)>=-1e-7)return {};
+    Vec3 P{(u-.5)*s.screenWidth,(1-v)*s.screenHeight,0};
     Vec3 D=P-E;double denominator=dot(N,D);if(std::abs(denominator)<1e-7)return {};
-    double t=dot(N,B-E)/denominator;if(t<=0)return {};Vec3 Q=E+D*t;
-    return std::array<double,2>{(Q.x-B.x)/s.screenWidth+.5,1-dot(Q-B,U)/s.screenHeight};
+    double t=-dot(N,E)/denominator;if(t<=0)return {};Vec3 Q=E+D*t;
+    return std::array<double,2>{Q.x/s.screenWidth+.5,1-dot(Q,U)/s.screenHeight};
 }
 // Independent forward control for the stationary test: rotate a source-space
 // point rigidly, then project it onto z=0 from the centered pinhole camera.
@@ -32,7 +33,7 @@ std::array<double,2> rotatedPoint(const Settings& s,double angle,double u,double
     return {projected.x/s.screenWidth+.5,1-projected.y/s.screenHeight};
 }
 void rotationTests(){
-    Settings s;check(s.projectionMode=="rotation","Stationary slider test is not the default");
+    Settings s;
     for(double ref:{1.,45.,90.,110.,120.,179.})for(double distance:{100.,550.,3000.}){
         s.referenceAngle=ref;s.eyeY=distance;
         for(double angle:{0.,.001,10.,20.,30.,40.,60.,85.,109.999,110.,120.,179.,180.}){
@@ -67,51 +68,55 @@ void rotationTests(){
     for(double angle:{110.,85.,60.,40.,0.,40.,60.,85.,110.}){
         auto h=projection(s,angle);auto again=projection(s,angle);check(h.h==again.h,"Reversal retained history instead of exact geometry");
     }
-    s.hingeOffset=200;s.eyeX=180;s.eyeZ=900;
-    auto debug=projection(s,40);s.hingeOffset=0;s.eyeX=-180;s.eyeZ=100;
-    check(debug.h==projection(s,40).h,"Physical-lid calibration distorted the centered debug camera");
 }
-void physicalAnchorTests(){
-    Settings s;s.projectionMode="physical";
-    for(double ref:{90.,110.,120.})for(double lateral:{-150.,0.,150.})for(double angle:{45.,60.,85.}){
-        s.referenceAngle=ref;s.eyeX=lateral;
-        double r=ref*std::numbers::pi/180,a=angle*std::numbers::pi/180;
-        Vec3 virtualUp{0,std::cos(r),std::sin(r)},physicalUp{0,std::cos(a),std::sin(a)};
-        Vec3 physicalNormal{0,-physicalUp.z,physicalUp.y},bottom=virtualUp*s.hingeOffset,eye{s.eyeX,s.eyeY,s.eyeZ};
-        for(double u:{0.,.25,.5,.75,1.})for(double v:{0.,.25,.5,.75,1.}){
-            // Q's world position never changes when the physical angle changes.
-            Vec3 Q=bottom+Vec3{(u-.5)*s.screenWidth,0,0}+virtualUp*((1-v)*s.screenHeight);
-            Vec3 ray=Q-eye;double divisor=dot(physicalNormal,ray);if(std::abs(divisor)<1e-7)continue;
-            double t=dot(physicalNormal,bottom-eye)/divisor;if(t<=0)continue;
-            Vec3 physicalPixel=eye+ray*t;double du=(physicalPixel.x-bottom.x)/s.screenWidth+.5;
-            double dv=1-dot(physicalPixel-bottom,physicalUp)/s.screenHeight;
-            auto source=projection(s,angle).map(du,dv);
-            check(source&&near((*source)[0],u,1e-6)&&near((*source)[1],v,1e-6),"Physical lid motion moves the fixed virtual image");
+void distanceFrostTests(){
+    Settings s;
+    for(double ref:{1.,45.,90.,110.,120.,179.})for(double height:{50.,212.5,2000.}){
+        s.referenceAngle=ref;s.screenHeight=height;
+        double previous=0;
+        for(int step=0;step<=100;++step){
+            double angle=ref*(1-step/100.),top=glassSeparationAtTop(s,angle);
+            check(top>=previous-1e-8&&top<=height,"Distance decreased during closure or exceeded finite panel bounds");previous=top;
+            double r=ref*std::numbers::pi/180,a=angle*std::numbers::pi/180,tilt=r-a;
+            Vec3 source{0,std::cos(tilt),std::sin(tilt)},glass{0,1,0};
+            double previousAmount=0;
+            for(double h:{0.,.001,.01,.1,.5,1.})for(double u:{0.,.5,1.}){
+                // Independent closest-point control in 3D on the finite glass.
+                Vec3 point=Vec3{(u-.5)*s.screenWidth,0,0}+source*(height*h);
+                Vec3 nearest=Vec3{std::clamp(point.x,-s.screenWidth/2,s.screenWidth/2),0,0}+glass*std::clamp(dot(point,glass),0.,height);
+                Vec3 delta=point-nearest;double expected=std::sqrt(dot(delta,delta));
+                double actual=top*h;check(near(actual,expected,1e-7),"Frost distance differs from independent finite-rectangle control");
+                double amount=frostAtDistance(actual,s.frostDistanceMm,s.frostResponse);
+                check(std::isfinite(amount)&&amount>=previousAmount-1e-12&&amount<=1,"Frost must grow with point distance");previousAmount=amount;
+                if(h==0)check(amount==0,"Hinge must stay clear at every angle");
+            }
         }
+        check(glassSeparationAtTop(s,ref)==0&&glassSeparationAtTop(s,180)==0,"Open screen must stay clear");
     }
-    for(double ref:{45.,90.,110.,179.}){
-        double previous=0,previousFrost=0;
-        for(int step=0;step<=100;++step){double angle=ref*(1-step/100.);double strength=closure(angle,ref);
-            check(strength>=previous&&strength>=0&&strength<=1,"Greater closure did not increase frosting");previous=strength;
-            double frost=frosting(angle,ref,s.frostResponse);
-            check(frost>=previousFrost&&frost>=strength-1e-12&&frost<=1,"Stronger frosting is nonmonotonic or weaker than original");previousFrost=frost;
-        }
-        check(near(previous,1),"Frosting did not reach maximum at closure");
-        check(frosting(ref,ref,3)==0&&frosting(180,ref,3)==0&&frosting(0,ref,3)==1,"Frosting broke clear/closed boundaries");
+    s=Settings{};double gap=glassSeparationAtTop(s,85);
+    double top=frostAtDistance(gap,s.frostDistanceMm,s.frostResponse),bottom=frostAtDistance(gap*.01,s.frostDistanceMm,s.frostResponse);
+    check(top>.8&&bottom<.02&&top>bottom*40,"Top should be much more frosted than the hinge region");
+    check(frostAtDistance(100,300,3)<frostAtDistance(100,150,3),"Distance control has inverted response");
+    check(frostAtDistance(100,150,6)>frostAtDistance(100,150,3),"Response control has inverted response");
+    check(near(frostAtDistance(1,150,3),frostAtDistance(2,300,3)),"Equal distance ratios should frost equally");
+    double prior=0;for(double angle:{110.,85.,40.,0.,40.,85.,110.}){
+        double amount=frostAtDistance(glassSeparationAtTop(s,angle),150,3);
+        if(angle==85&&prior==0)prior=amount;else if(angle==85)check(near(amount,prior),"Reopening must retrace frost without history");
     }
-    s=Settings{};double amount=frosting(85,110,s.frostResponse),weight=1-(1-amount)*(1-amount);
-    check(s.blurPixels==64&&amount>.34&&weight>.57,"Requested stronger mid-angle frosting regressed");
+    for(double invalid:{0.,-1.,2001.,std::numeric_limits<double>::quiet_NaN()}){
+        s.frostDistanceMm=invalid;bool rejected=false;try{s.validate();}catch(...){rejected=true;}check(rejected,"Invalid frost distance scale accepted");
+    }
 }
 int main(){try{
     winrt::init_apartment();Settings s;s.validate();
-    rotationTests();physicalAnchorTests();s.projectionMode="physical";
+    rotationTests();distanceFrostTests();
     for(auto dimensions:{PixelSize{2560,1600},PixelSize{1920,1080},PixelSize{1080,1920},PixelSize{3440,1440},PixelSize{1600,1600}}){
         auto size=fitPreview(dimensions.width,dimensions.height);
         check(size.width<=960&&size.height<=600&&size.width>0&&size.height>0,"Preview exceeds bounds");
         check(std::abs(double(size.width)/size.height-double(dimensions.width)/dimensions.height)<.003,"Preview distorts the source aspect ratio");
     }
-    for(double ref:{1.,45.,90.,110.,120.,179.})for(double eyeX:{-150.,0.,125.}){
-        s.referenceAngle=ref;s.eyeX=eyeX;
+    for(double ref:{1.,45.,90.,110.,120.,179.})for(double distance:{100.,550.,3000.}){
+        s.referenceAngle=ref;s.eyeY=distance;
         for(double angle:{0.,.001,10.,45.,89.,109.999,110.,120.,179.,180.}){
             auto map=projection(s,angle);
             for(int y=0;y<=10;++y)for(int x=0;x<=10;++x){double u=x/10.,v=y/10.;auto actual=map.map(u,v),expected=reference(s,angle,u,v);
@@ -121,17 +126,17 @@ int main(){try{
             check(std::all_of(map.h.begin(),map.h.end(),[](double n){return std::isfinite(n);}),"Nonfinite homography");
         }
     }
-    s=Settings{};s.projectionMode="physical";auto identity=projection(s,110).map(.25,.75);check(identity&&near((*identity)[0],.25)&&near((*identity)[1],.75),"Reference must be identity");
-    for(double offset:{0.,10.,50.,200.})for(double lateral:{-150.,0.,150.})for(double a:{0.,10.,40.,80.,109.99}){
-        s.hingeOffset=offset;s.eyeX=lateral;
+    s=Settings{};auto identity=projection(s,110).map(.25,.75);check(identity&&near((*identity)[0],.25)&&near((*identity)[1],.75),"Reference must be identity");
+    for(double height:{50.,212.5,2000.})for(double distance:{100.,550.,3000.})for(double a:{20.,40.,80.,109.99}){
+        s.screenHeight=height;s.eyeY=distance;
         for(double u:{0.,.1,.25,.5,.75,.9,1.}){auto bottom=projection(s,a).map(u,1);
-            check(bottom&&near((*bottom)[0],u)&&near((*bottom)[1],1),"Entire active bottom edge must remain fixed, including nonzero hinge offset");}
+            check(bottom&&near((*bottom)[0],u)&&near((*bottom)[1],1),"Entire active bottom edge must remain fixed at every viewing distance");}
     }
     s=Settings{};
     check(closure(110,110)==0&&closure(0,110)==1&&closure(180,110)==0,"Closure boundaries");
     check(near(closure(80,110),closure(80,110)),"Reversal must be path independent");
     s.referenceAngle=0;bool rejected=false;try{s.validate();}catch(...){rejected=true;}check(rejected,"Zero reference accepted");
-    s=Settings{};s.projectionMode="physical";s.eyeY=450;s.eyeZ=450;s.referenceAngle=45;rejected=false;try{s.validate();}catch(...){rejected=true;}check(rejected,"Eye on virtual plane accepted");
+    s=Settings{};s.eyeY=0;rejected=false;try{s.validate();}catch(...){rejected=true;}check(rejected,"Zero viewing distance accepted");
     SweepAngle sweep;sweep.start(1000,110,0,6);check(near(sweep.sample(1000).angle,110)&&near(sweep.sample(7000).angle,0),"Sweep endpoints");
     double mid=sweep.sample(3500).angle;sweep.start(3500,mid,110,6);check(near(sweep.sample(3500).angle,mid),"Reversal position jumped");
     AngleGate gate;gate.connection();AngleSample a{10,30,100,1000,true,true,"one","fusion"};check(gate.ingest(a),"Valid sample rejected");
@@ -147,7 +152,12 @@ int main(){try{
     for(char c:std::string("event: angle\r\ndata: {\"x\":1}\r\n\r\n"))parser.append(std::string(1,c),cb);check(events==1,"Chunked SSE lost event");
     Lifecycle life;life.transition(State::Starting);life.transition(State::Active);life.transition(State::Recovering);life.transition(State::Starting);life.transition(State::Suspended);life.transition(State::Starting);life.transition(State::Faulted);life.transition(State::Disabled);
     check(!canTransition(State::Disabled,State::Active),"Invalid state transition allowed");
-    auto path=std::filesystem::temp_directory_path()/L"hinge-glass-test-settings.json";s=Settings{};s.referenceAngle=97;s.eyeX=-80;s.projectionMode="physical";saveSettings(s,path);
-    auto roundtrip=loadSettings(path,false);check(roundtrip.referenceAngle==97&&roundtrip.eyeX==-80&&roundtrip.projectionMode=="physical","Preferences roundtrip failed");std::filesystem::remove(path);
+    auto path=std::filesystem::temp_directory_path()/L"hinge-glass-test-settings.json";s=Settings{};s.referenceAngle=97;s.eyeY=800;s.frostDistanceMm=240;saveSettings(s,path);
+    auto roundtrip=loadSettings(path,false);check(roundtrip.referenceAngle==97&&roundtrip.eyeY==800&&roundtrip.frostDistanceMm==240,"Preferences roundtrip failed");
+    {std::ofstream file(path);file<<R"({"version":1,"projectionMode":"physical","eyeX":99999,"eyeZ":0,"hingeOffset":200})";}
+    auto legacy=loadSettings(path,false);check(projection(legacy,40).h==projection(Settings{},40).h,"Legacy physical preference changed the single rotation geometry");
+    saveSettings(legacy,path);{std::ifstream file(path);std::string json((std::istreambuf_iterator<char>(file)),{});
+        check(json.find("projectionMode")==std::string::npos&&json.find("hingeOffset")==std::string::npos,"Removed mode was persisted again");}
+    std::filesystem::remove(path);
     std::cout<<assertions<<" checks passed (independent geometry, boundaries, sources, SSE, settings and lifecycle)\n";return 0;
 }catch(const std::exception& e){std::cerr<<"FAIL after "<<assertions<<" checks: "<<e.what()<<"\n";return 1;}}

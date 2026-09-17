@@ -1,16 +1,21 @@
 cbuffer Parameters : register(b0) {
     float4 row0, row1, row2;
     float4 sizes; // destination width,height; source width,height
-    float4 effect; // closure, blur radius in destination pixels, SDR input, HDR output
+    float4 effect; // top-to-glass distance (mm), maximum blur (pixels), SDR input, HDR output
     float4 direction; // blur texel direction x,y; kernel radius; sigma (pattern pass: time)
     float4 cursorRect; // source-normalized top left and size
     float4 cursorInfo; // enabled, reserved
+    float4 frosting; // distance scale (mm), response, reserved
+    float4 blurRadii; // four Gaussian radii relative to maximum blur
 };
 Texture2D scene : register(t0);
 Texture2D frost : register(t1);
 Texture2D cursorImage : register(t2);
 Texture2D cursorMask : register(t3);
 Texture2D lightField : register(t4);
+Texture2D frost2 : register(t5);
+Texture2D frost3 : register(t6);
+Texture2D frost4 : register(t7);
 SamplerState linearClamp : register(s0);
 struct Vertex { float4 position : SV_Position; float2 uv : TEXCOORD0; };
 Vertex VS(uint id : SV_VertexID) {
@@ -47,8 +52,15 @@ float4 Warp(Vertex input) : SV_Target {
     float3 p=float3(input.uv,1);float d=dot(row2.xyz,p);
     float2 uv=float2(dot(row0.xyz,p),dot(row1.xyz,p))/max(d,1e-7);
     float3 ambient=lightField.Load(int3(0,0,0)).rgb;
-    float3 c=(d>1e-7&&all(uv>=0)&&all(uv<=1))?sourceAt(uv):ambient;
-    return float4(c,1);
+    bool visible=d>1e-7&&all(uv>=0)&&all(uv<=1);
+    float3 c=visible?sourceAt(uv):ambient;
+    // Source height, not output row, gives the actual image-to-glass gap.
+    // Outside the finite image use the reciprocal glass-to-image-plane gap;
+    // invalid/grazing rays never contribute unbounded coordinates to frosting.
+    float height=visible?saturate(1-uv.y):saturate(1-input.uv.y);
+    float distance=effect.x*height;
+    float amount=(1-exp(-frosting.y*distance/max(frosting.x,1e-6)))*saturate(effect.y);
+    return float4(c,amount);
 }
 float4 Blur(Vertex input) : SV_Target {
     float4 c=0;float sum=0;
@@ -58,12 +70,19 @@ float4 Blur(Vertex input) : SV_Target {
     return c/sum;
 }
 float4 Composite(Vertex input) : SV_Target {
-    float3 clear=scene.SampleLevel(linearClamp,input.uv,0).rgb;
-    float3 blurred=frost.SampleLevel(linearClamp,input.uv,0).rgb;
-    // Use progressively less sharp-image contribution as frosting builds up.
-    float strength=(1-(1-effect.x)*(1-effect.x))*saturate(effect.y);
-    float3 c=lerp(clear,blurred,strength);
-    c=lerp(c,c*.91+float3(.045,.052,.062),effect.x*.22);
+    float4 projected=scene.SampleLevel(linearClamp,input.uv,0);
+    float amount=projected.a;
+    float4 radii2=blurRadii*blurRadii;
+    float r2=amount*amount;
+    float3 c;
+    // Interpolate neighboring fixed Gaussian levels by variance. The local
+    // footprint changes with depth, without retaining a sharp ghost at the top
+    // or letting a variable vertical pass over-blur the hinge.
+    if(amount<=blurRadii.x)c=lerp(projected.rgb,frost.SampleLevel(linearClamp,input.uv,0).rgb,saturate(r2/radii2.x));
+    else if(amount<=blurRadii.y)c=lerp(frost.SampleLevel(linearClamp,input.uv,0).rgb,frost2.SampleLevel(linearClamp,input.uv,0).rgb,saturate((r2-radii2.x)/(radii2.y-radii2.x)));
+    else if(amount<=blurRadii.z)c=lerp(frost2.SampleLevel(linearClamp,input.uv,0).rgb,frost3.SampleLevel(linearClamp,input.uv,0).rgb,saturate((r2-radii2.y)/(radii2.z-radii2.y)));
+    else c=lerp(frost3.SampleLevel(linearClamp,input.uv,0).rgb,frost4.SampleLevel(linearClamp,input.uv,0).rgb,saturate((r2-radii2.z)/(radii2.w-radii2.z)));
+    c=lerp(c,c*.91+float3(.045,.052,.062),amount*.22);
     if(effect.w<.5)c=toSrgb(max(c,0));
     return float4(c,1);
 }

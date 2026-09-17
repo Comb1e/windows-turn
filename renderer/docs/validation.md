@@ -1,6 +1,21 @@
 # Hinge Glass validation — 2026-09-17
 
-## Current version: 0.1.2, slider projection and stronger frosting
+## Current version: 0.1.4, distance frosting and single rotation
+
+- Release build and **3/3 CTest suites pass**: 166,827 core checks, 30 native window checks and 641,501 shader checks. Shader correctness runs offscreen on WARP and is not reported as hardware performance.
+- Independent 3D closest-point controls validate image-to-glass distance. Independent forward rotations and ray intersections validate the retained projection across reference angles, viewing distances, screen heights, edge-on/back-face conditions and reversal. Fixed-bottom and aspect-ratio regressions remain covered.
+- Actual HLSL tests cover reference/zero-blur identity, valid finite output at closure, variable blur radius and the distance response. An 85° stripe test retains 99.9195% of near-hinge contrast and only 0.0180% in the upper region. These percentages describe that synthetic frequency pattern, not every video or desktop.
+- The former physical compensation implementation, selector, config setting and benchmark option are removed. Loading an old `projectionMode: physical` preference produces the sole rotation geometry; saving it removes obsolete settings. A removed CLI selector fails explicitly.
+- Native fixtures confirm controls above output without focus steal, slider usability, cursor routing, capture exclusion, dialogs, minimization, recovery layering and cleanup.
+- Existing Fusion tests: **28/28 pass**. Estimator and Fusion source code are unchanged.
+- Synthetic 85° rotation output was inspected: increasingly blurred upper image and clear green bottom edge. The independent shader suite also checks exact/reference closure and maximum blur zero. Diagnostic images under `renderer/out/` are synthetic only.
+- The first distance-frost live sweep used the old physical benchmark override and reproduced the user's stretching report. Its 59.926 fps / GPU p95 1.126368 ms are historical performance evidence only, not validation of the requested geometry. The user requested deletion of that mode; it is no longer executable in this version.
+- The final single-rotation live sweep at 2560×1600 completed 60.021 seconds after warmup: 3,592 rendered frames (59.846 fps), 3,590 DXGI-presented increments (59.812 fps), GPU p95 **1.1264 ms**, and frame-interval p99 27.3844 ms on the **NVIDIA GeForce RTX 4070 Laptop GPU**. Capture delivered 2,520 frames and discarded 425 superseded frames; rendering kept its independent cadence and bounded queue. This is a desktop functional benchmark at 60 Hz, not game-load or optical-latency acceptance. Report: `renderer/out/live-rotation-60.json` (ignored).
+- Launched through `./renderer/start.ps1`. Native accessibility inspection confirms the manual slider, grid checkbox and frost-distance field, with no view-mode selector. While the app remained active, the observed slider angle changed from 111.1° to 72.8° and the live status reported capture/render/present at 60 fps. Controls remained exposed to native accessibility. The automation bridge did not support direct numeric-field value editing; the interactive grid toggle itself was not automated in this check. Native window fixtures cover pointer, focus and slider behavior independently.
+
+All current application tests are capped at **60 fps**. The current monitor reports 60 Hz; no Windows refresh setting was changed by the application or these tests. Physical-lid world-space compensation has been removed, so it is no longer a claimed feature. New-effect 240 Hz, HDR, games and hardware lid behavior remain unverified.
+
+## Previous version: 0.1.2, slider projection and stronger frosting
 
 - Release build passes; **99,392 core assertions pass**. The original physical-mode ray controls remain, alongside independent forward rigid-rotation controls and world-position checks for the physical effect.
 - Tests cover whole-source recovery, no top-edge enlargement during the standard closing sweep, both bottom corners and interior edge points, near/exact edge-on geometry, back-face culling, reversal, invalid inputs, and source aspect ratios 16:10, 16:9, portrait, ultrawide and square.
