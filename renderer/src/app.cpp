@@ -14,6 +14,7 @@
 namespace hinge {
 namespace {
 constexpr int Manual=100,Source=101,MonitorChoice=102,GpuChoice=103,Slider=104,Status=105;
+constexpr int ProjectionChoice=106;
 constexpr int Preview=201,Enable=202,Disable=203,CloseSweep=204,OpenSweep=205,Reverse=206,Apply=207,Power=208;
 struct Field {int id;const wchar_t* label;double Settings::* member;};
 const Field fields[]={
@@ -44,29 +45,34 @@ struct App {
         widget(L"STATIC",L"Angle source",0,20,92,125,22,0);widget(WC_COMBOBOXW,L"",CBS_DROPDOWNLIST|WS_TABSTOP,150,88,545,120,Source);
         for(auto label:{L"Manual / debug",L"Fusion (current measurement range: 10–120 degrees)"})SendMessageW(widgets[Source],CB_ADDSTRING,0,reinterpret_cast<LPARAM>(label));
         SendMessageW(widgets[Source],CB_SETCURSEL,0,0);
-        widget(L"STATIC",L"Manual test angle: 0° closed  ←  drag to rotate  →  180° open",0,20,122,675,22,0);
-        widget(TRACKBAR_CLASSW,L"",WS_TABSTOP|TBS_AUTOTICKS,20,146,675,38,Slider);
+        widget(L"STATIC",L"View mode",0,20,132,125,22,0);widget(WC_COMBOBOXW,L"",CBS_DROPDOWNLIST|WS_TABSTOP,150,128,545,120,ProjectionChoice);
+        for(auto label:{L"Slider test only — rotating plane on stationary screen",L"Physical lid — image anchored at the reference angle"})
+            SendMessageW(widgets[ProjectionChoice],CB_ADDSTRING,0,reinterpret_cast<LPARAM>(label));
+        SendMessageW(widgets[ProjectionChoice],CB_SETCURSEL,settings.projectionMode=="physical"?1:0,0);
+        widget(L"STATIC",L"Manual test angle: 0° closed  ←  drag to rotate  →  180° open",0,20,164,675,22,0);
+        widget(TRACKBAR_CLASSW,L"",WS_TABSTOP|TBS_AUTOTICKS,20,188,675,38,Slider);
         SendMessageW(widgets[Slider],TBM_SETRANGE,TRUE,MAKELPARAM(0,1800));SendMessageW(widgets[Slider],TBM_SETPOS,TRUE,LPARAM(settings.manualAngle*10));
         SendMessageW(widgets[Slider],TBM_SETTICFREQ,100,0);
-        for(size_t i=0;i<std::size(fields);++i){int col=int(i%2),row=int(i/2);int x=20+col*350,y=190+row*56;
+        for(size_t i=0;i<std::size(fields);++i){int col=int(i%2),row=int(i/2);int x=20+col*350,y=232+row*56;
             widget(L"STATIC",fields[i].label,0,x,y,320,21,0);std::wostringstream v;v<<settings.*(fields[i].member);
             widget(L"EDIT",v.str().c_str(),WS_TABSTOP|ES_AUTOHSCROLL,x,y+23,320,25,fields[i].id);}
-        widget(L"STATIC",L"Display",0,20,527,65,22,0);widget(WC_COMBOBOXW,L"",CBS_DROPDOWNLIST|WS_TABSTOP,90,522,605,170,MonitorChoice);
+        widget(L"STATIC",L"Display",0,20,569,65,22,0);widget(WC_COMBOBOXW,L"",CBS_DROPDOWNLIST|WS_TABSTOP,90,564,605,170,MonitorChoice);
         displays=monitors();int monitorIndex=0;
         for(size_t i=0;i<displays.size();++i){auto& m=displays[i];std::wostringstream text;text<<m.name<<L"   "<<m.rect.right-m.rect.left<<L" × "<<m.rect.bottom-m.rect.top<<L"   "<<m.hz<<L" Hz"<<(m.hdr?L" HDR":L" SDR");
             SendMessageW(widgets[MonitorChoice],CB_ADDSTRING,0,reinterpret_cast<LPARAM>(text.str().c_str()));if(winrt::to_string(m.name)==settings.monitor)monitorIndex=int(i);}
         SendMessageW(widgets[MonitorChoice],CB_SETCURSEL,monitorIndex,0);
-        widget(L"STATIC",L"GPU",0,20,567,65,22,0);widget(WC_COMBOBOXW,L"",CBS_DROPDOWNLIST|WS_TABSTOP,90,562,605,170,GpuChoice);
+        widget(L"STATIC",L"GPU",0,20,609,65,22,0);widget(WC_COMBOBOXW,L"",CBS_DROPDOWNLIST|WS_TABSTOP,90,604,605,170,GpuChoice);
         SendMessageW(widgets[GpuChoice],CB_ADDSTRING,0,reinterpret_cast<LPARAM>(L"Auto — prefer RTX 4070 when available"));gpus=adapters();int gpuIndex=0;
         for(size_t i=0;i<gpus.size();++i){SendMessageW(widgets[GpuChoice],CB_ADDSTRING,0,reinterpret_cast<LPARAM>(gpus[i].name.c_str()));if(gpus[i].id==settings.adapter)gpuIndex=int(i)+1;}
         SendMessageW(widgets[GpuChoice],CB_SETCURSEL,gpuIndex,0);
-        int x=20;for(auto [id,label]:{std::pair{Preview,L"Preview"},{Enable,L"Enable screen"},{Disable,L"Disable"},{Apply,L"Apply / save"}}){widget(L"BUTTON",label,WS_TABSTOP|BS_PUSHBUTTON,x,608,160,32,id);x+=174;}
-        x=20;for(auto [id,label]:{std::pair{CloseSweep,L"Close sweep"},{OpenSweep,L"Open sweep"},{Reverse,L"Reverse sweep"},{Power,L"Lid setup"}}){widget(L"BUTTON",label,WS_TABSTOP|BS_PUSHBUTTON,x,650,160,32,id);x+=174;}
-        widget(L"STATIC",L"Disabled. Start with Preview, then Enable screen. Viewing geometry uses millimetres.",0,20,698,680,120,Status);
+        int x=20;for(auto [id,label]:{std::pair{Preview,L"Preview"},{Enable,L"Enable screen"},{Disable,L"Disable"},{Apply,L"Apply / save"}}){widget(L"BUTTON",label,WS_TABSTOP|BS_PUSHBUTTON,x,650,160,32,id);x+=174;}
+        x=20;for(auto [id,label]:{std::pair{CloseSweep,L"Close sweep"},{OpenSweep,L"Open sweep"},{Reverse,L"Reverse sweep"},{Power,L"Lid setup"}}){widget(L"BUTTON",label,WS_TABSTOP|BS_PUSHBUTTON,x,692,160,32,id);x+=174;}
+        widget(L"STATIC",L"Disabled. Start with Preview, then Enable screen. Viewing geometry uses millimetres.",0,20,740,680,120,Status);
         manualSource();renderer.configure(settings,angle);constructing=false;
     }
     void readControls(bool save){
         Settings candidate=settings;
+        candidate.projectionMode=SendMessageW(widgets[ProjectionChoice],CB_GETCURSEL,0,0)==1?"physical":"rotation";
         for(auto& field:fields){wchar_t value[128];GetWindowTextW(widgets[field.id],value,128);wchar_t* end=nullptr;
             double number=wcstod(value,&end);if(end==value||*end)throw std::runtime_error("Enter a valid number for each setting");candidate.*(field.member)=number;}
         auto m=SendMessageW(widgets[MonitorChoice],CB_GETCURSEL,0,0);if(m<0||size_t(m)>=displays.size())throw std::runtime_error("Select an available monitor");candidate.monitor=winrt::to_string(displays[m].name);
@@ -84,7 +90,8 @@ struct App {
         if(output){DestroyWindow(output);output=nullptr;}
         DWORD ex=WS_EX_TOOLWINDOW|WS_EX_NOREDIRECTIONBITMAP;
         DWORD style=WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU;
-        int x=monitor.rect.left+px(760),y=monitor.rect.top+px(40),w=960,h=600;
+        auto previewSize=fitPreview(monitor.rect.right-monitor.rect.left,monitor.rect.bottom-monitor.rect.top);
+        int x=monitor.rect.left+px(760),y=monitor.rect.top+px(40),w=previewSize.width,h=previewSize.height;
         if(!preview){ex|=WS_EX_NOACTIVATE|WS_EX_LAYERED|WS_EX_TRANSPARENT|WS_EX_TOPMOST;style=WS_POPUP;x=monitor.rect.left;y=monitor.rect.top;w=monitor.rect.right-x;h=monitor.rect.bottom-y;}
         else{RECT client{0,0,w,h};AdjustWindowRectEx(&client,style,FALSE,ex);w=client.right-client.left;h=client.bottom-client.top;
             x=std::max<int>(monitor.rect.left,std::min<int>(x,monitor.rect.right-w));}
@@ -143,6 +150,7 @@ LRESULT CALLBACK controlProc(HWND hwnd,UINT message,WPARAM w,LPARAM l){
             if(SendMessageW(app->widgets[Source],CB_GETCURSEL,0,0)==1)app->angle=std::make_shared<FusionAngle>(app->settings);else app->manualSource();
             app->renderer.configure(app->settings,app->angle);return 0;
         }
+        if(id==ProjectionChoice&&notification==CBN_SELCHANGE){app->readControls(false);return 0;}
         if(notification!=BN_CLICKED)return 0;
         switch(id){case Preview:app->start(true);break;case Enable:app->start(false);break;case Disable:app->disable();break;
         case CloseSweep:app->sweep(true);break;case OpenSweep:app->sweep(false);break;case Reverse:app->sweep(!app->sweepClosing);break;case Apply:app->readControls(true);break;
@@ -164,7 +172,7 @@ int runApplication(){
     winrt::init_apartment(winrt::apartment_type::single_threaded);SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     std::filesystem::path config=executableDirectory()/L"config.json";bool noPreferences=false;
     for(int i=1;i<count;++i){if(std::wstring_view(argv[i])==L"--config"&&i+1<count)config=argv[++i];else if(std::wstring_view(argv[i])==L"--no-preferences")noPreferences=true;}
-    App app(loadSettings(config,!noPreferences));app.noPreferences=noPreferences;bool startPreview=true;
+    App app(loadSettings(config,!noPreferences));app.noPreferences=noPreferences;bool startPreview=true,openPreview=false;
     for(int i=1;i<count;++i){std::wstring_view a=argv[i];
         if(a==L"--smoke"||a==L"--benchmark"){app.automatic=true;app.benchmark=a==L"--benchmark";app.duration=app.benchmark?60:8;}
         else if(a==L"--synthetic")app.synthetic=true;
@@ -173,17 +181,20 @@ int runApplication(){
         else if(a==L"--report"&&i+1<count)app.report=argv[++i];
         else if(a==L"--fps"&&i+1<count)app.settings.maxFps=wcstod(argv[++i],nullptr);
         else if(a==L"--angle"&&i+1<count)app.settings.manualAngle=wcstod(argv[++i],nullptr);
+        else if(a==L"--projection"&&i+1<count)app.settings.projectionMode=winrt::to_string(argv[++i]);
+        else if(a==L"--preview")openPreview=true;
     }
     LocalFree(argv);app.settings.validate();INITCOMMONCONTROLSEX cc{sizeof(cc),ICC_BAR_CLASSES|ICC_STANDARD_CLASSES};InitCommonControlsEx(&cc);
     WNDCLASSEXW wc{sizeof(wc)};wc.hInstance=GetModuleHandleW(nullptr);wc.lpfnWndProc=controlProc;wc.lpszClassName=L"HingeGlassControls";
     wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);wc.hbrBackground=reinterpret_cast<HBRUSH>(COLOR_WINDOW+1);RegisterClassExW(&wc);
     wc.lpfnWndProc=outputProc;wc.lpszClassName=L"HingeGlassOutput";wc.hbrBackground=nullptr;RegisterClassExW(&wc);
-    float dpi=GetDpiForSystem()/96.f;HWND window=CreateWindowExW(0,L"HingeGlassControls",L"Hinge Glass 0.1.1 — live hinge animation",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,
-        CW_USEDEFAULT,CW_USEDEFAULT,int(740*dpi),int(880*dpi),nullptr,nullptr,GetModuleHandleW(nullptr),&app);
+    float dpi=GetDpiForSystem()/96.f;HWND window=CreateWindowExW(0,L"HingeGlassControls",L"Hinge Glass 0.1.2 — live hinge animation",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,
+        CW_USEDEFAULT,CW_USEDEFAULT,int(740*dpi),int(922*dpi),nullptr,nullptr,GetModuleHandleW(nullptr),&app);
     if(!window)winrt::throw_last_error();if(!SetWindowDisplayAffinity(window,WDA_EXCLUDEFROMCAPTURE))throw std::runtime_error("Cannot exclude controls from screen capture");
     if(!RegisterHotKey(window,1,MOD_CONTROL|MOD_ALT|MOD_NOREPEAT,VK_F12))throw std::runtime_error("Ctrl+Alt+F12 is already registered. Close the conflicting app before enabling Hinge Glass.");
     WTSRegisterSessionNotification(window,NOTIFY_FOR_THIS_SESSION);ShowWindow(window,SW_SHOWNORMAL);
     if(app.automatic){app.deadline=nowMs()+(app.duration+25)*1000;app.start(startPreview);}
+    else if(openPreview)app.start(true);
     MSG msg{};while(GetMessageW(&msg,nullptr,0,0)>0){if(!IsDialogMessageW(window,&msg)){TranslateMessage(&msg);DispatchMessageW(&msg);}}
     return int(msg.wParam);
 }

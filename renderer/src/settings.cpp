@@ -14,24 +14,24 @@ static void merge(Settings& s,const std::filesystem::path& p){
     std::string text((std::istreambuf_iterator<char>(file)),{});auto o=JsonObject::Parse(winrt::to_hstring(text));
     if(o.GetNamedNumber(L"version",0)!=1)throw std::runtime_error("Unsupported configuration version");
 #define NUMBER(x) if(o.HasKey(L###x))s.x=o.GetNamedNumber(L###x)
-    NUMBER(manualAngle);NUMBER(referenceAngle);NUMBER(blurPixels);NUMBER(eyeX);NUMBER(eyeY);NUMBER(eyeZ);
+    NUMBER(manualAngle);NUMBER(referenceAngle);NUMBER(blurPixels);NUMBER(frostResponse);NUMBER(eyeX);NUMBER(eyeY);NUMBER(eyeZ);
     NUMBER(screenWidth);NUMBER(screenHeight);NUMBER(hingeOffset);NUMBER(maxFps);NUMBER(sweepSeconds);
     NUMBER(staleMs);NUMBER(predictionMs);NUMBER(retryMs);NUMBER(captureTimeoutMs);NUMBER(blurScale);
 #undef NUMBER
 #define STRING(x) if(o.HasKey(L###x))s.x=winrt::to_string(o.GetNamedString(L###x))
-    STRING(fusionUrl);STRING(monitor);STRING(adapter);
+    STRING(fusionUrl);STRING(monitor);STRING(adapter);STRING(projectionMode);
 #undef STRING
 }
 Settings loadSettings(const std::filesystem::path& p,bool preferences){Settings s;merge(s,p);
     if(preferences&&std::filesystem::exists(preferencesPath()))merge(s,preferencesPath());s.validate();return s;}
 void saveSettings(const Settings& s,const std::filesystem::path& path){s.validate();JsonObject o;o.Insert(L"version",JsonValue::CreateNumberValue(1));
 #define NUMBER(x) o.Insert(L###x,JsonValue::CreateNumberValue(s.x))
-    NUMBER(manualAngle);NUMBER(referenceAngle);NUMBER(blurPixels);NUMBER(eyeX);NUMBER(eyeY);NUMBER(eyeZ);
+    NUMBER(manualAngle);NUMBER(referenceAngle);NUMBER(blurPixels);NUMBER(frostResponse);NUMBER(eyeX);NUMBER(eyeY);NUMBER(eyeZ);
     NUMBER(screenWidth);NUMBER(screenHeight);NUMBER(hingeOffset);NUMBER(maxFps);NUMBER(sweepSeconds);
     NUMBER(staleMs);NUMBER(predictionMs);NUMBER(retryMs);NUMBER(captureTimeoutMs);NUMBER(blurScale);
 #undef NUMBER
 #define STRING(x) o.Insert(L###x,JsonValue::CreateStringValue(winrt::to_hstring(s.x)))
-    STRING(fusionUrl);STRING(monitor);STRING(adapter);
+    STRING(fusionUrl);STRING(monitor);STRING(adapter);STRING(projectionMode);
 #undef STRING
     std::filesystem::create_directories(path.parent_path());auto tmp=path;tmp+=L".tmp";
     {std::ofstream file(tmp,std::ios::binary|std::ios::trunc);file<<winrt::to_string(o.Stringify());file.flush();if(!file)throw std::runtime_error("Cannot save preferences");}

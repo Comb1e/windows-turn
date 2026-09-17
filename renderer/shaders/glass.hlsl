@@ -2,7 +2,7 @@ cbuffer Parameters : register(b0) {
     float4 row0, row1, row2;
     float4 sizes; // destination width,height; source width,height
     float4 effect; // closure, blur radius in destination pixels, SDR input, HDR output
-    float4 direction; // blur texel direction x,y; pass; paper-white multiplier
+    float4 direction; // blur texel direction x,y; kernel radius; sigma (pattern pass: time)
     float4 cursorRect; // source-normalized top left and size
     float4 cursorInfo; // enabled, reserved
 };
@@ -52,14 +52,16 @@ float4 Warp(Vertex input) : SV_Target {
 }
 float4 Blur(Vertex input) : SV_Target {
     float4 c=0;float sum=0;
-    // Fixed tap count, variable spacing: stable work at every user-selected blur strength.
-    [unroll]for(int i=-6;i<=6;++i){float w=exp(-.5*i*i/4.0);c+=scene.SampleLevel(linearClamp,input.uv+direction.xy*i,0)*w;sum+=w;}
+    // Consecutive reduced-resolution texels prevent repeated-image bands at large radii.
+    int radius=(int)direction.z;float sigma=max(direction.w,.01);
+    [loop]for(int i=-radius;i<=radius;++i){float w=exp(-.5*i*i/(sigma*sigma));c+=scene.SampleLevel(linearClamp,input.uv+direction.xy*i,0)*w;sum+=w;}
     return c/sum;
 }
 float4 Composite(Vertex input) : SV_Target {
     float3 clear=scene.SampleLevel(linearClamp,input.uv,0).rgb;
     float3 blurred=frost.SampleLevel(linearClamp,input.uv,0).rgb;
-    float strength=effect.x*saturate(effect.y);
+    // Use progressively less sharp-image contribution as frosting builds up.
+    float strength=(1-(1-effect.x)*(1-effect.x))*saturate(effect.y);
     float3 c=lerp(clear,blurred,strength);
     c=lerp(c,c*.91+float3(.045,.052,.062),effect.x*.22);
     if(effect.w<.5)c=toSrgb(max(c,0));

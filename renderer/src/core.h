@@ -8,12 +8,12 @@
 
 namespace hinge {
 struct Settings {
-    double manualAngle=110, referenceAngle=110, blurPixels=24;
+    double manualAngle=110, referenceAngle=110, blurPixels=64, frostResponse=3;
     double eyeX=0, eyeY=550, eyeZ=450;
     double screenWidth=340, screenHeight=212.5, hingeOffset=10;
     double maxFps=60, sweepSeconds=6, staleMs=500, predictionMs=17;
     double retryMs=1000, captureTimeoutMs=5000, blurScale=.25;
-    std::string fusionUrl="http://127.0.0.1:1820", monitor, adapter="auto";
+    std::string fusionUrl="http://127.0.0.1:1820", monitor, adapter="auto",projectionMode="rotation";
     void validate() const;
 };
 struct Vec3 { double x,y,z; };
@@ -28,7 +28,10 @@ struct Mapping {
     std::optional<std::array<double,2>> map(double u,double v) const;
 };
 Mapping projection(const Settings& s,double angle);
+struct PixelSize {int width,height;};
+PixelSize fitPreview(int sourceWidth,int sourceHeight,int maxWidth=960,int maxHeight=600);
 double closure(double angle,double reference);
+double frosting(double angle,double reference,double response);
 double nowMs();
 enum class State { Disabled, Starting, Active, Recovering, Suspended, Faulted };
 const wchar_t* stateName(State state);

@@ -1,5 +1,18 @@
 # Workspace architecture
 
+## Hinge Glass 0.1.2 — 2026-09-17
+
+```mermaid
+flowchart LR
+  Debug[Stationary-screen slider test] --> Rotating[Rotate rigid source plane]
+  Actual[Physical lid movement] --> Fixed[Keep source plane fixed at reference angle]
+  Rotating --> Projection[Shared perspective projection / bottom edge fixed]
+  Fixed --> Projection
+  Projection --> Frost[Blur increases with closing rotation]
+```
+
+The default slider-test mode uses a rigid rotating plane so the full texture stays visible while testing on a stationary screen. The explicit **Physical lid** view mode retains the original world-anchored image behavior: the physical display moves while the reference plane remains fixed. Preview, grid and full-screen output use the same selected projection; changing output never changes modes automatically. This prevents mistaking compensation viewed on a stationary monitor for the intended physical effect. Frosting is stronger and uses a dense Gaussian kernel. All tests remain capped at 60 fps. Preview sizing preserves the monitor aspect ratio.
+
 ## Hinge Glass 0.1.1 — 2026-09-17
 
 ```mermaid

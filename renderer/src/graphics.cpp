@@ -153,15 +153,17 @@ public:
         auto& query=queries[queryIndex];bool measure=!query.pending;if(measure){context->Begin(query.disjoint.get());context->End(query.begin.get());}
         Constants p{};auto map=projection(s,angle);for(int row=0;row<3;++row)for(int col=0;col<3;++col)p.rows[row][col]=static_cast<float>(map.h[row*3+col]);
         p.sizes[0]=static_cast<float>(width);p.sizes[1]=static_cast<float>(height);p.sizes[2]=static_cast<float>(source.width);p.sizes[3]=static_cast<float>(source.height);
-        p.effect[0]=static_cast<float>(closure(angle,s.referenceAngle));p.effect[1]=static_cast<float>(s.blurPixels);p.effect[2]=hdr||synthetic?0.f:1.f;p.effect[3]=hdr?1.f:0.f;
+        p.effect[0]=static_cast<float>(frosting(angle,s.referenceAngle,s.frostResponse));p.effect[1]=static_cast<float>(s.blurPixels);p.effect[2]=hdr||synthetic?0.f:1.f;p.effect[3]=hdr?1.f:0.f;
         p.direction[3]=static_cast<float>(elapsed);
         if(synthetic){draw(pattern.get(),source.rtv.get(),source.width,source.height,p,nullptr);++captures;captureTime=qpcMs();}
         double cursorStart=nowMs();cursor->update(monitor.rect);cursorMs=nowMs()-cursorStart;std::copy(cursor->rectangle.begin(),cursor->rectangle.end(),p.cursorRect);p.cursorInfo[0]=cursor->visible?1.f:0.f;
         draw(lightShader.get(),lightField.rtv.get(),1,1,p,source.srv.get());
         draw(warp.get(),projected.rtv.get(),width,height,p,source.srv.get());
-        p.direction[0]=static_cast<float>(s.blurPixels*p.effect[0]/6/width);p.direction[1]=0;
+        float reducedRadius=static_cast<float>(s.blurPixels*p.effect[0]*smallA.width/width);
+        p.direction[0]=1.f/smallA.width;p.direction[1]=0;p.direction[2]=std::ceil(reducedRadius);p.direction[3]=reducedRadius/3;
         draw(blur.get(),smallA.rtv.get(),smallA.width,smallA.height,p,projected.srv.get());
-        p.direction[0]=0;p.direction[1]=static_cast<float>(s.blurPixels*p.effect[0]/6/height);
+        reducedRadius=static_cast<float>(s.blurPixels*p.effect[0]*smallA.height/height);
+        p.direction[0]=0;p.direction[1]=1.f/smallA.height;p.direction[2]=std::ceil(reducedRadius);p.direction[3]=reducedRadius/3;
         draw(blur.get(),smallB.rtv.get(),smallB.width,smallB.height,p,smallA.srv.get());
         draw(composite.get(),back.get(),width,height,p,projected.srv.get(),smallB.srv.get());
         if(measure){context->End(query.end.get());context->End(query.disjoint.get());query.pending=true;queryIndex=(queryIndex+1)%queries.size();}
@@ -189,7 +191,11 @@ void writeReport(const std::filesystem::path& path,const Telemetry& t,const Rend
     o.Insert(L"adapter",JsonValue::CreateStringValue(t.adapter));o.Insert(L"state",JsonValue::CreateStringValue(stateName(t.state)));o.Insert(L"message",JsonValue::CreateStringValue(t.message));
     o.Insert(L"synthetic",JsonValue::CreateBooleanValue(options.synthetic));o.Insert(L"preview",JsonValue::CreateBooleanValue(options.preview));
     o.Insert(L"presentStatisticsAvailable",JsonValue::CreateBooleanValue(t.presentStatsAvailable));
-    num(L"seconds",seconds);num(L"renderWidth",options.preview?960:options.monitor.rect.right-options.monitor.rect.left);num(L"monitorRefreshHz",options.monitor.hz);
+    auto previewSize=fitPreview(options.monitor.rect.right-options.monitor.rect.left,options.monitor.rect.bottom-options.monitor.rect.top);
+    num(L"seconds",seconds);num(L"renderWidth",options.preview?previewSize.width:options.monitor.rect.right-options.monitor.rect.left);
+    num(L"renderHeight",options.preview?previewSize.height:options.monitor.rect.bottom-options.monitor.rect.top);num(L"monitorRefreshHz",options.monitor.hz);
+    o.Insert(L"projectionMode",JsonValue::CreateStringValue(to_hstring(settings.projectionMode)));
+    num(L"maxBlurPixels",settings.blurPixels);num(L"frostResponse",settings.frostResponse);num(L"finalAngle",t.angle);
     num(L"requestedCap",settings.maxFps);num(L"captures",double(t.captures));num(L"renders",double(t.renders));num(L"presents",double(t.presents));
     num(L"averageRenderFps",seconds>0?t.renders/seconds:0);num(L"gpuP95Ms",t.p95GpuMs);num(L"frameIntervalP99Ms",t.p99FrameMs);num(L"droppedCaptures",double(t.dropped));
     num(L"cpuCaptureMs",t.cpuCaptureMs);num(L"cpuRenderMs",t.cpuRenderMs);num(L"cpuCursorMs",t.cpuCursorMs);num(L"presentWaitMs",t.presentWaitMs);num(L"pacingWaitMs",t.pacingWaitMs);
