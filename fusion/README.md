@@ -14,7 +14,9 @@ The launcher reuses healthy existing services and starts missing ones in their o
 
 Open http://localhost:1820 and start the camera. `PORT` overrides the coordinator's port; `node server.js --config path.json` selects another coordinator configuration. Ports, service URLs, capture settings, stale/grace intervals, controller parameters, queue bounds, and recording limits live in `config.json`.
 
-The current raw angle always equals a valid keyboard reading. Displayed movement is separate: filtered physical motion supplies feedforward, and a seventh-degree correction trajectory preserves position, velocity, acceleration, and jerk during replanning. Each chase has an original 1-second deadline that source/profile changes do not restart. Late large discrepancies can exceed the preferred correction speed, acceleration, and jerk; the page reports this explicitly.
+When a fresh valid keyboard reading is available, both the measured angle and **Target angle** equal that reading. Brightness disagreement never overrides it. Only motion measured from contiguous keyboard samples may drive a keyboard target; sparse samples or brief visibility gaps do not substitute scene motion. The keyboard target is not extrapolated between samples. After the configured keyboard grace period, usable brightness becomes the fallback.
+
+Displayed movement is separate: filtered physical motion supplies feedforward, and a seventh-degree correction trajectory preserves position, velocity, acceleration, and jerk during replanning. The large displayed angle therefore converges smoothly to the target. Each chase has an original 1-second deadline that source/profile changes do not restart. Late large discrepancies can exceed the preferred correction speed, acceleration, and jerk; the page reports this explicitly. Existing filtered motion decays continuously on keyboard reacquisition instead of snapping the displayed derivatives.
 
 ## Calibrate with one opening and closing sweep
 
@@ -63,6 +65,7 @@ The UI uses `/api/start`, `/api/frames`, `/api/stop`, and the `/api/events` SSE 
 ```json
 {
   "measurementAngleDeg": 25,
+  "targetAngleDeg": 25,
   "displayAngleDeg": 38.5,
   "source": "keyboard",
   "authoritative": true,
@@ -75,7 +78,7 @@ The UI uses `/api/start`, `/api/frames`, `/api/stop`, and the `/api/events` SSE 
 }
 ```
 
-Angles may be `null` when unavailable. `lastValid` and `displayAgeMs` identify retained values separately. `motionVelocityDegS` is filtered physical-motion inference, not the displayed derivative. `adaptation` includes the state, version, segment, parameters, and anchor coverage.
+Angles may be `null` when unavailable. `targetAngleDeg` is the controller's current correction target: the exact keyboard measurement when selected, the retained keyboard angle during a brief gap, or the age-aligned brightness estimate on fallback. It is null when the controller is stale. The UI marks retained targets as held. `lastValid` and `displayAgeMs` identify retained values separately. `motionVelocityDegS` is filtered physical-motion inference, not the displayed derivative. `adaptation` includes the state, version, segment, parameters, and anchor coverage.
 
 Recording export includes lighting features, raw/adapted values, keyboard label provenance, motion increments, frozen settings, initial adapter state, and the real display timeline. It contains no camera pixels. It remains in memory until downloaded; export before stopping/restarting. Preview visibility does not affect processing.
 
@@ -93,6 +96,8 @@ The smoke command starts all three real services on temporary ports with generat
 Replay calls the adapter's public `restore/observe/add` functions from the neighboring Light Track checkout; pass its module path as the third argument if located elsewhere. It scores the current prediction before admitting its keyboard label. Accuracy uses independent checkpoint/reference labels, excluding keyboard teachers. Reports distinguish raw brightness, adapted brightness, recorded adaptation, replay display, and actual recorded display; missing predictions reduce coverage. Dynamic delay needs synchronized moving labels. Recorded correction trajectories carry deadlines and completion status; ordinary motion delay is reported separately.
 
 Software verification does not establish real laptop angle accuracy, reference synchronization, or live camera latency. Those measurements require real recordings with independent references.
+
+See [keyboard target validation and references](docs/keyboard-target-validation.md) for the conflicting-motion regression, source boundaries and research used for version 0.2.2.
 
 ## Calibration and profile APIs
 

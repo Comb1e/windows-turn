@@ -1,5 +1,17 @@
 # Iteration history
 
+## Fusion 0.2.2 — Use the available keyboard angle as the target — 2026-09-17
+
+**Previous issues:** Fusion could report an authoritative keyboard measurement while the displayed angle stayed far away. A 60 Hz counterexample with 25° keyboard readings every 300 ms and conflicting scene motion displayed 59.153958° after three seconds.
+
+**Method root causes:** Source selection gave the keyboard priority, but missing keyboard velocity fell back to scene velocity. The display controller then used that unrelated motion for sample-age extrapolation and future waypoints. Existing tests asserted measurement priority without conflicting scene motion. Residual filtered motion could also shift a newly reacquired keyboard target.
+
+**Improvements:** Bind keyboard targets to keyboard-derived motion only; use zero input motion when the slope is unavailable. Keep the exact keyboard correction target through sample age, keyboard grace and display holds. Preserve smooth physical-filter decay, continuous replanning, the original correction deadline and brightness fallback. Publish `targetAngleDeg` and show **Target angle** separately in Fusion. Research roles and the counterexample are recorded in `fusion/docs/keyboard-target-validation.md`.
+
+**Verification:** All 32 Fusion tests pass (the original 28 plus four regressions). Tests cover conflicting scene velocities, sparse keyboard readings, endpoint angles, moving targets, source reacquisition, continuity through jerk, grace/stale boundaries, reordered input, HTTP/SSE behavior and UI target status. All four renderer CTest suites also pass, including native Fusion integration. Identical 60 Hz counterexample inputs now converge to 25°. No OS refresh settings changed.
+
+**Remaining issues:** Physical-camera measurement accuracy and real lid movement remain unverified. Sparse keyboard motion needs enough contiguous samples for velocity estimation. An abrupt late target change can still miss an imminent deadline, which remains explicitly reported. Renderer geometry and prior hardware limits remain unchanged.
+
 ## 0.1.5 — Restore live Fusion angle reception — 2026-09-17
 
 **Previous issues:** Starting Fusion and its camera could leave Hinge Glass showing no received angle or stuck at “Connecting to Fusion.” The controls used renderer telemetry, so connection progress and angles were not visible while rendering was disabled.

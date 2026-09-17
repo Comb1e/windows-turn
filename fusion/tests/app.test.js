@@ -35,6 +35,17 @@ test('camera startup can be cancelled; late camera and old-session events cannot
     assert.equal(elements.get('record').disabled,true);
     events.service({data:JSON.stringify({sessionId:'s1',kind:'lighting',result:{valid:false,quality:{reason:'Collect baseline'}}})});
     assert.equal(elements.get('record').disabled,false);
+    const angle={sessionId:'s1',displayAngleDeg:80,measurementAngleDeg:25,targetAngleDeg:25,motionVelocityDegS:0,
+      measurementAgeMs:40,state:'KEYBOARD',source:'keyboard',authoritative:true,services:{}};
+    events.angle({data:JSON.stringify(angle)});
+    assert.equal(elements.get('target').textContent,'25.00°');assert.equal(elements.get('angle').textContent,'80.0');
+    assert.match(elements.get('quality').textContent,/keyboard angle is the target/);
+    events.angle({data:JSON.stringify({...angle,sessionId:'obsolete',targetAngleDeg:90})});
+    assert.equal(elements.get('target').textContent,'25.00°');
+    events.angle({data:JSON.stringify({...angle,measurementAngleDeg:null,displayTargetHeld:true})});
+    assert.equal(elements.get('target').textContent,'25.00° (held)');
+    events.angle({data:JSON.stringify({...angle,targetAngleDeg:null,controllerState:'STALE'})});
+    assert.equal(elements.get('target').textContent,'Unavailable');
     const video=elements.get('video');video.currentTime=1;animation(100);await settle();assert.equal(uploads.length,1);
     elements.get('preview-toggle').onclick();video.currentTime=2;animation(200);await settle();assert.equal(uploads.length,2);assert.equal(elements.get('preview').hidden,true);
     windowEvents.pagehide();elements.get('stop').onclick();await settle();assert.equal(animation,null);

@@ -1,5 +1,17 @@
 # Iteration history
 
+## 0.2.2 — Keyboard angle is the correction target — 2026-09-17
+
+**Previous issues:** An available keyboard angle could be reported correctly while the displayed angle diverged. With 25° readings every 300 ms and +60°/s scene motion, the old controller displayed 59.153958° after three seconds at a 60 Hz update rate.
+
+**Method root causes:** An unavailable keyboard velocity estimate silently selected scene motion, even though the target came from the keyboard. Age extrapolation and future trajectory endpoints inherited that motion. The old tests checked raw source selection but lacked conflicting motion with sparse keyboard samples.
+
+**Improvements:** Keyboard targets now use only keyboard motion, defaulting to zero input motion when unavailable. Their exact angle is retained without sample-age extrapolation, including grace and display holds. Smooth derivative state and the original correction deadline survive reacquisition; brightness still supplies fallback. Added target telemetry and a separate target reading in the UI. The implementation reuses the existing controller and source state machines; [research and validation](docs/keyboard-target-validation.md) record the references used.
+
+**Verification:** 32/32 Fusion tests and all four renderer CTest suites pass. The original 28 Fusion cases remain covered. New regressions verify conflicting motion, 10°/25°/46° targets, freshness boundaries, moving keyboard targets, continuity through jerk, unchanged deadlines and source recovery. Expanded real HTTP/SSE and UI tests check target reporting, sparse-sample convergence and fallback. The same 60 Hz counterexample now displays 25°.
+
+**Remaining issues:** Hardware camera/lid accuracy remains unverified. Sparse keyboard motion may lag while a slope is unavailable. Large late target changes can exceed comfort preferences or miss the original deadline; these are still reported. No rendering geometry or hardware acceptance claims change.
+
 ## 2026-09-15 — Automatic keyboard model limits and recovered calibration profiles
 
 The previous sweep trainer hard-coded a 44-degree ceiling and its shared loader separately imposed 45 degrees. Retraining the independent keyboard model to support 46 degrees therefore caused valid matched labels to fail calibration. Fusion now captures the active keyboard service model ID and supported range automatically and includes them in each sweep. Both Python training paths share a metadata-based validator. A changed keyboard model aborts an active sweep; labels are never clamped or dropped to fit an obsolete limit.

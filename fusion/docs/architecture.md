@@ -8,7 +8,7 @@ flowchart TD
     Results --> Engine[Source state machine]
     Results --> Pairs[Bounded exact-frame pairing]
     Pairs --> Anchors[Latest pending anchor to Light Track]
-    Engine --> Motion[Keyboard robust slope or relative scene velocity]
+    Engine --> Motion[Keyboard slope for keyboard targets; scene velocity for fallback]
     Engine --> Target[Authoritative target]
     Motion --> Display[Physical feedforward and septic correction]
     Target --> Display
@@ -41,6 +41,34 @@ stateDiagram-v2
 `FusionEngine.ingest()` accepts increasing capture timestamps independently for each source. Keyboard validity comes from the service; the fusion layer never compares its value against brightness to accept/reject it. A valid sample is authoritative until superseded or stale. An explicit loss gets a 200 ms grace period from the last valid capture. Samples older than 500 ms never become a current measurement.
 
 `DisplayController.update(target, motion, timestamp, observation)` retains position through jerk, exact filtered physical motion, and a deadline-bound septic correction. It advances physical motion in bounded substeps and evaluates correction polynomials directly. Stale gaps freeze position, retain the chase deadline, and clear derivative states; resuming starts from the retained position. Control constants reside in `config.json`.
+
+## Keyboard correction targets — Fusion 0.2.2, 2026-09-17
+
+```mermaid
+flowchart TD
+    Read[Fresh timestamped service results] --> Select{Source state machine}
+    Select -->|KEYBOARD| Exact[Exact keyboard angle; no age extrapolation]
+    Select -->|KEYBOARD_GRACE| Retain[Retain exact keyboard angle]
+    Select -->|LIGHTING| Fallback[Brightness angle with existing age alignment]
+    Select -->|UNAVAILABLE| Hold{Last target within display hold?}
+    Hold -->|Yes| Policy[Retain angle and its source policy]
+    Hold -->|No| Freeze[STALE: freeze display; null target]
+    Exact --> Slope[Use only contiguous keyboard slope; otherwise zero input motion]
+    Retain --> Zero[Zero input motion]
+    Policy --> Motion[Keyboard target: zero input motion; brightness target: existing scene path]
+    Fallback --> Scene[Relative scene motion]
+    Slope --> Controller[Continuous feedforward and correction; original deadline]
+    Zero --> Controller
+    Motion --> Controller
+    Scene --> Controller
+    Controller --> Output[Target angle and displayed angle in UI / JSON / SSE]
+```
+
+`FusionEngine` binds input motion to the selected target source. Keyboard motion needs the configured minimum samples and span within its velocity window. If these are missing, a valid keyboard reading still drives correction; scene velocity cannot replace its missing slope. Grace and display-only holds retain that restriction until a brightness target is actually selected. Existing filtered velocity decays through the physical-motion stages, preserving continuity on source changes.
+
+The observation flag `extrapolateTarget: false` keeps an exact keyboard correction target across its sample age and is stored with the last measurement for display holds. It prevents residual velocity from the previous source from shifting the keyboard target. A future trajectory waypoint can still follow measured keyboard velocity; its feedback reference remains the actual keyboard angle. Brightness retains its existing age alignment. `targetAngleDeg` publishes this feedback reference and becomes null on stale freeze. The renderer continues consuming `displayAngleDeg` and `displayVelocityDegS`.
+
+The existing 200 ms keyboard grace, 500 ms measurement freshness/display hold, 250 ms velocity window and 1-second correction deadline remain configured in `config.json`. There is no new smoothing filter. The [validation note](keyboard-target-validation.md) records independent counterexamples and references.
 
 The capture clock is aligned once to coordinator monotonic time on the first uploaded frame; frame IDs and timestamps strictly increase. The UI publishes at the configured camera rate, keeps one upload active plus one latest waiting upload, and does not use its preview canvas as an input. Each service client independently holds one request and one latest pending frame. Failed/expired leases can reconnect, while timeouts retain the active service's lease and do not overtake its worker operation.
 

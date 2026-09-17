@@ -59,7 +59,8 @@ export class DisplayController {
     if(this.time!==null&&timestamp<=this.time)return this.snapshot();
     const elapsed=this.time===null?0:timestamp-this.time;
     const current=Number.isFinite(target);
-    if(current)this.lastMeasurement={angle:target,timestampMs:observation?.timestampMs??timestamp};
+    if(current)this.lastMeasurement={angle:target,timestampMs:observation?.timestampMs??timestamp,
+      extrapolateTarget:observation?.extrapolateTarget!==false};
     const age=this.lastMeasurement?timestamp-this.lastMeasurement.timestampMs:Infinity;
     this.targetHeld=!current&&age>=0&&age<=this.c.displayHoldMs;
     if((!current&&!this.targetHeld)||elapsed>this.c.staleMs){
@@ -72,7 +73,10 @@ export class DisplayController {
       return this.snapshot();
     }
     this.advance(timestamp,elapsed);this.time=timestamp;this.rawMotion=Number.isFinite(motion)?motion:0;
-    const aligned=clamp(this.lastMeasurement.angle+this.velocity*Math.max(0,age)/1000,this.c.minAngle,this.c.maxAngle);
+    // An authoritative observation is the feedback target even while the physical
+    // motion filter still carries velocity from the previously selected source.
+    const offset=this.lastMeasurement.extrapolateTarget?this.velocity*Math.max(0,age)/1000:0;
+    const aligned=clamp(this.lastMeasurement.angle+offset,this.c.minAngle,this.c.maxAngle);
     const error=aligned-this.angle;this.target=aligned;
     const base=physicalDerivatives(this.physical,this.tau);
     const settled=Math.abs(error)<=this.c.toleranceDeg&&(timestamp>=this.plan?.end||
@@ -91,7 +95,7 @@ export class DisplayController {
   }
   snapshot(){return {displayAngleDeg:this.angle,motionVelocityDegS:this.velocity,displayVelocityDegS:this.state[1],
     displayAccelerationDegS2:this.state[2],displayJerkDegS3:this.state[3],controllerState:this.mode,
-    correctionErrorDeg:this.target===null?null:this.target-this.angle,
+    targetAngleDeg:this.target,correctionErrorDeg:this.target===null?null:this.target-this.angle,
     correctionElapsedMs:this.chase?this.time-this.chase.start:0,correctionRemainingMs:this.chase?Math.max(0,this.chase.deadline-this.time):0,
     correctionDeadlineMs:this.chase?.deadline??null,correctionOverdue:this.chase?.overdue??false,
     displayTargetHeld:this.targetHeld,displayTargetAgeMs:this.lastMeasurement?this.time-this.lastMeasurement.timestampMs:null,comfortExceeded:this.comfortExceeded,lastCorrection:this.lastChase,
@@ -136,8 +140,13 @@ export class FusionEngine {
     else if(fresh(l)&&l.valid&&Number.isFinite(l.angleDeg)){selected=l;source='lighting';state='LIGHTING';}
     let motion=null,motionSource='unavailable';
     if(source==='keyboard'&&!held){motion=robustVelocity(this.history,this.c.selection);if(motion!==null)motionSource='keyboard';}
-    if(motion===null&&fresh(l)&&Number.isFinite(l.motion?.velocityDegS)){motion=l.motion.velocityDegS;motionSource='scene';}
-    const output=this.controller.update(selected?.angleDeg??null,motion,now,selected?{timestampMs:selected.timestampMs,key:`${source}:${selected.frameId}:${selected.modelGeneration??0}`}:null);
+    // Sparse or briefly missing keyboard samples are not permission to steer a
+    // keyboard target with unrelated scene motion. Retained display targets keep
+    // their source policy until a fallback is actually selected.
+    const keyboardTarget=(selected?source:this.lastValid?.source)==='keyboard';
+    if(!keyboardTarget&&motion===null&&fresh(l)&&Number.isFinite(l.motion?.velocityDegS)){motion=l.motion.velocityDegS;motionSource='scene';}
+    const output=this.controller.update(selected?.angleDeg??null,motion,now,selected?{timestampMs:selected.timestampMs,
+      extrapolateTarget:source!=='keyboard',key:`${source}:${selected.frameId}:${selected.modelGeneration??0}`}:null);
     if(selected)this.lastValid={angleDeg:selected.angleDeg,timestampMs:selected.timestampMs,source};
     return {...output,timestampMs:now,measurementAngleDeg:selected?.angleDeg??null,source,state,held,
       measurementTimestampMs:selected?.timestampMs??null,measurementAgeMs:selected?now-selected.timestampMs:null,

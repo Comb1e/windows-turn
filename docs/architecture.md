@@ -1,5 +1,22 @@
 # Workspace architecture
 
+## Fusion 0.2.2 — Keyboard target priority — 2026-09-17
+
+```mermaid
+flowchart LR
+  Keyboard[Fresh valid keyboard angle] --> Target[Exact correction target]
+  Keyboard --> Motion[Keyboard-only motion estimate]
+  Missing[Keyboard unavailable after grace] --> Light[Brightness fallback and scene motion]
+  Target --> Control[Continuous display controller; original correction deadline]
+  Motion --> Control
+  Light --> Control
+  Control --> API[Target and displayed angle via JSON / SSE]
+  API --> UI[Fusion shows target separately]
+  API --> Renderer[Hinge Glass uses displayed angle and velocity]
+```
+
+Fusion previously selected the keyboard measurement but allowed unrelated scene motion to shift its display target and future trajectory. Sparse keyboard observations could therefore remain far from the displayed angle even while marked authoritative. Keyboard targets now exclude scene-motion input and sample-age extrapolation, including short retained-target intervals. Available keyboard velocity still drives smooth tracking; brightness remains the fallback after keyboard loss. The existing source and controller state machines, configured freshness limits and immutable correction deadline remain in use. See [Fusion architecture](../fusion/docs/architecture.md#keyboard-correction-targets--fusion-022-2026-09-17) and [validation](../fusion/docs/keyboard-target-validation.md).
+
 ## Hinge Glass 0.1.5 — Fusion connection — 2026-09-17
 
 ```mermaid
