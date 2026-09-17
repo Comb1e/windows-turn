@@ -1,5 +1,7 @@
 # Windows hinge estimation
 
+The independent **Hinge Glass** native renderer is now in [`renderer/`](renderer/README.md). Run `./renderer/build.ps1 -Test`, then `./renderer/start.ps1`. It supports manual angle debugging, an adjustable reference angle (110° initially), a fixed bottom edge, live desktop capture, progressive frosting, and an optional Fusion angle source. Tests default to 60 Hz; the render cap can be raised to 240 Hz. Ctrl+Alt+F12 disables the overlay.
+
 Three independently runnable components share one front-camera stream:
 
 | Project | Function | Default address |

@@ -5,3 +5,5 @@
 **/test-results/
 **/*.log
 **/__pycache__/
+/renderer/build/
+/renderer/out/

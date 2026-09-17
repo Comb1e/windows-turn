@@ -1,5 +1,24 @@
 # Workspace architecture
 
+## Hinge Glass 0.1.1 — 2026-09-17
+
+```mermaid
+flowchart LR
+  Manual[Manual / scripted angles] --> Sources[Renderer angle-source interface]
+  Fusion[Fusion snapshot + SSE] --> Sources
+  Config[Reference angle and viewer calibration] --> Projection[Bottom-edge-anchored perspective]
+  Sources --> Projection
+  Desktop[Live Windows monitor capture] --> GPU[GPU desktop + cursor texture]
+  Projection --> GPU
+  GPU --> Glass[Projection then screen-space frosting]
+  Glass --> Output[Capture-excluded native overlay]
+  Output --> Stats[GPU / capture / presentation diagnostics]
+```
+
+Hinge Glass is an independently runnable C++/WinRT/D3D11 application managed by this root Git repository. The full active bottom edge is the stationary visual pivot. A nonzero mechanical-hinge offset changes viewer calibration without moving that visual pivot. Reference angle defaults to 110° and is user-adjustable. The default test cap is 60 Hz; 240 Hz is supported when explicitly configured. Input coordinates remain native while the cursor is rendered on the virtual plane.
+
+Fusion's existing APIs and camera ownership are unchanged. Its smoothed display angle is optional input, and its present 10–120° range is never remapped to imply full closure. Native capture, rendering, UI, and source reception run independently. See [renderer architecture](../renderer/docs/architecture.md) for the geometry derivation, resource state machine, and cursor recovery workflow.
+
 ## Compatible annotation model improvement — 2026-09-16
 
 ```mermaid

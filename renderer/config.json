@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "manualAngle": 110,
+  "referenceAngle": 110,
+  "blurPixels": 24,
+  "eyeX": 0,
+  "eyeY": 550,
+  "eyeZ": 450,
+  "screenWidth": 340,
+  "screenHeight": 212.5,
+  "hingeOffset": 10,
+  "maxFps": 60,
+  "sweepSeconds": 6,
+  "fusionUrl": "http://127.0.0.1:1820",
+  "staleMs": 500,
+  "predictionMs": 17,
+  "retryMs": 1000,
+  "captureTimeoutMs": 5000,
+  "blurScale": 0.25,
+  "monitor": "",
+  "adapter": "auto"
+}

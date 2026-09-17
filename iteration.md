@@ -1,5 +1,29 @@
 # Iteration history
 
+## 0.1.1 — Hinge Glass fixed bottom edge — 2026-09-17
+
+**Previous issues:** The first renderer's active bottom edge moved during rotation, especially with the default nonzero hinge offset. The user requested a stationary bottom edge and 60 Hz testing. A separately reported possible rotation problem was withdrawn pending this correction.
+
+**Method root cause:** The first projection rotated the mechanical-hinge-to-active-panel offset with the panel. It only tested the hinge center with zero offset; that control could pass while the displayed bottom edge moved.
+
+**Improvements:** The complete active bottom edge is now the visual pivot. The hinge offset locates a constant origin at the reference angle, then the eye and physical pixels are expressed relative to that origin. The reference remains adjustable. The default render/test cap is 60 Hz; the 240 Hz capability is retained. A clearly labeled 0–180° manual slider is placed near the top of the controls for camera-free testing. Colored grid borders make bottom movement and orientation visible during synthetic diagnostics.
+
+**Verification:** Independent world-space ray/plane controls and homography tests pass. Regression cases now assert every tested point across the bottom edge, including both corners, with hinge offsets 0/10/50/200 mm and lateral viewer offsets −150/0/150 mm. Original identity, full closure, source ordering, stale data, invalid geometry, SSE parsing, settings and lifecycle cases remain included. The 85° GPU diagnostic shows the green bottom border anchored across the full output width. The existing 28 Fusion tests also pass. Detailed rendering results and limitations are in `renderer/docs/validation.md`.
+
+**Remaining issues:** User visual acceptance of the rotation after this pivot correction, physical lid shutdown/resume, HDR display behavior, game-specific capture/occlusion and independent motion-to-photon measurement remain hardware/application checks. No additional rotation-direction change was made based on the withdrawn symptom.
+
+## 0.1.0 — Initial Hinge Glass renderer — 2026-09-17
+
+**Previous issues:** The workspace estimated and displayed hinge angles but could not transform live desktop/game/video content.
+
+**Method root cause:** Browser angle display and camera inference cannot replace native composed-monitor capture and refresh-paced GPU presentation.
+
+**Improvements:** Added an independent C++20 Win32/C++/WinRT/D3D11 renderer, live GPU capture, viewer-calibrated homography, linear-light frosting, configurable reference angle, native debug controls, manual/scripted/Fusion sources, capture-excluded overlay, transformed cursor with native input, process-exit cursor recovery, device/session recovery, HDR-aware formats, and benchmark telemetry. Papers, projects and official APIs actually used are recorded in `renderer/docs/research.md`.
+
+**Verification:** Release compilation, 43,206 initial core checks, real monitor capture, synthetic PNG inspection and full-screen capture passed. Intel/60 Hz was initially available; RTX 4070/240 Hz became available during development. Before the user's request to use 60 Hz for further tests, a completed 60-second synthetic benchmark measured 237.62 rendered fps, 237.68 DXGI-presented fps and 0.2304 ms GPU p95 at 2560×1600. That was a synthetic software-counter result, not live-game, optical-latency or final-pivot acceptance. Bounded two-frame presentation fixed the hybrid-GPU half-refresh issue seen with a one-frame queue.
+
+**Remaining issues:** The initial mechanical pivot moved the bottom active edge; corrected in 0.1.1. Protected/exclusive-fullscreen content is outside the supported baseline. Actual game compatibility, HDR, physical lid behavior and Fusion measurement outside 10–120° require further validation.
+
 ## 2026-09-16 — Improve Light Track annotation training without data migration
 
 The fixed all-feature annotation forest fit its own labels closely but transferred poorly between sessions. Light Track 0.13.0 now selects regularized color forests using existing stored features and whole-group tuning, compares the selection procedure with the original method using nested group diagnostics, and exposes results through the training page. Research sources and method limitations are documented in the Light Track repository. Original groups, PNGs, labels, keyboard provenance, old model files, and Fusion/Keyboard APIs retain their formats and usability.

@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.24)
+project(HingeGlass VERSION 0.1.1 LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+if(NOT WIN32)
+  message(FATAL_ERROR "Hinge Glass requires Windows 10 build 19041 or newer")
+endif()
+add_compile_definitions(UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+add_compile_options(/W4 /permissive- /EHsc /utf-8)
+add_library(hinge_core src/core.cpp src/settings.cpp src/angle.cpp)
+target_include_directories(hinge_core PUBLIC src)
+target_link_libraries(hinge_core PUBLIC windowsapp winhttp)
+add_executable(HingeGlass WIN32 src/app.cpp src/graphics.cpp src/cursor.cpp)
+target_link_libraries(HingeGlass PRIVATE hinge_core d3d11 dxgi d3dcompiler dcomp dwmapi comctl32 magnification wtsapi32 shell32 windowscodecs)
+add_custom_target(hinge_assets ALL
+  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:HingeGlass>
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/config.json $<TARGET_FILE_DIR:HingeGlass>/config.json
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/shaders/glass.hlsl $<TARGET_FILE_DIR:HingeGlass>/glass.hlsl)
+add_dependencies(HingeGlass hinge_assets)
+enable_testing()
+add_executable(hinge_tests tests/core_tests.cpp)
+target_link_libraries(hinge_tests PRIVATE hinge_core)
+add_test(NAME hinge_core COMMAND hinge_tests)
