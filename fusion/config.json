@@ -50,7 +50,8 @@
   "output": {
     "fps": 60,
     "publishMs": 16,
-    "maxTimelineRecords": 60000
+    "maxTimelineRecords": 60000,
+    "maxTimelineBytes": 12582912
   },
   "calibration": {
     "holdMs": 800,

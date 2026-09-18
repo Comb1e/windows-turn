@@ -35,6 +35,8 @@ The launcher uses each project's own runtime and configuration. It checks servic
 
 Open [Hinge Fusion](http://localhost:1820), then select **Start camera**. Only the coordinator browser opens the webcam; leave the other applications' camera workflows stopped.
 
+Fusion keeps only compact angle summaries in its live pair cache. Long recordings use a byte-bounded display timeline and Blob-based export; reaching a recording limit stops collection with a visible status instead of allowing an unbounded page allocation.
+
 Without a real brightness model, keyboard readings and baseline recording work. The wide-angle measurement remains unavailable; the displayed initial 120° is explicitly a retained/provisional value. For provisional measurement, use **Start sweep calibration** in Fusion. It trains, saves, and activates a selectable Light Track profile without a service restart. The stricter source-environment training path remains available for independent validation.
 
 The existing keyboard model requests 640×480 and supports 10–46°; consumers obtain the active supported range from its API. A fresh valid keyboard reading sets Fusion's exact **Target angle**; brightness and scene motion cannot override it. Brightness supplies a fallback when keyboard readings become unavailable. The displayed angle is separate and may take time to converge to an accurate measurement, with a hard 1-second correction deadline and continuous trajectory replanning.

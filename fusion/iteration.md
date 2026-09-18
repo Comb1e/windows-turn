@@ -1,5 +1,17 @@
 # Iteration history
 
+## 0.2.3 — Bound long-running recording memory — 2026-09-18
+
+**Previous issues:** Fusion could eventually report an out-of-memory error after extended use. The coordinator retained complete service results in its exact-frame cache, and large recording downloads were parsed and copied in the browser.
+
+**Method root causes:** Lighting results include feature vectors that are not needed by Fusion. The display timeline was made from full controller snapshots and had only a count limit. The UI's JSON download helper held multiple complete representations at once.
+
+**Improvements:** Pair and controller inputs now retain only compact service summaries. Timeline entries contain only replay fields and are bounded by both records and serialized bytes; reaching either limit stops the remote recording with a visible error. Large exports use `Response.blob()` directly. Camera pending buffers and stopped video resources are released promptly.
+
+**Verification:** `npm test` passes 34/34 on the 60 Hz test configuration. The timeline unit test confirms feature vectors are excluded and samples remain compact. Synthetic sustained uploads show bounded coordinator memory and no growing frame queue.
+
+**Remaining issues:** Physical browser and GPU memory behavior still needs a long camera run on the target machine. Exported recordings remain resident until the user downloads or stops the session.
+
 ## 0.2.2 — Keyboard angle is the correction target — 2026-09-17
 
 Light Track 0.14 integration addendum: documented promoted image models and immutable measured-reference scene profiles in the existing selector. Added a real-coordinator/real-worker regression for profile selection, fallback angle reception, profile export and immediate keyboard target priority. Fusion's public angle schema and estimator behavior are unchanged; all original 32 tests plus the new profile test pass.

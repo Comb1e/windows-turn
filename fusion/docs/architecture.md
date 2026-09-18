@@ -72,7 +72,17 @@ The existing 200 ms keyboard grace, 500 ms measurement freshness/display hold, 2
 
 The capture clock is aligned once to coordinator monotonic time on the first uploaded frame; frame IDs and timestamps strictly increase. The UI publishes at the configured camera rate, keeps one upload active plus one latest waiting upload, and does not use its preview canvas as an input. Each service client independently holds one request and one latest pending frame. Failed/expired leases can reconnect, while timeouts retain the active service's lease and do not overtake its worker operation.
 
-The `/api/events` stream contains session-bound angle and source events. Slow SSE readers are closed to prevent an unbounded network buffer and can reconnect. `/api/angle` supplies the same latest output for local applications. Recording and adaptation exports are explicit and bounded; stopping the session clears server-side state.
+The `/api/events` stream contains session-bound angle and source events. Slow SSE readers are closed to prevent an unbounded network buffer and can reconnect. `/api/angle` supplies the same latest output for local applications. Recording and adaptation exports are explicit and bounded; stopping the session clears server-side state. The display timeline keeps only compact replay fields, drops service feature vectors, and stops both recording buffers at the configured record or byte limit. A recording download receives the JSON as a browser `Blob`, so the page does not parse and stringify a second full copy.
+
+```mermaid
+flowchart LR
+  Result[Service result] --> Pair[Compact exact-frame pair]
+  Pair --> Engine[Fusion controller]
+  Engine --> Live[Full live angle event]
+  Engine --> Timeline[Compact display sample]
+  Features[Lighting features] --> LightRecord[Light Track recording]
+  Timeline --> Export[Bounded recording export]
+```
 
 Light Track 0.14 adds `image-model` and `scene-calibration` profile kinds behind the existing profile APIs. Fusion passes the selected ID through unchanged; the Light Track frame service owns versioned image inference and returns the same raw/adapted angle fields. `inference` additionally reports backend and processing time in lighting service events. Image profiles remain provisional. An HTTP integration test exercises profile listing/selection/export, real Python inference, and keyboard target reacquisition without changing Fusion's estimator or renderer-facing output.
 

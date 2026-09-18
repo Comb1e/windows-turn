@@ -7,6 +7,7 @@ import { performance } from 'node:perf_hooks';
 import { SweepCalibration } from './src/calibration.js';
 import { FusionEngine } from './src/controller.js';
 import { LatestQueue, ServiceClient, requestJson } from './src/service-client.js';
+import { timelineFits, timelineSample, timelineSize } from './src/timeline.js';
 
 const root=fileURLToPath(new URL('.',import.meta.url));
 const args=process.argv.slice(2);
@@ -26,22 +27,25 @@ async function health(){
 }
 function accept(s,kind,result){
   if(session!==s)return;
-  s.errors[kind]=null;if(!s.engine.ingest(kind,result))return;
-  const pair=s.pairs.get(result.frameId)||{};pair[kind]=result;s.pairs.set(result.frameId,pair);
+  // Service responses may contain hundreds of lighting features. They are
+  // needed by Light Track's recording, but never by Fusion's controller or
+  // exact-frame pairing. Keep the coordinator's live state small and bounded.
+  const {features: _features, ...summary}=result;
+  s.errors[kind]=null;if(!s.engine.ingest(kind,summary))return;
+  const pair=s.pairs.get(summary.frameId)||{};pair[kind]=summary;s.pairs.set(summary.frameId,pair);
   while(s.pairs.size>config.network.pairCacheSize)s.pairs.delete(s.pairs.keys().next().value);
   if(pair.keyboard?.valid&&pair.lighting&&!pair.anchored&&pair.keyboard.timestampMs===pair.lighting.timestampMs){
-    pair.anchored=true;s.anchors.push({frameId:result.frameId,angleDeg:pair.keyboard.angleDeg,source:'keyboard',
+    pair.anchored=true;s.anchors.push({frameId:summary.frameId,angleDeg:pair.keyboard.angleDeg,source:'keyboard',
       ...(pair.lighting.modelGeneration===undefined?{}:{modelGeneration:pair.lighting.modelGeneration})});
   }
   if(pair.keyboard&&pair.lighting&&!pair.calibrated&&pair.keyboard.timestampMs===pair.lighting.timestampMs){
     pair.calibrated=true;if(s.calibration?.active()){s.calibration.push(pair.keyboard,pair.lighting);void calibrationProgress(s);}
   }
-  const {features,...summary}=result;
   broadcast('service',{sessionId:s.id,kind,result:summary});
 }
 function start(camera,lightingOptions={}){
   const s={id:randomUUID(),camera,engine:new FusionEngine(config),pairs:new Map(),errors:{},clockOffset:null,lastFrame:-1,lastTimestamp:-1,
-    timeline:[],recording:false,clients:{},lastPublish:0,activity:Date.now()};
+    timeline:[],timelineBytes:0,recording:false,recordingStopRequested:false,clients:{},lastPublish:0,activity:Date.now()};
   for(const kind of ['keyboard','lighting'])s.clients[kind]=new ServiceClient(kind,config.services[kind],camera,config.network,
     result=>accept(s,kind,result),error=>{if(session===s){s.errors[kind]=error.message;s.engine.invalidate(kind);}},kind==='lighting'?lightingOptions:{});
   s.anchors=new LatestQueue(anchor=>s.clients.lighting.call('anchors',anchor),error=>{s.anchorError=error.message;});
@@ -81,15 +85,25 @@ async function calibrationProgress(s){
   }catch(error){cal.fail(error.message);broadcast('calibration',{sessionId:s.id,...cal.status()});}
 }
 
+function stopRecordingAtLimit(s,reason){
+  if(s.recordingStopRequested)return;
+  s.recordingStopRequested=true;s.recording=false;s.errors.recording=reason;
+  // The coordinator and Light Track own separate recording buffers. Stop
+  // both when Fusion reaches its display-timeline budget.
+  void s.clients.lighting.call('recording',{},'DELETE').catch(()=>{});
+}
+
 const interval=setInterval(()=>{
   const s=session;if(!s||s.clockOffset===null)return;
   const now=performance.now()-s.clockOffset;
   if(s.calibration?.active()&&s.calibration.last&&now-s.calibration.last.timestampMs>config.calibration.maxGapMs){s.calibration.fail('Camera or service stopped producing matched frames.');void calibrationProgress(s);}
-  latest={sessionId:s.id,...s.engine.tick(now),services:{keyboard:s.errors.keyboard??null,lighting:s.errors.lighting??null},
+  latest={sessionId:s.id,...s.engine.tick(now),services:{keyboard:s.errors.keyboard??null,lighting:s.errors.lighting??null,recording:s.errors.recording??null},
     profileId:s.profileId??null,calibration:s.calibration?.status()??null,droppedFrames:Object.fromEntries(Object.entries(s.clients).map(([kind,client])=>[kind,client.queue.dropped]))};
   if(s.recording){
-    if(s.timeline.length<config.output.maxTimelineRecords)s.timeline.push(latest);
-    else {s.recording=false;s.errors.recording='Timeline limit reached; stop and export the recording';}
+    const sample=timelineSample(latest),size=timelineSize(sample);
+    if(!timelineFits(s.timeline.length,s.timelineBytes,size,config.output))
+      stopRecordingAtLimit(s,'Display timeline memory limit reached; stop and export the recording');
+    else {s.timeline.push(sample);s.timelineBytes+=size;}
   }
   if(now-s.lastPublish>=config.output.publishMs){s.lastPublish=now;broadcast('angle',latest);}
 },1000/config.output.fps);
@@ -168,7 +182,7 @@ const server=createServer(async(req,res)=>{
         await s.clients.lighting.activate(null);s.engine.invalidate('lighting');s.pairs.clear();
         const timestampMs=performance.now()-s.clockOffset;
         await s.clients.lighting.call('recording',{metadata,timestampMs,epochMs:Date.now()});
-        s.calibration=calibration;s.trainingStarted=false;s.trainingJob=null;s.timeline=[];s.recording=true;
+        s.calibration=calibration;s.trainingStarted=false;s.trainingJob=null;s.timeline=[];s.timelineBytes=0;s.recordingStopRequested=false;s.errors.recording=null;s.recording=true;
         send(200,s.calibration.status());return;
       }
       if(path==='/api/calibration'&&req.method==='DELETE'){
@@ -189,12 +203,12 @@ const server=createServer(async(req,res)=>{
       if(req.method!=='GET'&&data.sessionId!==s.id)fail('Expired coordinator session',409);
       const client=s.clients.lighting;
       if(path==='/api/recording'&&req.method==='POST'){
-        const result=await client.call('recording',data);s.timeline=[];s.recording=true;send(200,result);return;
+        const result=await client.call('recording',data);s.timeline=[];s.timelineBytes=0;s.recordingStopRequested=false;s.errors.recording=null;s.recording=true;send(200,result);return;
       }
       if(path==='/api/recording'&&req.method==='DELETE'){s.recording=false;send(200,await client.call('recording',{},'DELETE'));return;}
       if(path==='/api/recording'&&req.method==='GET'){
         const dataset=await client.call('recording',undefined,'GET');
-        send(200,{...dataset,fusion:{version:1,config,camera:s.camera,timeline:s.timeline}});return;
+        send(200,{...dataset,fusion:{version:1,timelineVersion:2,config,camera:s.camera,timeline:s.timeline}});return;
       }
       if(path==='/api/adaptation'&&req.method==='GET'){send(200,await client.call('export',undefined,'GET'));return;}
       if(path==='/api/checkpoint'&&req.method==='POST'){send(200,await client.call('checkpoint',data));return;}

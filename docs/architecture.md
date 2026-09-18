@@ -1,5 +1,21 @@
 # Workspace architecture
 
+## Fusion 0.2.3 — Bounded long-running recordings — 2026-09-18
+
+```mermaid
+flowchart LR
+  Services[Keyboard and Light Track results] --> Summary[Compact Fusion summaries]
+  Summary --> Pair[Bounded exact-frame pairs]
+  Pair --> Controller[Display controller]
+  Controller --> Live[Live JSON / SSE output]
+  Controller --> Timeline[Compact byte-bounded display timeline]
+  Features[Lighting feature vectors] --> Recording[Light Track recording]
+  Timeline --> Export[Blob-based browser export]
+  Recording --> Export
+```
+
+Fusion discards feature vectors after the Light Track service accepts each frame because the coordinator only needs angle, motion, freshness and adaptation fields. Recordings retain compact replay samples and stop at record or byte limits. The browser downloads the response as a Blob to avoid building a parsed object and a second JSON string at the same time. Both service state and pending camera buffers remain bounded.
+
 ## Light Track 0.14.0 — Scene robustness — 2026-09-17
 
 ```mermaid

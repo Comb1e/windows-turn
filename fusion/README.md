@@ -82,7 +82,7 @@ The UI uses `/api/start`, `/api/frames`, `/api/stop`, and the `/api/events` SSE 
 
 Angles may be `null` when unavailable. `targetAngleDeg` is the controller's current correction target: the exact keyboard measurement when selected, the retained keyboard angle during a brief gap, or the age-aligned brightness estimate on fallback. It is null when the controller is stale. The UI marks retained targets as held. `lastValid` and `displayAgeMs` identify retained values separately. `motionVelocityDegS` is filtered physical-motion inference, not the displayed derivative. `adaptation` includes the state, version, segment, parameters, and anchor coverage.
 
-Recording export includes lighting features, raw/adapted values, keyboard label provenance, motion increments, frozen settings, initial adapter state, and the real display timeline. It contains no camera pixels. It remains in memory until downloaded; export before stopping/restarting. Preview visibility does not affect processing.
+Recording export includes lighting features, raw/adapted values, keyboard label provenance, motion increments, frozen settings, initial adapter state, and a compact real display timeline. It contains no camera pixels. Fusion drops per-service feature vectors from its live pair cache and enforces the configured display-timeline record/byte budget; when a limit is reached it stops both recording buffers with an explicit status. Downloads use a browser Blob to avoid a second parsed JSON copy. It remains in memory until downloaded; export before stopping/restarting. Preview visibility does not affect processing.
 
 ## Validation and replay
 

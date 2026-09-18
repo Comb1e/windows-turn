@@ -18,6 +18,7 @@ async function health(){
 async function cameras(){const devices=await navigator.mediaDevices.enumerateDevices();const selected=$('camera').value;$('camera').replaceChildren(new Option('Default front camera',''));
   for(const d of devices.filter(d=>d.kind==='videoinput'))$('camera').add(new Option(d.label||'Camera',d.deviceId));$('camera').value=selected;}
 function cameraSettings(){const s=stream?.getVideoTracks()[0]?.getSettings()||{};return Object.fromEntries(['deviceId','width','height','frameRate','resizeMode','exposureMode','exposureTime','whiteBalanceMode','colorTemperature','brightness','contrast'].filter(k=>s[k]!==undefined).map(k=>[k,s[k]]));}
+function clearPending(){if(pending)pending.bytes=null;pending=null;}
 function controls(){const active=Boolean(session);$('start').disabled=active;$('stop').disabled=!active;$('camera').disabled=active;$('record').disabled=!active||!lightConnected||recording||unsaved;$('end-record').disabled=!recording;$('checkpoint').disabled=!recording;$('export-adaptation').disabled=!active||!lightConnected;
   const calibrating=calibrationActive();$('calibrate').disabled=!active||!lightConnected||calibrating||recording||unsaved;
   $('cancel-calibration').disabled=!active||(!calibrating&&calibrationState!=='RETRY');
@@ -30,7 +31,13 @@ async function upload(frame){
     const response=await fetch('/api/frames',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Session-Id':frame.sessionId,'X-Frame-Id':String(frame.id),'X-Timestamp-Ms':String(frame.timestamp),
       'X-Width':String(frame.width),'X-Height':String(frame.height),'X-Camera-Settings':encodeURIComponent(JSON.stringify(frame.camera))},body:frame.bytes});
     if(!response.ok)throw new Error((await response.json()).error);
-  }catch(error){message(error.message);}finally{inFlight=false;const next=pending;pending=null;if(next&&session?.sessionId===next.sessionId)void upload(next);}
+  }catch(error){message(error.message);}finally{
+    // Release the browser-side frame reference as soon as fetch has consumed
+    // the body. At most one in-flight and one waiting frame remain live.
+    frame.bytes=null;inFlight=false;const next=pending;pending=null;
+    if(next&&session?.sessionId===next.sessionId)void upload(next);
+    else if(next)next.bytes=null;
+  }
 }
 function tick(timestamp){
   if(!session)return;
@@ -54,13 +61,13 @@ $('start').onclick=async()=>{
     if(current!==generation){acquired.getTracks().forEach(t=>t.stop());return;}
     if(video.videoWidth!==c.width||video.videoHeight!==c.height)throw new Error('Camera resolution does not match the saved keyboard model');
     canvas.width=preview.width=c.width;canvas.height=preview.height=c.height;sequence=0;lastCapture=-Infinity;lastVideo=-1;
-    stream.getVideoTracks()[0].addEventListener('ended',async()=>{cancelAnimationFrame(animation);pending=null;
+    stream.getVideoTracks()[0].addEventListener('ended',async()=>{cancelAnimationFrame(animation);clearPending();
       if(recording){await api('/api/recording',{},'DELETE').catch(()=>{});recording=false;$('download').disabled=false;}
       controls();message('Camera disconnected. Export any recording before stopping the session.');});
     animation=requestAnimationFrame(tick);message(session.profileError||'Camera ready. Use a saved calibration or start a sweep below 25°.');await cameras();
   }catch(error){if(current===generation){await stop();message(error.message);}}finally{controls();}
 };
-async function stop(){generation++;cancelAnimationFrame(animation);pending=null;stream?.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;
+async function stop(){generation++;cancelAnimationFrame(animation);clearPending();stream?.getTracks().forEach(t=>t.stop());stream=null;video.pause?.();video.srcObject=null;video.load?.();
   if(session)await api('/api/stop',{}).catch(error=>message(error.message));session=null;recording=false;lightConnected=false;calibrationState='IDLE';$('state').textContent='Stopped';message('Camera stopped.');controls();}
 $('stop').onclick=()=>{if(calibrationActive())message('Finish or cancel calibration before stopping the camera.');else if(recording||unsaved)message('End and download the recording before stopping the camera.');else void stop();};
 $('refresh').onclick=()=>cameras().catch(error=>message(error.message));
@@ -75,7 +82,7 @@ events.addEventListener('angle',event=>{const value=JSON.parse(event.data);if(va
   if(value.calibration)showCalibration(value.calibration);
   $('correction-status').textContent=value.controllerState==='CHASING'?value.correctionOverdue?'Correction deadline missed during interrupted or changing input; continuing smoothly.':`Smooth correction · ${(value.correctionRemainingMs/1000).toFixed(1)} s remaining${value.displayTargetHeld?' · briefly retaining the last target':''}${value.comfortExceeded?' · increased pace to meet the deadline':''}`:value.controllerState==='STALE'?'Waiting for a fresh measurement.':'Following screen motion.';
   if(value.adaptation)$('adaptation-status').textContent=`${value.adaptation.state.replaceAll('_',' ')} · ${value.adaptation.anchorCount} anchors · version ${value.adaptation.version}`;
-  for(const [kind,error] of Object.entries(value.services))if(error)$(kind+'-status').textContent=error;
+  for(const [kind,error] of Object.entries(value.services))if(error){const status=$(kind+'-status');if(status)status.textContent=error;else if(kind==='recording')message(error);}
 });
 events.addEventListener('service',event=>{const {sessionId,kind,result}=JSON.parse(event.data);if(sessionId!==session?.sessionId)return;
   if(kind==='keyboard')$('keyboard-status').textContent=result.valid?`${result.angleDeg.toFixed(2)}° · authoritative`:result.quality.reason||'Keyboard not visible';
@@ -88,7 +95,14 @@ events.addEventListener('service',event=>{const {sessionId,kind,result}=JSON.par
 $('record').onclick=async()=>{try{await api('/api/recording',{metadata:Object.fromEntries(['device','location','position','lighting','display'].map(k=>[k,$(k).value])),timestampMs:performance.now(),epochMs:Date.now()});recording=true;unsaved=true;$('download').disabled=true;$('import-reference').disabled=true;controls();}catch(error){message(error.message);}};
 $('end-record').onclick=async()=>{try{await api('/api/recording',{},'DELETE');recording=false;$('download').disabled=false;$('import-reference').disabled=false;controls();}catch(error){message(error.message);}};
 $('checkpoint').onclick=async()=>{try{await api('/api/checkpoint',{angleDeg:$('reference-angle').valueAsNumber,timestampMs:performance.now()});$('checkpoint').disabled=true;}catch(error){message(error.message);}};
-async function download(path,name){const data=await api(path,null,'GET');const url=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+async function download(path,name){
+  const response=await fetch(path,{headers:{'Accept':'application/json'}});
+  if(!response.ok){let value;try{value=await response.json();}catch{value=null;}throw new Error(value?.error||`Download failed (${response.status})`);}
+  // Keep large recordings out of the JS object heap. The browser streams the
+  // response into a Blob instead of parsing and stringifying it twice.
+  const blob=await response.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 $('download').onclick=async()=>{try{await download('/api/recording',`hinge-session-${Date.now()}.json`);unsaved=false;controls();}catch(error){message(error.message);}};
 $('export-adaptation').onclick=()=>download('/api/adaptation',`hinge-adaptation-${Date.now()}.json`).catch(error=>message(error.message));
 $('import-reference').onclick=async()=>{try{const file=$('reference-file').files[0];if(!file)throw new Error('Choose a synchronized reference CSV');const result=await api('/api/reference',{csv:await file.text(),offsetMs:$('reference-offset').valueAsNumber});unsaved=true;controls();message(`Matched ${result.matched} reference samples. Download the updated recording.`);}catch(error){message(error.message);}};

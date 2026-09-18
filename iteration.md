@@ -1,5 +1,17 @@
 # Iteration history
 
+## Fusion 0.2.3 — Bound long-running recording memory — 2026-09-18
+
+**Previous issues:** After a long Fusion session the page could report an out-of-memory error, especially when a recording or calibration was left running. Each paired lighting result retained its full feature vector in the coordinator, and downloading a recording parsed the whole response before serializing it again for a Blob.
+
+**Method root causes:** Fusion only needs angle, motion, freshness and adaptation fields for pairing, control and replay. Retaining feature vectors duplicated Light Track's recording memory. The browser export path created overlapping response-object, JSON-string and Blob allocations. The display timeline also had a record-count bound without a byte budget.
+
+**Improvements:** Exact-frame pairs and controller state now discard service feature vectors immediately. Display recordings store compact replay samples, track their serialized byte size, and stop both coordinator and Light Track recording buffers at the configured limit. Recording downloads consume the response as a Blob, and pending camera buffers are released when fetch completes or a session stops.
+
+**Verification:** 34 Fusion tests pass, including the original lifecycle, controller, HTTP, profile and replay cases plus a compact-timeline boundary test. A synthetic 12,000-frame coordinator run kept process RSS around 98–118 MB with no growing pair/timeline queue; a 640×480 3,000-frame run remained around 69–111 MB before the process harness timeout. All tests remain capped at 60 Hz and no Windows refresh setting changed.
+
+**Remaining issues:** A recording intentionally remains in memory until export, and real browser/GPU memory telemetry still requires a long physical camera run. The existing Light Track feature-recording byte budget remains the final bound for model-training data.
+
 ## Light Track 0.14.0 — Rich image features and scene calibration — 2026-09-17
 
 **Previous issues:** Lighting/color features handled changed scenes poorly, with 19.59° mean held-group error on the current 253 screenshots. Existing annotations needed to remain usable while investigating stronger features.
