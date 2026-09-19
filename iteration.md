@@ -1,5 +1,7 @@
 # Iteration history
 
+Current integration entry: [Light Track 0.15.0 / Keyboard 0.7.0](docs/iteration.md).
+
 ## Fusion 0.2.3 — Bound long-running recording memory — 2026-09-18
 
 **Previous issues:** After a long Fusion session the page could report an out-of-memory error, especially when a recording or calibration was left running. Each paired lighting result retained its full feature vector in the coordinator, and downloading a recording parsed the whole response before serializing it again for a Blob.

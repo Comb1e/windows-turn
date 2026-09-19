@@ -336,3 +336,38 @@ The sweep trainer and shared source-recording loader use one validator. Recorded
 Older exports never recorded keyboard model metadata. They retain matching-frame provenance and use the configured lighting operating range, explicitly marked `legacy-operating-range-only`; the current model is not retroactively claimed as the original model. This compatibility path does not certify the missing historical model range. Independent accuracy gates remain unchanged.
 
 The shared tree exporter corrects only floating-point endpoint roundoff (for example, 120.00000000000006 to 120). It rejects materially out-of-range predictions and does not alter source labels or fitted trees. Runtime model validation remains strict.
+
+## Photo editing and optional keyboard identity
+
+```mermaid
+flowchart LR
+    Review[Identity labels in separate keyboard sidecar] --> Split[Whole-group and duplicate checks]
+    Split --> Refs[Reference images and derived masks]
+    Split --> Test[Validation and held-out evaluation]
+    Refs --> Gate[Optional frozen identity verifier]
+    Frame[Fusion camera frame] --> Edge[Keyboard boundary candidates]
+    Edge --> Gate
+    Gate -->|accepted| Angle[Existing angle model and confirmation]
+    Gate -->|rejected or unavailable| Empty[Null keyboard angle]
+    Angle --> Priority[Fusion keyboard priority]
+    Empty --> Fallback[Light Track fallback]
+    Priority --> Display[Existing displayed angle API]
+    Fallback --> Display
+    Display --> Glass[Hinge Glass]
+```
+
+Verification is disabled by default until a candidate passes independent acceptance. Enabled methods share a reusable verifier interface; they cannot authorize a frame from temporal persistence or background similarity alone. Candidate rejection happens before edge ranking. The keyboard service remains camera-free, bounds current work, and returns additive identity diagnostics without changing its nullable angle contract. Rejected results cannot become keyboard labels or adaptation anchors. Fusion's existing freshness/grace behavior can briefly retain a previous valid target but does not use the rejected frame as a new measurement.
+
+```mermaid
+flowchart LR
+    Select[Selected Light Track photo] --> Confirm[One permanent-delete confirmation]
+    Confirm --> Check[Validate revision and usage leases]
+    Check --> Journal[Write transaction journal]
+    Journal --> Manifest[Atomically remove sample from manifest]
+    Manifest --> File[Remove PNG and journal]
+    File --> UI[Select next or previous photo; update counts]
+    Restart[Restart after interruption] --> Recover[Read manifest to finish or roll back deletion]
+    Recover --> UI
+```
+
+Light Track owns deletion; root coordination does not modify annotation storage. Collection, annotation training and scene fitting acquire usage leases through the serialized store interface. Published profiles, models and exports are immutable snapshots outside this transaction. Keyboard identity labels use their own atomic sidecar and do not alter measured-angle annotations. The user can collect larger batches without a runtime marker or manual object-selection step.

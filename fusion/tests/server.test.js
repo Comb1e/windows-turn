@@ -17,7 +17,7 @@ async function mock(kind,{sceneVelocity=0}={}){
     else if(req.url==='/v1/sessions')result={sessionId:`${kind}-${++id}`};
     else if(req.url.endsWith('/frames')){
       seen.push({bytes,headers:req.headers});const angle=kind==='keyboard'?(bytes[0]===17?25:null):80;
-      result={sessionId:`${kind}-${id}`,frameId:Number(req.headers['x-frame-id']),timestampMs:Number(req.headers['x-timestamp-ms']),angleDeg:angle,valid:angle!==null,quality:{},motion:{velocityDegS:sceneVelocity}};
+      result={sessionId:`${kind}-${id}`,frameId:Number(req.headers['x-frame-id']),timestampMs:Number(req.headers['x-timestamp-ms']),angleDeg:angle,valid:angle!==null,quality:kind==='keyboard'?{identity:{status:angle===null?'rejected':'accepted',reason:angle===null?'Surface does not identify the laptop':''}}:{},motion:{velocityDegS:sceneVelocity}};
     }else if(req.url.endsWith('/anchors')){anchors.push(JSON.parse(bytes));result={added:true};}
     res.end(JSON.stringify(result));
   }).listen(0,'127.0.0.1');await once(server,'listening');
@@ -54,13 +54,14 @@ test('coordinator HTTP sends identical RGBA frames and pairs anchors without blo
       await upload(17);await waitAngle(reader,v=>v.frameId===id&&v.authoritative);
     }
     const snapshot=await (await fetch(url+'/api/angle')).json();assert.equal(snapshot.targetAngleDeg,25);
-    await upload(19);const second=await waitAngle(reader,v=>v.source==='lighting');assert.equal(second.measurementAngleDeg,80);
+    await upload(19);const rejectedFrameId=id;const second=await waitAngle(reader,v=>v.source==='lighting');assert.equal(second.measurementAngleDeg,80);
     assert.equal(second.motionSource,'scene');
     await upload(17);const reacquired=await waitAngle(reader,v=>v.frameId===id&&v.authoritative);
     assert.equal(reacquired.targetAngleDeg,25);assert.equal(reacquired.motionSource,'unavailable');
     assert.ok(keyboard.seen.length>=2);assert.ok(lighting.seen.length>=2);
     for(const frame of keyboard.seen){const other=lighting.seen.find(f=>f.headers['x-frame-id']===frame.headers['x-frame-id']);assert.ok(other);assert.deepEqual(other.bytes,frame.bytes);assert.equal(other.headers['x-timestamp-ms'],frame.headers['x-timestamp-ms']);}
     assert.deepEqual(lighting.anchors[0],{frameId:1,angleDeg:25,source:'keyboard'});
+    assert.ok(lighting.anchors.every(anchor=>anchor.frameId!==rejectedFrameId),'Identity-rejected frames must never create adaptation anchors');
     assert.equal((await fetch(url+'/keyboard/config.json')).status,404);
     await json('/api/stop',{sessionId:session.sessionId});
   }finally{await reader?.cancel().catch(()=>{});child.kill();await ended;await Promise.all([keyboard,lighting].map(m=>new Promise(resolve=>m.server.close(resolve))));}
