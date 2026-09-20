@@ -40,6 +40,10 @@ test('coordinator HTTP sends identical RGBA frames and pairs anchors without blo
     const url=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Coordinator readiness timed out')),5000);
       child.once('exit',()=>{clearTimeout(timer);reject(new Error('Coordinator exited'));});child.stdout.on('data',chunk=>{const match=String(chunk).match(/http:\/\/localhost:\d+/);if(match){clearTimeout(timer);resolve(match[0]);}});});
     const json=async(path,data,method='POST')=>{const res=await fetch(url+path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});assert.equal(res.status,200,await res.clone().text());return res.json();};
+    for(const route of ['calibration','calibration/action','calibration/export','recording','checkpoint','reference'])for(const method of ['GET','POST','DELETE']){
+      const response=await fetch(url+'/api/'+route,{method,body:method==='POST'?'{}':undefined});
+      assert.equal(response.status,410);assert.match((await response.json()).error,/photo annotations/);
+    }
     const session=await json('/api/start',{});assert.equal(session.camera.height,64);
     reader=(await fetch(url+'/api/events',{signal:AbortSignal.timeout(10000)})).body.getReader();
     let id=0;const upload=async level=>{const bytes=Buffer.alloc(64*64*4,level);const timestamp=performance.now();

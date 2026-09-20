@@ -46,20 +46,13 @@ try{
     await new Promise(resolve=>setTimeout(resolve,80));
   }};
   await feed(hidden,40);const initial=await call('/api/angle',null,'GET');assert.equal(initial.source,'lighting');assert.equal(initial.measurementAngleDeg,80);
-  await call('/api/recording',{sessionId:sid,timestampMs:performance.now(),epochMs:Date.now(),metadata:{device:'SYNTHETIC-SOFTWARE-SMOKE',location:'synthetic',position:'fixed',lighting:'rendered',display:'none'}});
-  await call('/api/checkpoint',{sessionId:sid,timestampMs:performance.now(),angleDeg:25});
   await feed(visible,35);const key=await call('/api/angle',null,'GET');assert.equal(key.source,'keyboard');assert.ok(Math.abs(key.measurementAngleDeg-25)<.5);
   await feed(hidden,12);const fallback=await call('/api/angle',null,'GET');assert.equal(fallback.source,'lighting');assert.ok(Math.abs(fallback.measurementAngleDeg-25)<1);
-  await call('/api/recording',{sessionId:sid},'DELETE');
-  const recording=await call('/api/recording',null,'GET');recording.source='synthetic';await writeFile(join(output,'recording.json'),JSON.stringify(recording));
-  assert.ok(recording.records.some(r=>r.label?.source==='keyboard'));assert.ok(recording.fusion.timeline.length>0);
-  const {replay}=await import('./replay.mjs');const {SessionAdapter}=await import(new URL('../../light-track/src/adaptation.js',import.meta.url));
-  const report=await replay(recording,SessionAdapter);await writeFile(join(output,'report.json'),JSON.stringify(report,null,2));
-  assert.equal(report.speedBoundViolations,0);
+  assert.ok(fallback.adaptation.anchorCount>0);
+  await writeFile(join(output,'report.json'),JSON.stringify({initial,key,fallback},null,2));
   await call('/api/stop',{sessionId:sid});
   console.log(JSON.stringify({initialAngle:initial.measurementAngleDeg,keyboardAngle:key.measurementAngleDeg,fallbackAngle:fallback.measurementAngleDeg,
-    anchors:fallback.adaptation.anchorCount,recordedFrames:recording.records.length,displaySamples:recording.fusion.timeline.length,
-    speedBoundViolations:report.speedBoundViolations,hardwareAccuracyValidated:false,output},null,2));
+    anchors:fallback.adaptation.anchorCount,hardwareAccuracyValidated:false,output},null,2));
 }finally{
   for(const {child} of children.reverse())if(child.exitCode===null)child.kill();
   await Promise.allSettled(children.map(p=>p.ended));

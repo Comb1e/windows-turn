@@ -32,9 +32,9 @@ test('camera startup can be cancelled; late camera and old-session events cannot
     assert.equal(stopped,1);assert.equal(animation,null);assert.equal(elements.get('start').disabled,false);
     await elements.get('start').onclick();assert.ok(animation);
     events.service({data:JSON.stringify({sessionId:'obsolete',kind:'lighting',result:{valid:true,angleDeg:70,quality:{}}})});
-    assert.equal(elements.get('record').disabled,true);
+    assert.equal(elements.get('export-adaptation').disabled,true);
     events.service({data:JSON.stringify({sessionId:'s1',kind:'lighting',result:{valid:false,quality:{reason:'Collect baseline'}}})});
-    assert.equal(elements.get('record').disabled,false);
+    assert.equal(elements.get('export-adaptation').disabled,false);
     const angle={sessionId:'s1',displayAngleDeg:80,measurementAngleDeg:25,targetAngleDeg:25,motionVelocityDegS:0,
       measurementAgeMs:40,state:'KEYBOARD',source:'keyboard',authoritative:true,services:{}};
     events.angle({data:JSON.stringify(angle)});

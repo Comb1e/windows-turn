@@ -1,5 +1,15 @@
 # Iteration history
 
+## Integration: Light Track 0.16.0 / Fusion 0.3.0 — 2026-09-19
+
+**Previous issue and cause:** Multiple historical collection/calibration workflows remained executable, including sweep-inferred training and timed recording. Keeping obsolete paths exposed made it possible to bypass photo annotation.
+
+**Improvement:** Light Track now trains and calibrates only from annotated photos, including matching-frame Keyboard labels. Fusion removes sweep/recording logic, links to photo annotation and refreshes published profiles. Shared inference/motion helpers and old saved artifacts remain usable. Current architecture diagrams and running instructions describe only the supported workflow; original datasets are preserved.
+
+**Verification:** 259 automated checks pass: Light Track 54 JavaScript + 29 Python; Fusion 28; Keyboard 144; renderer 4. Light Track syntax checks pass for 31 modules. Browser checked model selection, preview visibility, annotation and keyboard controls, and Fusion's replacement entry. Retired endpoints fail explicitly; original positive paths and stale/invalid/boundary cases remain covered. All 2,042 existing Light Track data/artifact files retain their SHA-256 hashes; all 15 published model artifacts load. Physical capture was not started, and no Windows refresh setting changed.
+
+**Remaining issues:** This is workflow simplification, not new model training or hardware acceptance. Historical artifacts can still be read/exported; their deleted training tools are only in Git history. Photo collection owns Keyboard, so stop Fusion's camera before using annotation. Light Track implementation is committed on `main` as `6c98922`; detailed changes are in Light Track's and Fusion's current iteration documents.
+
 ## Integration: Light Track 0.15.0 / Keyboard 0.7.0 — 2026-09-19
 
 **Previous issues:** Unwanted annotation screenshots could not be permanently deleted. Structurally plausible background edges could become keyboard angles, while eight original positive photos provided insufficient identity evidence.

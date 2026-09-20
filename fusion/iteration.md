@@ -1,5 +1,9 @@
 # Iteration history
 
+## 0.3.0 — 2026-09-19 — Photo-only Light Track workflow
+
+Removed sweep calibration and recording controls/APIs. Photo annotation is the only training/calibration entry; keyboard priority and the renderer protocol are unchanged. Full causes, verification and remaining issues: [docs/iteration.md](docs/iteration.md).
+
 ## 0.2.3 — Bound long-running recording memory — 2026-09-18
 
 **Previous issues:** Fusion could eventually report an out-of-memory error after extended use. The coordinator retained complete service results in its exact-frame cache, and large recording downloads were parsed and copied in the browser.
