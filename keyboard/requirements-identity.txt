@@ -1,0 +1,6 @@
+# Optional experimental verifiers. Install separately from the minimal detector.
+torch>=2.8,<3
+torchvision>=0.23,<0.27
+timm==1.0.15
+ultralytics==8.4.155
+psutil>=7,<8

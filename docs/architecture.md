@@ -8,11 +8,11 @@ This workspace estimates a laptop hinge angle from the front camera and can use 
 | --- | --- | --- |
 | Fusion launcher | Start or reuse compatible services; stop processes it owns | Does not install dependencies or stop independently launched services |
 | Fusion browser and coordinator | Own one camera capture, distribute frames, select measurements, smooth motion, publish angles | No model training or persistent frame recording |
-| Keyboard service | Detect the moving keyboard boundary and return a valid angle or an unavailable result | Independent repository; advertises its model, camera dimensions and supported angle range |
-| Light Track | Photo annotation, model training, scene calibration, image inference and temporary live adaptation | Independent repository; owns photos, models, profiles and inference workers |
+| Keyboard service | Detect the moving keyboard boundary and return a valid angle or an unavailable result | Separate process; advertises its model, camera dimensions and supported angle range |
+| Light Track | Photo annotation, model training, scene calibration, image inference and temporary live adaptation | Separate process; owns photos, models, profiles and inference workers |
 | Hinge Glass | Capture a Windows monitor and project its image using manual, scripted or Fusion angles | Native application; owns no camera or estimator |
 
-The root Git repository tracks `fusion/`, `renderer/` and integration documentation. `keyboard/` and `light-track/` are separate, ignored repositories that must be provisioned alongside it. Links into those directories describe the local workspace and require the corresponding checkout.
+One Git repository tracks `keyboard/`, `light-track/`, `fusion/`, `renderer/` and their documentation. The components remain separate applications with their own runtime dependencies and configuration. A clone includes their sources and tests; local environments, datasets and trained artifacts must be provisioned separately. See the [Keyboard architecture](../keyboard/docs/architecture.md) and [Light Track architecture](../light-track/docs/architecture.md) for estimator internals.
 
 ```mermaid
 flowchart LR
@@ -76,11 +76,11 @@ Live adaptation is separate from training. Fusion matches Keyboard and Light Tra
 | Latest measurements, display trajectory and matched pairs | Fusion session memory; feature vectors are discarded and pairs are bounded to 256 by default |
 | Temporary correction and cached inference features | Light Track session memory; bounded by its service configuration |
 | Photo groups, labels, model artifacts and selected profile | Light Track storage under its configured data/artifact directories; profile selection persists across restarts |
-| Keyboard angle model and annotations | Keyboard repository's configured local data storage |
+| Keyboard angle model and annotations | Keyboard component's configured local data storage |
 | Render preferences | `%LOCALAPPDATA%/HingeGlass/preferences.json`, applied over renderer defaults |
 | Diagnostic exports | Explicit downloads or renderer reports under the chosen output path; live desktop pixels are not saved |
 
-[Fusion configuration](../fusion/config.json) controls service addresses, capture rate, queue/lease limits, source freshness and controller timing. [Renderer configuration](../renderer/config.json) controls geometry, frosting, angle freshness and presentation. Keyboard and Light Track manage their own models, runtimes and configurations. Ignored local data and independent repositories are not included in a root clone.
+[Fusion configuration](../fusion/config.json) controls service addresses, capture rate, queue/lease limits, source freshness and controller timing. [Renderer configuration](../renderer/config.json) controls geometry, frosting, angle freshness and presentation. Keyboard and Light Track manage their own models, runtimes and configurations. Shared defaults and dependency manifests are tracked; Keyboard's machine-specific `config.json`, Python environments, local data and trained artifacts are ignored and are not included in a clone.
 
 ## Desktop rendering and failures
 
@@ -92,6 +92,6 @@ Service errors affect the failing measurement source rather than blocking the ot
 
 ## Evidence and constraints
 
-The architecture was checked against the current coordinator, service clients, controller, launcher, renderer and the local independent-service interfaces. Automated tests cover successful flows, source loss, stale identities, queue bounds, correction deadlines and independent projection controls. They do not establish physical camera accuracy, unseen-scene transfer, HDR behavior, game contention or physical lid/panel behavior. Renderer tests use a 60 Hz cap and do not change Windows refresh settings.
+The architecture was checked against the current coordinator, service clients, controller, launcher, renderer and the estimator service interfaces. Automated tests cover successful flows, source loss, stale identities, queue bounds, correction deadlines and independent projection controls. They do not establish physical camera accuracy, unseen-scene transfer, HDR behavior, game contention or physical lid/panel behavior. Renderer tests use a 60 Hz cap and do not change Windows refresh settings.
 
 Research sources actually used and their limits are recorded in [technical design](technical-design.md), [renderer research](../renderer/docs/research.md), [Light Track research](../light-track/docs/scene-model-research.md) and [Keyboard identity research](../keyboard/docs/identity-research.md). Dated changes and historical validation belong in [iteration history](iteration.md).

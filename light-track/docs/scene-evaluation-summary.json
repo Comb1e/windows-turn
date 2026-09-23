@@ -1,0 +1,2745 @@
+{
+  "version": "0.14.0",
+  "date": "2026-09-17",
+  "sourceFileCount": 259,
+  "sourceFilesUnchanged": true,
+  "modelJobId": "9bf96cbc-c9a0-4129-8a4a-04fe71313b16",
+  "selectedCandidate": {
+    "id": "dino:1",
+    "families": [
+      "dino"
+    ],
+    "head": {
+      "kind": "ridge",
+      "alpha": 100
+    }
+  },
+  "dimensions": {
+    "legacy": 499,
+    "lighting": 1302,
+    "texture": 2751,
+    "metadata": 22,
+    "dino": 2304,
+    "depth": 189
+  },
+  "promotionPassed": true,
+  "exportParityMaxError": 6.383442513424598e-05,
+  "runtimeGate": {
+    "backend": "cuda",
+    "p95Ms": 10.041889999865816,
+    "budgetMs": 66.7
+  },
+  "software": {
+    "python": "3.13.14",
+    "numpy": "2.5.3",
+    "sklearn": "1.9.1",
+    "opencv": "4.14.0"
+  },
+  "protocols": {
+    "group": {
+      "summaries": {
+        "legacy": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 20.954559628779347,
+          "p95": 37.54870619367537,
+          "within5": 0.23777842527842527,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 29.5983469103437,
+          "above90MAE": 35.71495036569007,
+          "belowKeyboardMAE": 11.174005210429241,
+          "worstGroupMAE": 38.405863861228916
+        },
+        "current": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 19.590442704672782,
+          "p95": 35.90018504942963,
+          "within5": 0.22978179228179227,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 24.874574532311975,
+          "above90MAE": 29.996889645254633,
+          "belowKeyboardMAE": 11.891181599387115,
+          "worstGroupMAE": 34.50139838465675
+        },
+        "depth": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 11.206770799637463,
+          "p95": 23.892310089607815,
+          "within5": 0.492974617974618,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 20.72486402193705,
+          "above90MAE": 24.52632397015889,
+          "belowKeyboardMAE": 4.571137879468419,
+          "worstGroupMAE": 26.187236849466956
+        },
+        "dino": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 5.725956088712977,
+          "p95": 13.135653594845186,
+          "within5": 0.5248478373478374,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 9.855557060241699,
+          "above90MAE": 10.193614101409912,
+          "belowKeyboardMAE": 4.366209891911743,
+          "worstGroupMAE": 10.380578740437825
+        },
+        "legacy+depth": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 16.64972266869073,
+          "p95": 34.107098599401674,
+          "within5": 0.3111564361564362,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 20.70130373881552,
+          "above90MAE": 23.432622203414496,
+          "belowKeyboardMAE": 9.78477290289999,
+          "worstGroupMAE": 33.972796503702796
+        },
+        "legacy+dino": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 6.385523731703127,
+          "p95": 14.803965531803088,
+          "within5": 0.5536616161616161,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 9.910359977868993,
+          "above90MAE": 10.00081392624568,
+          "belowKeyboardMAE": 4.290054159972444,
+          "worstGroupMAE": 16.14367904663086
+        },
+        "legacy+lighting": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 22.126502816376842,
+          "p95": 43.46909722607393,
+          "within5": 0.3656274281274281,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 30.454806876499028,
+          "above90MAE": 33.90809212908829,
+          "belowKeyboardMAE": 10.226511286370236,
+          "worstGroupMAE": 48.18237279256184
+        },
+        "legacy+lighting+texture+dino+depth+metadata": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 9.577553417507767,
+          "p95": 19.34983233449162,
+          "within5": 0.46409608909608907,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 13.9141182771718,
+          "above90MAE": 14.74349084212338,
+          "belowKeyboardMAE": 5.800565137456674,
+          "worstGroupMAE": 18.578287963626984
+        },
+        "legacy+metadata": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 14.133924603340644,
+          "p95": 33.778402855890484,
+          "within5": 0.3554778554778555,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 19.78308965365092,
+          "above90MAE": 21.95508147875468,
+          "belowKeyboardMAE": 8.485698413174733,
+          "worstGroupMAE": 31.410009447733557
+        },
+        "legacy+texture": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 20.406032956019548,
+          "p95": 31.389866631827974,
+          "within5": 0.36614542864542865,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 26.413823108386424,
+          "above90MAE": 26.86737245982365,
+          "belowKeyboardMAE": 10.329030928520922,
+          "worstGroupMAE": 59.45684314914332
+        },
+        "lighting": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 19.036953574964084,
+          "p95": 38.392555514965196,
+          "within5": 0.2894166019166019,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 24.343786780963974,
+          "above90MAE": 25.124268278410668,
+          "belowKeyboardMAE": 11.923979226512436,
+          "worstGroupMAE": 37.88579692840576
+        },
+        "lighting+texture+metadata": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 13.21747646356682,
+          "p95": 24.107493074145182,
+          "within5": 0.31823038073038074,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 16.810820731044686,
+          "above90MAE": 18.070087107540047,
+          "belowKeyboardMAE": 9.25857817640855,
+          "worstGroupMAE": 27.029102314327183
+        },
+        "metadata": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 43.13485281016858,
+          "p95": 57.521451985828215,
+          "within5": 0.0236985236985237,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 40.58539371889422,
+          "above90MAE": 49.1186854823252,
+          "belowKeyboardMAE": 38.75393186085248,
+          "worstGroupMAE": 58.740114385011175
+        },
+        "texture": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 13.871720410643407,
+          "p95": 27.351422992660602,
+          "within5": 0.4795875420875421,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 21.181263704614224,
+          "above90MAE": 21.46773150835372,
+          "belowKeyboardMAE": 8.408705248466832,
+          "worstGroupMAE": 32.03547653456515
+        },
+        "selected-procedure": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 6.686472806411817,
+          "p95": 14.731306543860486,
+          "within5": 0.4970700595700596,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 11.296332136789959,
+          "above90MAE": 11.634389177958171,
+          "belowKeyboardMAE": 4.366209891911743,
+          "worstGroupMAE": 16.14367904663086
+        }
+      },
+      "promotion": {
+        "passed": true,
+        "reasons": [],
+        "candidate": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 6.686472806411817,
+          "p95": 14.731306543860486,
+          "within5": 0.4970700595700596,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 11.296332136789959,
+          "above90MAE": 11.634389177958171,
+          "belowKeyboardMAE": 4.366209891911743,
+          "worstGroupMAE": 16.14367904663086
+        },
+        "baseline": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 19.590442704672782,
+          "p95": 35.90018504942963,
+          "within5": 0.22978179228179227,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 24.874574532311975,
+          "above90MAE": 29.996889645254633,
+          "belowKeyboardMAE": 11.891181599387115,
+          "worstGroupMAE": 34.50139838465675
+        }
+      },
+      "foldSelections": {
+        "361e67dc-555d-48f9-b74d-707488f164da": {
+          "trainingGroups": [
+            "661d3ccc-3cb8-40ab-b8f8-b6af1082a997",
+            "68631139-76e6-4429-8ac6-8de76c9f888d",
+            "9d8e1da4-f2ce-4808-817b-538ba60faf30",
+            "a6d1e916-c465-4934-ad1e-217ff7d79123",
+            "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007"
+          ],
+          "selected": {
+            "legacy": {
+              "id": "legacy"
+            },
+            "current": {
+              "id": "current"
+            },
+            "depth": {
+              "id": "depth:0",
+              "families": [
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "dino": {
+              "id": "dino:1",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+depth": {
+              "id": "legacy+depth:0",
+              "families": [
+                "legacy",
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+dino": {
+              "id": "legacy+dino:2",
+              "families": [
+                "legacy",
+                "dino"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "legacy+lighting": {
+              "id": "legacy+lighting:1",
+              "families": [
+                "legacy",
+                "lighting"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+lighting+texture+dino+depth+metadata": {
+              "id": "legacy+lighting+texture+dino+depth+metadata:1",
+              "families": [
+                "legacy",
+                "lighting",
+                "texture",
+                "dino",
+                "depth",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+metadata": {
+              "id": "legacy+metadata:1",
+              "families": [
+                "legacy",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+texture": {
+              "id": "legacy+texture:2",
+              "families": [
+                "legacy",
+                "texture"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "lighting": {
+              "id": "lighting:1",
+              "families": [
+                "lighting"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "lighting+texture+metadata": {
+              "id": "lighting+texture+metadata:0",
+              "families": [
+                "lighting",
+                "texture",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "metadata": {
+              "id": "metadata:2",
+              "families": [
+                "metadata"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "texture": {
+              "id": "texture:3",
+              "families": [
+                "texture"
+              ],
+              "head": {
+                "kind": "random-forest",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "selected-procedure": {
+              "id": "dino:1",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            }
+          }
+        },
+        "661d3ccc-3cb8-40ab-b8f8-b6af1082a997": {
+          "trainingGroups": [
+            "361e67dc-555d-48f9-b74d-707488f164da",
+            "68631139-76e6-4429-8ac6-8de76c9f888d",
+            "9d8e1da4-f2ce-4808-817b-538ba60faf30",
+            "a6d1e916-c465-4934-ad1e-217ff7d79123",
+            "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007"
+          ],
+          "selected": {
+            "legacy": {
+              "id": "legacy"
+            },
+            "current": {
+              "id": "current"
+            },
+            "depth": {
+              "id": "depth:0",
+              "families": [
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "dino": {
+              "id": "dino:0",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+depth": {
+              "id": "legacy+depth:3",
+              "families": [
+                "legacy",
+                "depth"
+              ],
+              "head": {
+                "kind": "random-forest",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "legacy+dino": {
+              "id": "legacy+dino:0",
+              "families": [
+                "legacy",
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+lighting": {
+              "id": "legacy+lighting:2",
+              "families": [
+                "legacy",
+                "lighting"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "legacy+lighting+texture+dino+depth+metadata": {
+              "id": "legacy+lighting+texture+dino+depth+metadata:1",
+              "families": [
+                "legacy",
+                "lighting",
+                "texture",
+                "dino",
+                "depth",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+metadata": {
+              "id": "legacy+metadata:1",
+              "families": [
+                "legacy",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+texture": {
+              "id": "legacy+texture:1",
+              "families": [
+                "legacy",
+                "texture"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "lighting": {
+              "id": "lighting:1",
+              "families": [
+                "lighting"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "lighting+texture+metadata": {
+              "id": "lighting+texture+metadata:1",
+              "families": [
+                "lighting",
+                "texture",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "metadata": {
+              "id": "metadata:0",
+              "families": [
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "texture": {
+              "id": "texture:2",
+              "families": [
+                "texture"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "selected-procedure": {
+              "id": "dino:0",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            }
+          }
+        },
+        "68631139-76e6-4429-8ac6-8de76c9f888d": {
+          "trainingGroups": [
+            "361e67dc-555d-48f9-b74d-707488f164da",
+            "661d3ccc-3cb8-40ab-b8f8-b6af1082a997",
+            "9d8e1da4-f2ce-4808-817b-538ba60faf30",
+            "a6d1e916-c465-4934-ad1e-217ff7d79123",
+            "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007"
+          ],
+          "selected": {
+            "legacy": {
+              "id": "legacy"
+            },
+            "current": {
+              "id": "current"
+            },
+            "depth": {
+              "id": "depth:0",
+              "families": [
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "dino": {
+              "id": "dino:1",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+depth": {
+              "id": "legacy+depth:1",
+              "families": [
+                "legacy",
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+dino": {
+              "id": "legacy+dino:0",
+              "families": [
+                "legacy",
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+lighting": {
+              "id": "legacy+lighting:0",
+              "families": [
+                "legacy",
+                "lighting"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+lighting+texture+dino+depth+metadata": {
+              "id": "legacy+lighting+texture+dino+depth+metadata:1",
+              "families": [
+                "legacy",
+                "lighting",
+                "texture",
+                "dino",
+                "depth",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+metadata": {
+              "id": "legacy+metadata:1",
+              "families": [
+                "legacy",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+texture": {
+              "id": "legacy+texture:2",
+              "families": [
+                "legacy",
+                "texture"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "lighting": {
+              "id": "lighting:1",
+              "families": [
+                "lighting"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "lighting+texture+metadata": {
+              "id": "lighting+texture+metadata:2",
+              "families": [
+                "lighting",
+                "texture",
+                "metadata"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "metadata": {
+              "id": "metadata:2",
+              "families": [
+                "metadata"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "texture": {
+              "id": "texture:2",
+              "families": [
+                "texture"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "selected-procedure": {
+              "id": "legacy+dino:0",
+              "families": [
+                "legacy",
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            }
+          }
+        },
+        "9d8e1da4-f2ce-4808-817b-538ba60faf30": {
+          "trainingGroups": [
+            "361e67dc-555d-48f9-b74d-707488f164da",
+            "661d3ccc-3cb8-40ab-b8f8-b6af1082a997",
+            "68631139-76e6-4429-8ac6-8de76c9f888d",
+            "a6d1e916-c465-4934-ad1e-217ff7d79123",
+            "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007"
+          ],
+          "selected": {
+            "legacy": {
+              "id": "legacy"
+            },
+            "current": {
+              "id": "current"
+            },
+            "depth": {
+              "id": "depth:0",
+              "families": [
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "dino": {
+              "id": "dino:0",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+depth": {
+              "id": "legacy+depth:0",
+              "families": [
+                "legacy",
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+dino": {
+              "id": "legacy+dino:1",
+              "families": [
+                "legacy",
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+lighting": {
+              "id": "legacy+lighting:1",
+              "families": [
+                "legacy",
+                "lighting"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+lighting+texture+dino+depth+metadata": {
+              "id": "legacy+lighting+texture+dino+depth+metadata:1",
+              "families": [
+                "legacy",
+                "lighting",
+                "texture",
+                "dino",
+                "depth",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+metadata": {
+              "id": "legacy+metadata:0",
+              "families": [
+                "legacy",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+texture": {
+              "id": "legacy+texture:2",
+              "families": [
+                "legacy",
+                "texture"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "lighting": {
+              "id": "lighting:3",
+              "families": [
+                "lighting"
+              ],
+              "head": {
+                "kind": "random-forest",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "lighting+texture+metadata": {
+              "id": "lighting+texture+metadata:1",
+              "families": [
+                "lighting",
+                "texture",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "metadata": {
+              "id": "metadata:2",
+              "families": [
+                "metadata"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "texture": {
+              "id": "texture:2",
+              "families": [
+                "texture"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "selected-procedure": {
+              "id": "dino:0",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            }
+          }
+        },
+        "a6d1e916-c465-4934-ad1e-217ff7d79123": {
+          "trainingGroups": [
+            "361e67dc-555d-48f9-b74d-707488f164da",
+            "661d3ccc-3cb8-40ab-b8f8-b6af1082a997",
+            "68631139-76e6-4429-8ac6-8de76c9f888d",
+            "9d8e1da4-f2ce-4808-817b-538ba60faf30",
+            "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007"
+          ],
+          "selected": {
+            "legacy": {
+              "id": "legacy"
+            },
+            "current": {
+              "id": "current"
+            },
+            "depth": {
+              "id": "depth:0",
+              "families": [
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "dino": {
+              "id": "dino:0",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+depth": {
+              "id": "legacy+depth:1",
+              "families": [
+                "legacy",
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+dino": {
+              "id": "legacy+dino:1",
+              "families": [
+                "legacy",
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+lighting": {
+              "id": "legacy+lighting:3",
+              "families": [
+                "legacy",
+                "lighting"
+              ],
+              "head": {
+                "kind": "random-forest",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "legacy+lighting+texture+dino+depth+metadata": {
+              "id": "legacy+lighting+texture+dino+depth+metadata:1",
+              "families": [
+                "legacy",
+                "lighting",
+                "texture",
+                "dino",
+                "depth",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+metadata": {
+              "id": "legacy+metadata:1",
+              "families": [
+                "legacy",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+texture": {
+              "id": "legacy+texture:2",
+              "families": [
+                "legacy",
+                "texture"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "lighting": {
+              "id": "lighting:3",
+              "families": [
+                "lighting"
+              ],
+              "head": {
+                "kind": "random-forest",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "lighting+texture+metadata": {
+              "id": "lighting+texture+metadata:2",
+              "families": [
+                "lighting",
+                "texture",
+                "metadata"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "metadata": {
+              "id": "metadata:0",
+              "families": [
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "texture": {
+              "id": "texture:2",
+              "families": [
+                "texture"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "selected-procedure": {
+              "id": "dino:0",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            }
+          }
+        },
+        "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007": {
+          "trainingGroups": [
+            "361e67dc-555d-48f9-b74d-707488f164da",
+            "661d3ccc-3cb8-40ab-b8f8-b6af1082a997",
+            "68631139-76e6-4429-8ac6-8de76c9f888d",
+            "9d8e1da4-f2ce-4808-817b-538ba60faf30",
+            "a6d1e916-c465-4934-ad1e-217ff7d79123"
+          ],
+          "selected": {
+            "legacy": {
+              "id": "legacy"
+            },
+            "current": {
+              "id": "current"
+            },
+            "depth": {
+              "id": "depth:0",
+              "families": [
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "dino": {
+              "id": "dino:1",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+depth": {
+              "id": "legacy+depth:1",
+              "families": [
+                "legacy",
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+dino": {
+              "id": "legacy+dino:1",
+              "families": [
+                "legacy",
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+lighting": {
+              "id": "legacy+lighting:2",
+              "families": [
+                "legacy",
+                "lighting"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "legacy+lighting+texture+dino+depth+metadata": {
+              "id": "legacy+lighting+texture+dino+depth+metadata:2",
+              "families": [
+                "legacy",
+                "lighting",
+                "texture",
+                "dino",
+                "depth",
+                "metadata"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "legacy+metadata": {
+              "id": "legacy+metadata:1",
+              "families": [
+                "legacy",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+texture": {
+              "id": "legacy+texture:3",
+              "families": [
+                "legacy",
+                "texture"
+              ],
+              "head": {
+                "kind": "random-forest",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "lighting": {
+              "id": "lighting:3",
+              "families": [
+                "lighting"
+              ],
+              "head": {
+                "kind": "random-forest",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "lighting+texture+metadata": {
+              "id": "lighting+texture+metadata:2",
+              "families": [
+                "lighting",
+                "texture",
+                "metadata"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "metadata": {
+              "id": "metadata:3",
+              "families": [
+                "metadata"
+              ],
+              "head": {
+                "kind": "random-forest",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "texture": {
+              "id": "texture:2",
+              "families": [
+                "texture"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "selected-procedure": {
+              "id": "dino:1",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            }
+          }
+        }
+      },
+      "calibration": {
+        "3": {
+          "summaries": {
+            "current-affine": {
+              "groups": 5,
+              "skipped": 0,
+              "mae": 11.64547401471729,
+              "p95": 27.36874176996819,
+              "within5": 0.394558860920417,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": 21.529827540237495,
+              "above90MAE": 18.045993816931027,
+              "belowKeyboardMAE": 10.052936024799237,
+              "worstGroupMAE": 25.492817509483103
+            },
+            "current-selected-calibration": {
+              "groups": 5,
+              "skipped": 0,
+              "mae": 11.517977463312857,
+              "p95": 25.65369213754469,
+              "within5": 0.3378337147215865,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": 20.797170765323905,
+              "above90MAE": 21.20304001207651,
+              "belowKeyboardMAE": 9.697956302151429,
+              "worstGroupMAE": 25.492817509483103
+            },
+            "selected-procedure-calibrated": {
+              "groups": 5,
+              "skipped": 0,
+              "mae": 5.043266950689364,
+              "p95": 15.084271637055698,
+              "within5": 0.6607487922705314,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": 10.106925126745715,
+              "above90MAE": 9.373556514831074,
+              "belowKeyboardMAE": 2.4947630195807307,
+              "worstGroupMAE": 8.72522752549913
+            }
+          },
+          "promotion": {
+            "current-selected-calibration": {
+              "passed": false,
+              "reasons": [
+                "Mean group MAE improvement below threshold",
+                "Worse or unavailable above90MAE",
+                "Worse or unavailable within5"
+              ],
+              "candidate": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 11.517977463312857,
+                "p95": 25.65369213754469,
+                "within5": 0.3378337147215865,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 20.797170765323905,
+                "above90MAE": 21.20304001207651,
+                "belowKeyboardMAE": 9.697956302151429,
+                "worstGroupMAE": 25.492817509483103
+              },
+              "baseline": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 11.64547401471729,
+                "p95": 27.36874176996819,
+                "within5": 0.394558860920417,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 21.529827540237495,
+                "above90MAE": 18.045993816931027,
+                "belowKeyboardMAE": 10.052936024799237,
+                "worstGroupMAE": 25.492817509483103
+              }
+            },
+            "selected-procedure-calibrated": {
+              "passed": true,
+              "reasons": [],
+              "candidate": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 5.043266950689364,
+                "p95": 15.084271637055698,
+                "within5": 0.6607487922705314,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 10.106925126745715,
+                "above90MAE": 9.373556514831074,
+                "belowKeyboardMAE": 2.4947630195807307,
+                "worstGroupMAE": 8.72522752549913
+              },
+              "baseline": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 11.64547401471729,
+                "p95": 27.36874176996819,
+                "within5": 0.394558860920417,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 21.529827540237495,
+                "above90MAE": 18.045993816931027,
+                "belowKeyboardMAE": 10.052936024799237,
+                "worstGroupMAE": 25.492817509483103
+              }
+            }
+          },
+          "skipped": [
+            {
+              "groupId": "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007",
+              "reason": "Need 3 distinct references plus 5 disjoint queries"
+            }
+          ]
+        },
+        "5": {
+          "summaries": {
+            "current-affine": {
+              "groups": 5,
+              "skipped": 0,
+              "mae": 10.111383555731681,
+              "p95": 26.29699770837315,
+              "within5": 0.40391059408838165,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": 16.437475017887134,
+              "above90MAE": 14.700879748657094,
+              "belowKeyboardMAE": 7.653569799228791,
+              "worstGroupMAE": 16.000418744554537
+            },
+            "current-selected-calibration": {
+              "groups": 5,
+              "skipped": 0,
+              "mae": 9.44193911769803,
+              "p95": 23.663590172429437,
+              "within5": 0.39855345123123875,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": 13.117034969834128,
+              "above90MAE": 13.767697907265985,
+              "belowKeyboardMAE": 8.524886560080226,
+              "worstGroupMAE": 16.000418744554537
+            },
+            "selected-procedure-calibrated": {
+              "groups": 5,
+              "skipped": 0,
+              "mae": 5.439810536629611,
+              "p95": 14.852812191435216,
+              "within5": 0.6632170032191981,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": 7.985036914818928,
+              "above90MAE": 4.43928711231783,
+              "belowKeyboardMAE": 3.6232666100046464,
+              "worstGroupMAE": 10.202714320591516
+            }
+          },
+          "promotion": {
+            "current-selected-calibration": {
+              "passed": false,
+              "reasons": [
+                "Mean group MAE improvement below threshold",
+                "Worse or unavailable within5"
+              ],
+              "candidate": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 9.44193911769803,
+                "p95": 23.663590172429437,
+                "within5": 0.39855345123123875,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 13.117034969834128,
+                "above90MAE": 13.767697907265985,
+                "belowKeyboardMAE": 8.524886560080226,
+                "worstGroupMAE": 16.000418744554537
+              },
+              "baseline": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 10.111383555731681,
+                "p95": 26.29699770837315,
+                "within5": 0.40391059408838165,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 16.437475017887134,
+                "above90MAE": 14.700879748657094,
+                "belowKeyboardMAE": 7.653569799228791,
+                "worstGroupMAE": 16.000418744554537
+              }
+            },
+            "selected-procedure-calibrated": {
+              "passed": true,
+              "reasons": [],
+              "candidate": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 5.439810536629611,
+                "p95": 14.852812191435216,
+                "within5": 0.6632170032191981,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 7.985036914818928,
+                "above90MAE": 4.43928711231783,
+                "belowKeyboardMAE": 3.6232666100046464,
+                "worstGroupMAE": 10.202714320591516
+              },
+              "baseline": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 10.111383555731681,
+                "p95": 26.29699770837315,
+                "within5": 0.40391059408838165,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 16.437475017887134,
+                "above90MAE": 14.700879748657094,
+                "belowKeyboardMAE": 7.653569799228791,
+                "worstGroupMAE": 16.000418744554537
+              }
+            }
+          },
+          "skipped": [
+            {
+              "groupId": "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007",
+              "reason": "Need 5 distinct references plus 5 disjoint queries"
+            }
+          ]
+        },
+        "10": {
+          "summaries": {
+            "current-affine": {
+              "groups": 3,
+              "skipped": 0,
+              "mae": 7.413763350561218,
+              "p95": 22.488614558186708,
+              "within5": 0.6720620696585685,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": null,
+              "above90MAE": null,
+              "belowKeyboardMAE": 7.413763350561218,
+              "worstGroupMAE": 15.367955771809598
+            },
+            "current-selected-calibration": {
+              "groups": 3,
+              "skipped": 0,
+              "mae": 7.562311019033114,
+              "p95": 23.212024329646393,
+              "within5": 0.6636207069814505,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": null,
+              "above90MAE": null,
+              "belowKeyboardMAE": 7.562311019033114,
+              "worstGroupMAE": 15.367955771809598
+            },
+            "selected-procedure-calibrated": {
+              "groups": 3,
+              "skipped": 0,
+              "mae": 1.8707791308312622,
+              "p95": 4.6661603873278175,
+              "within5": 0.9583199054678269,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": null,
+              "above90MAE": null,
+              "belowKeyboardMAE": 1.8707791308312622,
+              "worstGroupMAE": 2.2922125582728206
+            }
+          },
+          "promotion": {
+            "current-selected-calibration": {
+              "passed": false,
+              "reasons": [
+                "Insufficient larger-angle evaluation coverage",
+                "Mean group MAE improvement below threshold",
+                "Worse or unavailable p95",
+                "Worse or unavailable within5"
+              ],
+              "candidate": {
+                "groups": 3,
+                "skipped": 0,
+                "mae": 7.562311019033114,
+                "p95": 23.212024329646393,
+                "within5": 0.6636207069814505,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": null,
+                "above90MAE": null,
+                "belowKeyboardMAE": 7.562311019033114,
+                "worstGroupMAE": 15.367955771809598
+              },
+              "baseline": {
+                "groups": 3,
+                "skipped": 0,
+                "mae": 7.413763350561218,
+                "p95": 22.488614558186708,
+                "within5": 0.6720620696585685,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": null,
+                "above90MAE": null,
+                "belowKeyboardMAE": 7.413763350561218,
+                "worstGroupMAE": 15.367955771809598
+              }
+            },
+            "selected-procedure-calibrated": {
+              "passed": false,
+              "reasons": [
+                "Insufficient larger-angle evaluation coverage"
+              ],
+              "candidate": {
+                "groups": 3,
+                "skipped": 0,
+                "mae": 1.8707791308312622,
+                "p95": 4.6661603873278175,
+                "within5": 0.9583199054678269,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": null,
+                "above90MAE": null,
+                "belowKeyboardMAE": 1.8707791308312622,
+                "worstGroupMAE": 2.2922125582728206
+              },
+              "baseline": {
+                "groups": 3,
+                "skipped": 0,
+                "mae": 7.413763350561218,
+                "p95": 22.488614558186708,
+                "within5": 0.6720620696585685,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": null,
+                "above90MAE": null,
+                "belowKeyboardMAE": 7.413763350561218,
+                "worstGroupMAE": 15.367955771809598
+              }
+            }
+          },
+          "skipped": [
+            {
+              "groupId": "361e67dc-555d-48f9-b74d-707488f164da",
+              "reason": "Need 10 distinct references plus 5 disjoint queries"
+            },
+            {
+              "groupId": "68631139-76e6-4429-8ac6-8de76c9f888d",
+              "reason": "Need 10 distinct references plus 5 disjoint queries"
+            },
+            {
+              "groupId": "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007",
+              "reason": "Need 10 distinct references plus 5 disjoint queries"
+            }
+          ]
+        }
+      }
+    },
+    "lighting-description": {
+      "summaries": {
+        "legacy": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 31.620856277679223,
+          "p95": 51.24388661044083,
+          "within5": 0.08801152551152551,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 39.63503262384091,
+          "above90MAE": 46.29278327965512,
+          "belowKeyboardMAE": 19.350074440737103,
+          "worstGroupMAE": 52.01635142075447
+        },
+        "current": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 31.2350433855548,
+          "p95": 56.59407108752902,
+          "within5": 0.09942372442372444,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 37.52096919907913,
+          "above90MAE": 46.13167114293487,
+          "belowKeyboardMAE": 20.93638415723922,
+          "worstGroupMAE": 48.17379793840999
+        },
+        "depth": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 23.57673693051372,
+          "p95": 41.89798863126894,
+          "within5": 0.32107938357938354,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 38.237717882792154,
+          "above90MAE": 41.5208189646403,
+          "belowKeyboardMAE": 7.3023013360418645,
+          "worstGroupMAE": 75.73426920572916
+        },
+        "dino": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 11.580644171580856,
+          "p95": 20.11642288754549,
+          "within5": 0.46390183890183884,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 20.697939014434816,
+          "above90MAE": 24.200443204243975,
+          "belowKeyboardMAE": 3.9983609620755933,
+          "worstGroupMAE": 36.04537556966145
+        },
+        "legacy+depth": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 31.538884976958126,
+          "p95": 51.352563546696274,
+          "within5": 0.07677738927738928,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 42.557619786262514,
+          "above90MAE": 47.54058628877004,
+          "belowKeyboardMAE": 15.767024033785681,
+          "worstGroupMAE": 68.31255394617716
+        },
+        "legacy+dino": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 13.670694327932075,
+          "p95": 21.25059594168859,
+          "within5": 0.4107096607096607,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 23.520392910639444,
+          "above90MAE": 27.576329723993936,
+          "belowKeyboardMAE": 3.751098630218916,
+          "worstGroupMAE": 42.716868782043456
+        },
+        "legacy+lighting": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 30.757541851344715,
+          "p95": 53.923020276665234,
+          "within5": 0.12003043253043255,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 41.79699309736212,
+          "above90MAE": 49.51968422717313,
+          "belowKeyboardMAE": 15.825888525887033,
+          "worstGroupMAE": 66.81995557149251
+        },
+        "legacy+lighting+texture+dino+depth+metadata": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 18.17158188315895,
+          "p95": 32.66790279389655,
+          "within5": 0.14834239834239835,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 31.219089206059778,
+          "above90MAE": 40.53058562278748,
+          "belowKeyboardMAE": 9.437021901736033,
+          "worstGroupMAE": 36.17286052703857
+        },
+        "legacy+metadata": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 28.41012831651881,
+          "p95": 49.13323305911947,
+          "within5": 0.08425602175602176,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 33.29176467259725,
+          "above90MAE": 36.261004781723024,
+          "belowKeyboardMAE": 18.20085185743028,
+          "worstGroupMAE": 63.38381519317627
+        },
+        "legacy+texture": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 23.207466328739244,
+          "p95": 35.798688463569704,
+          "within5": 0.04951761201761202,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 26.793077246348062,
+          "above90MAE": 30.05545450846354,
+          "belowKeyboardMAE": 17.376568292125857,
+          "worstGroupMAE": 33.34554265340169
+        },
+        "lighting": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 29.98499207019384,
+          "p95": 54.46345257666177,
+          "within5": 0.13196063196063199,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 41.03327751134641,
+          "above90MAE": 47.902393442477134,
+          "belowKeyboardMAE": 15.579800331568485,
+          "worstGroupMAE": 66.62820742925008
+        },
+        "lighting+texture+metadata": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 20.555272291243426,
+          "p95": 32.61912541398318,
+          "within5": 0.11200142450142449,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 22.975518401463823,
+          "above90MAE": 24.453346427281694,
+          "belowKeyboardMAE": 14.718132124299505,
+          "worstGroupMAE": 36.4018294652303
+        },
+        "metadata": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 44.894659463531184,
+          "p95": 60.48892317547208,
+          "within5": 0.015151515151515152,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 44.72522750774216,
+          "above90MAE": 54.266894174408826,
+          "belowKeyboardMAE": 38.38510874173682,
+          "worstGroupMAE": 55.94328923382741
+        },
+        "texture": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 25.224202712867697,
+          "p95": 39.1341242799509,
+          "within5": 0.05861499611499612,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 27.889651041077386,
+          "above90MAE": 31.25779933154591,
+          "belowKeyboardMAE": 20.219974862712704,
+          "worstGroupMAE": 36.18061065673828
+        },
+        "selected-procedure": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 11.580644171580856,
+          "p95": 20.11642288754549,
+          "within5": 0.46390183890183884,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 20.697939014434816,
+          "above90MAE": 24.200443204243975,
+          "belowKeyboardMAE": 3.9983609620755933,
+          "worstGroupMAE": 36.04537556966145
+        }
+      },
+      "promotion": {
+        "passed": true,
+        "reasons": [],
+        "candidate": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 11.580644171580856,
+          "p95": 20.11642288754549,
+          "within5": 0.46390183890183884,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 20.697939014434816,
+          "above90MAE": 24.200443204243975,
+          "belowKeyboardMAE": 3.9983609620755933,
+          "worstGroupMAE": 36.04537556966145
+        },
+        "baseline": {
+          "groups": 6,
+          "skipped": 0,
+          "mae": 31.2350433855548,
+          "p95": 56.59407108752902,
+          "within5": 0.09942372442372444,
+          "validCoverage": 1.0,
+          "aboveKeyboardMAE": 37.52096919907913,
+          "above90MAE": 46.13167114293487,
+          "belowKeyboardMAE": 20.93638415723922,
+          "worstGroupMAE": 48.17379793840999
+        }
+      },
+      "foldSelections": {
+        "661d3ccc-3cb8-40ab-b8f8-b6af1082a997": {
+          "trainingGroups": [
+            "361e67dc-555d-48f9-b74d-707488f164da",
+            "68631139-76e6-4429-8ac6-8de76c9f888d",
+            "9d8e1da4-f2ce-4808-817b-538ba60faf30",
+            "a6d1e916-c465-4934-ad1e-217ff7d79123"
+          ],
+          "selected": {
+            "legacy": {
+              "id": "legacy"
+            },
+            "current": {
+              "id": "current"
+            },
+            "depth": {
+              "id": "depth:0",
+              "families": [
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "dino": {
+              "id": "dino:0",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+depth": {
+              "id": "legacy+depth:1",
+              "families": [
+                "legacy",
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+dino": {
+              "id": "legacy+dino:0",
+              "families": [
+                "legacy",
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+lighting": {
+              "id": "legacy+lighting:2",
+              "families": [
+                "legacy",
+                "lighting"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "legacy+lighting+texture+dino+depth+metadata": {
+              "id": "legacy+lighting+texture+dino+depth+metadata:1",
+              "families": [
+                "legacy",
+                "lighting",
+                "texture",
+                "dino",
+                "depth",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+metadata": {
+              "id": "legacy+metadata:1",
+              "families": [
+                "legacy",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+texture": {
+              "id": "legacy+texture:0",
+              "families": [
+                "legacy",
+                "texture"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "lighting": {
+              "id": "lighting:2",
+              "families": [
+                "lighting"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "lighting+texture+metadata": {
+              "id": "lighting+texture+metadata:1",
+              "families": [
+                "lighting",
+                "texture",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "metadata": {
+              "id": "metadata:3",
+              "families": [
+                "metadata"
+              ],
+              "head": {
+                "kind": "random-forest",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "texture": {
+              "id": "texture:0",
+              "families": [
+                "texture"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "selected-procedure": {
+              "id": "dino:0",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            }
+          }
+        },
+        "361e67dc-555d-48f9-b74d-707488f164da": {
+          "trainingGroups": [
+            "661d3ccc-3cb8-40ab-b8f8-b6af1082a997",
+            "9d8e1da4-f2ce-4808-817b-538ba60faf30",
+            "a6d1e916-c465-4934-ad1e-217ff7d79123",
+            "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007"
+          ],
+          "selected": {
+            "legacy": {
+              "id": "legacy"
+            },
+            "current": {
+              "id": "current"
+            },
+            "depth": {
+              "id": "depth:1",
+              "families": [
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "dino": {
+              "id": "dino:1",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+depth": {
+              "id": "legacy+depth:1",
+              "families": [
+                "legacy",
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+dino": {
+              "id": "legacy+dino:0",
+              "families": [
+                "legacy",
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+lighting": {
+              "id": "legacy+lighting:0",
+              "families": [
+                "legacy",
+                "lighting"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+lighting+texture+dino+depth+metadata": {
+              "id": "legacy+lighting+texture+dino+depth+metadata:1",
+              "families": [
+                "legacy",
+                "lighting",
+                "texture",
+                "dino",
+                "depth",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+metadata": {
+              "id": "legacy+metadata:1",
+              "families": [
+                "legacy",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "legacy+texture": {
+              "id": "legacy+texture:0",
+              "families": [
+                "legacy",
+                "texture"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "lighting": {
+              "id": "lighting:0",
+              "families": [
+                "lighting"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "lighting+texture+metadata": {
+              "id": "lighting+texture+metadata:0",
+              "families": [
+                "lighting",
+                "texture",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "metadata": {
+              "id": "metadata:0",
+              "families": [
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "texture": {
+              "id": "texture:2",
+              "families": [
+                "texture"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "selected-procedure": {
+              "id": "dino:1",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            }
+          }
+        },
+        "9d8e1da4-f2ce-4808-817b-538ba60faf30": {
+          "trainingGroups": [
+            "361e67dc-555d-48f9-b74d-707488f164da",
+            "661d3ccc-3cb8-40ab-b8f8-b6af1082a997",
+            "68631139-76e6-4429-8ac6-8de76c9f888d",
+            "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007"
+          ],
+          "selected": {
+            "legacy": {
+              "id": "legacy"
+            },
+            "current": {
+              "id": "current"
+            },
+            "depth": {
+              "id": "depth:0",
+              "families": [
+                "depth"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "dino": {
+              "id": "dino:0",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+depth": {
+              "id": "legacy+depth:3",
+              "families": [
+                "legacy",
+                "depth"
+              ],
+              "head": {
+                "kind": "random-forest",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "legacy+dino": {
+              "id": "legacy+dino:0",
+              "families": [
+                "legacy",
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+lighting": {
+              "id": "legacy+lighting:2",
+              "families": [
+                "legacy",
+                "lighting"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "legacy+lighting+texture+dino+depth+metadata": {
+              "id": "legacy+lighting+texture+dino+depth+metadata:0",
+              "families": [
+                "legacy",
+                "lighting",
+                "texture",
+                "dino",
+                "depth",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "legacy+metadata": {
+              "id": "legacy+metadata:2",
+              "families": [
+                "legacy",
+                "metadata"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "legacy+texture": {
+              "id": "legacy+texture:0",
+              "families": [
+                "legacy",
+                "texture"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "lighting": {
+              "id": "lighting:2",
+              "families": [
+                "lighting"
+              ],
+              "head": {
+                "kind": "extra-trees",
+                "trees": 48,
+                "depth": 8,
+                "leaf": 4,
+                "fraction": 0.5
+              }
+            },
+            "lighting+texture+metadata": {
+              "id": "lighting+texture+metadata:1",
+              "families": [
+                "lighting",
+                "texture",
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 100
+              }
+            },
+            "metadata": {
+              "id": "metadata:0",
+              "families": [
+                "metadata"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "texture": {
+              "id": "texture:0",
+              "families": [
+                "texture"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            },
+            "selected-procedure": {
+              "id": "dino:0",
+              "families": [
+                "dino"
+              ],
+              "head": {
+                "kind": "ridge",
+                "alpha": 1
+              }
+            }
+          }
+        }
+      },
+      "calibration": {
+        "3": {
+          "summaries": {
+            "current-affine": {
+              "groups": 5,
+              "skipped": 0,
+              "mae": 13.91711227251059,
+              "p95": 29.470418586781296,
+              "within5": 0.43666412407831173,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": 27.111287554890808,
+              "above90MAE": 26.082917144950972,
+              "belowKeyboardMAE": 10.057607343761642,
+              "worstGroupMAE": 28.271940265115152
+            },
+            "current-selected-calibration": {
+              "groups": 5,
+              "skipped": 0,
+              "mae": 21.823193260318508,
+              "p95": 44.42254775242988,
+              "within5": 0.17483473175692854,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": 35.35961301956909,
+              "above90MAE": 44.79057812927808,
+              "belowKeyboardMAE": 12.000144038458675,
+              "worstGroupMAE": 42.303748158258855
+            },
+            "selected-procedure-calibrated": {
+              "groups": 5,
+              "skipped": 0,
+              "mae": 3.7856929031622224,
+              "p95": 10.820859681800652,
+              "within5": 0.770785659801678,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": 6.4859547374274245,
+              "above90MAE": 6.229048382408645,
+              "belowKeyboardMAE": 3.2648190358714486,
+              "worstGroupMAE": 5.056732654571533
+            }
+          },
+          "promotion": {
+            "current-selected-calibration": {
+              "passed": false,
+              "reasons": [
+                "Group regression exceeds limit: 68631139-76e6-4429-8ac6-8de76c9f888d",
+                "Group regression exceeds limit: 9d8e1da4-f2ce-4808-817b-538ba60faf30",
+                "Group regression exceeds limit: a6d1e916-c465-4934-ad1e-217ff7d79123",
+                "Mean group MAE improvement below threshold",
+                "Worse or unavailable above90MAE",
+                "Worse or unavailable aboveKeyboardMAE",
+                "Worse or unavailable p95",
+                "Worse or unavailable within5"
+              ],
+              "candidate": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 21.823193260318508,
+                "p95": 44.42254775242988,
+                "within5": 0.17483473175692854,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 35.35961301956909,
+                "above90MAE": 44.79057812927808,
+                "belowKeyboardMAE": 12.000144038458675,
+                "worstGroupMAE": 42.303748158258855
+              },
+              "baseline": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 13.91711227251059,
+                "p95": 29.470418586781296,
+                "within5": 0.43666412407831173,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 27.111287554890808,
+                "above90MAE": 26.082917144950972,
+                "belowKeyboardMAE": 10.057607343761642,
+                "worstGroupMAE": 28.271940265115152
+              }
+            },
+            "selected-procedure-calibrated": {
+              "passed": true,
+              "reasons": [],
+              "candidate": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 3.7856929031622224,
+                "p95": 10.820859681800652,
+                "within5": 0.770785659801678,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 6.4859547374274245,
+                "above90MAE": 6.229048382408645,
+                "belowKeyboardMAE": 3.2648190358714486,
+                "worstGroupMAE": 5.056732654571533
+              },
+              "baseline": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 13.91711227251059,
+                "p95": 29.470418586781296,
+                "within5": 0.43666412407831173,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 27.111287554890808,
+                "above90MAE": 26.082917144950972,
+                "belowKeyboardMAE": 10.057607343761642,
+                "worstGroupMAE": 28.271940265115152
+              }
+            }
+          },
+          "skipped": [
+            {
+              "groupId": "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007",
+              "reason": "Need 3 distinct references plus 5 disjoint queries"
+            }
+          ]
+        },
+        "5": {
+          "summaries": {
+            "current-affine": {
+              "groups": 5,
+              "skipped": 0,
+              "mae": 11.128304039173056,
+              "p95": 29.207046689947383,
+              "within5": 0.5794535724737656,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": 24.146177799463043,
+              "above90MAE": 26.296390211773183,
+              "belowKeyboardMAE": 7.029224019697395,
+              "worstGroupMAE": 27.046424595248165
+            },
+            "current-selected-calibration": {
+              "groups": 5,
+              "skipped": 0,
+              "mae": 18.012528075123736,
+              "p95": 42.52928591955963,
+              "within5": 0.20238356536644506,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": 28.880337197763307,
+              "above90MAE": 44.351770604677405,
+              "belowKeyboardMAE": 10.097939474939723,
+              "worstGroupMAE": 35.344760490530476
+            },
+            "selected-procedure-calibrated": {
+              "groups": 5,
+              "skipped": 0,
+              "mae": 3.6675586732643866,
+              "p95": 10.81638156876917,
+              "within5": 0.7397053597558425,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": 4.119968825946629,
+              "above90MAE": 2.2909863975136733,
+              "belowKeyboardMAE": 2.801361233922514,
+              "worstGroupMAE": 4.862674582834224
+            }
+          },
+          "promotion": {
+            "current-selected-calibration": {
+              "passed": false,
+              "reasons": [
+                "Group regression exceeds limit: 68631139-76e6-4429-8ac6-8de76c9f888d",
+                "Group regression exceeds limit: 9d8e1da4-f2ce-4808-817b-538ba60faf30",
+                "Group regression exceeds limit: a6d1e916-c465-4934-ad1e-217ff7d79123",
+                "Mean group MAE improvement below threshold",
+                "Worse or unavailable above90MAE",
+                "Worse or unavailable aboveKeyboardMAE",
+                "Worse or unavailable p95",
+                "Worse or unavailable within5"
+              ],
+              "candidate": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 18.012528075123736,
+                "p95": 42.52928591955963,
+                "within5": 0.20238356536644506,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 28.880337197763307,
+                "above90MAE": 44.351770604677405,
+                "belowKeyboardMAE": 10.097939474939723,
+                "worstGroupMAE": 35.344760490530476
+              },
+              "baseline": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 11.128304039173056,
+                "p95": 29.207046689947383,
+                "within5": 0.5794535724737656,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 24.146177799463043,
+                "above90MAE": 26.296390211773183,
+                "belowKeyboardMAE": 7.029224019697395,
+                "worstGroupMAE": 27.046424595248165
+              }
+            },
+            "selected-procedure-calibrated": {
+              "passed": true,
+              "reasons": [],
+              "candidate": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 3.6675586732643866,
+                "p95": 10.81638156876917,
+                "within5": 0.7397053597558425,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 4.119968825946629,
+                "above90MAE": 2.2909863975136733,
+                "belowKeyboardMAE": 2.801361233922514,
+                "worstGroupMAE": 4.862674582834224
+              },
+              "baseline": {
+                "groups": 5,
+                "skipped": 0,
+                "mae": 11.128304039173056,
+                "p95": 29.207046689947383,
+                "within5": 0.5794535724737656,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": 24.146177799463043,
+                "above90MAE": 26.296390211773183,
+                "belowKeyboardMAE": 7.029224019697395,
+                "worstGroupMAE": 27.046424595248165
+              }
+            }
+          },
+          "skipped": [
+            {
+              "groupId": "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007",
+              "reason": "Need 5 distinct references plus 5 disjoint queries"
+            }
+          ]
+        },
+        "10": {
+          "summaries": {
+            "current-affine": {
+              "groups": 3,
+              "skipped": 0,
+              "mae": 7.215156233188164,
+              "p95": 20.532582968378332,
+              "within5": 0.7621032715478258,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": null,
+              "above90MAE": null,
+              "belowKeyboardMAE": 7.215156233188164,
+              "worstGroupMAE": 16.383036752297368
+            },
+            "current-selected-calibration": {
+              "groups": 3,
+              "skipped": 0,
+              "mae": 7.215156233188164,
+              "p95": 20.532582968378332,
+              "within5": 0.7621032715478258,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": null,
+              "above90MAE": null,
+              "belowKeyboardMAE": 7.215156233188164,
+              "worstGroupMAE": 16.383036752297368
+            },
+            "selected-procedure-calibrated": {
+              "groups": 3,
+              "skipped": 0,
+              "mae": 2.7669970013539653,
+              "p95": 6.105152235907448,
+              "within5": 0.8500012128394651,
+              "validCoverage": 1.0,
+              "aboveKeyboardMAE": null,
+              "above90MAE": null,
+              "belowKeyboardMAE": 2.7669970013539653,
+              "worstGroupMAE": 3.300142927237542
+            }
+          },
+          "promotion": {
+            "current-selected-calibration": {
+              "passed": false,
+              "reasons": [
+                "Insufficient larger-angle evaluation coverage",
+                "Mean group MAE improvement below threshold"
+              ],
+              "candidate": {
+                "groups": 3,
+                "skipped": 0,
+                "mae": 7.215156233188164,
+                "p95": 20.532582968378332,
+                "within5": 0.7621032715478258,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": null,
+                "above90MAE": null,
+                "belowKeyboardMAE": 7.215156233188164,
+                "worstGroupMAE": 16.383036752297368
+              },
+              "baseline": {
+                "groups": 3,
+                "skipped": 0,
+                "mae": 7.215156233188164,
+                "p95": 20.532582968378332,
+                "within5": 0.7621032715478258,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": null,
+                "above90MAE": null,
+                "belowKeyboardMAE": 7.215156233188164,
+                "worstGroupMAE": 16.383036752297368
+              }
+            },
+            "selected-procedure-calibrated": {
+              "passed": false,
+              "reasons": [
+                "Insufficient larger-angle evaluation coverage"
+              ],
+              "candidate": {
+                "groups": 3,
+                "skipped": 0,
+                "mae": 2.7669970013539653,
+                "p95": 6.105152235907448,
+                "within5": 0.8500012128394651,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": null,
+                "above90MAE": null,
+                "belowKeyboardMAE": 2.7669970013539653,
+                "worstGroupMAE": 3.300142927237542
+              },
+              "baseline": {
+                "groups": 3,
+                "skipped": 0,
+                "mae": 7.215156233188164,
+                "p95": 20.532582968378332,
+                "within5": 0.7621032715478258,
+                "validCoverage": 1.0,
+                "aboveKeyboardMAE": null,
+                "above90MAE": null,
+                "belowKeyboardMAE": 7.215156233188164,
+                "worstGroupMAE": 16.383036752297368
+              }
+            }
+          },
+          "skipped": [
+            {
+              "groupId": "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007",
+              "reason": "Need 10 distinct references plus 5 disjoint queries"
+            },
+            {
+              "groupId": "361e67dc-555d-48f9-b74d-707488f164da",
+              "reason": "Need 10 distinct references plus 5 disjoint queries"
+            },
+            {
+              "groupId": "68631139-76e6-4429-8ac6-8de76c9f888d",
+              "reason": "Need 10 distinct references plus 5 disjoint queries"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "performance": {
+    "benchmark-cuda": {
+      "backend": "cuda",
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "torch": "2.11.0+cu128",
+      "loadMs": 1593.7005000005229,
+      "contention": "none",
+      "iterations": 40,
+      "p50Ms": 7.875100000092061,
+      "p95Ms": 10.113059999912366,
+      "maxMs": 10.256200000185345,
+      "budgetMs": 66.7,
+      "passesBudget": true
+    },
+    "benchmark-cpu-isolated": {
+      "backend": "cpu",
+      "device": "CPU",
+      "torch": "2.11.0+cu128",
+      "loadMs": 1309.1450000001714,
+      "contention": "none",
+      "iterations": 40,
+      "p50Ms": 54.0155999997296,
+      "p95Ms": 67.4636300002021,
+      "maxMs": 70.6198999996559,
+      "budgetMs": 66.7,
+      "passesBudget": false
+    },
+    "benchmark-cuda-renderer60": {
+      "backend": "cuda",
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "torch": "2.11.0+cu128",
+      "loadMs": 1537.6108999998905,
+      "contention": "hinge-glass-live-preview-60fps",
+      "iterations": 40,
+      "p50Ms": 9.608700000171666,
+      "p95Ms": 13.402564999614697,
+      "maxMs": 13.932099999692582,
+      "budgetMs": 66.7,
+      "passesBudget": true
+    },
+    "service-paced-renderer60": {
+      "kind": "local-image-service-smoke",
+      "input": "saved annotated still; no physical-motion accuracy claim",
+      "camera": {
+        "width": 640,
+        "height": 480,
+        "horizontalFovDegrees": 60
+      },
+      "backend": "cuda",
+      "seconds": 60.011773,
+      "frames": 900,
+      "valid": 900,
+      "achievedFps": 14.997044707365042,
+      "p50Ms": 43.39409999999771,
+      "p95Ms": 52.2361000000019,
+      "maxMs": 74.50340000000142,
+      "missedSlots": 24,
+      "maxInFlight": 1,
+      "queuedFrames": 0
+    }
+  },
+  "independentValidationAvailable": false
+}

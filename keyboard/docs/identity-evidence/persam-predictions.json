@@ -1,0 +1,1185 @@
+{
+  "rows": [
+    {
+      "image": "../../data/annotations/frame-1789355708689.jpg",
+      "sha256": "57b84dd9c0850832d34687adc66abee82dff7168ed8dee467ccaa8d7aabd2c66",
+      "identity": "present",
+      "edge": [
+        [
+          0.0,
+          376.21875
+        ],
+        [
+          639.0,
+          373.21875
+        ]
+      ],
+      "group": "original-keyboard-references",
+      "reference": true,
+      "independent": false,
+      "thinStrip": false,
+      "review": "Existing human-marked edge, visually reviewed; fitting reference, not independent accuracy",
+      "valid": true,
+      "angleDeg": 29.923177894142167,
+      "referenceEdge": [
+        [
+          0.0,
+          376.21875
+        ],
+        [
+          639.0,
+          373.21875
+        ]
+      ],
+      "detectedEdge": [
+        [
+          33.8,
+          375.13707487725816
+        ],
+        [
+          606.2,
+          373.7228622829837
+        ]
+      ],
+      "boundaryErrorPixels": 0.9229896767324451,
+      "correct": true,
+      "reason": "",
+      "processingMs": 190.8880999981193,
+      "evidence": {
+        "status": "accepted",
+        "reason": "",
+        "scores": {
+          "maskScore": 0.9980673789978027,
+          "similarity": 0.9664677977561951,
+          "belowCoverage": 0.9985299647875286,
+          "aboveCoverage": 0.0
+        }
+      },
+      "acquisitionMs": 208.7212999977055
+    },
+    {
+      "image": "../../data/annotations/frame-1789355787591.jpg",
+      "sha256": "32a3aeb388106a8667597cc31188fbfb0dc9bc2042930fcbcef96ba4d7b410ad",
+      "identity": "present",
+      "edge": [
+        [
+          0.0,
+          330.21875
+        ],
+        [
+          639.0,
+          326.21875
+        ]
+      ],
+      "group": "original-keyboard-references",
+      "reference": true,
+      "independent": false,
+      "thinStrip": false,
+      "review": "Existing human-marked edge, visually reviewed; fitting reference, not independent accuracy",
+      "valid": true,
+      "angleDeg": 21.86389904120201,
+      "referenceEdge": [
+        [
+          0.0,
+          330.21875
+        ],
+        [
+          639.0,
+          326.21875
+        ]
+      ],
+      "detectedEdge": [
+        [
+          33.8,
+          328.61892576775386
+        ],
+        [
+          606.2,
+          326.7944855630292
+        ]
+      ],
+      "boundaryErrorPixels": 1.3882436375669485,
+      "correct": true,
+      "reason": "",
+      "processingMs": 70.14820000040345,
+      "evidence": {
+        "status": "accepted",
+        "reason": "",
+        "scores": {
+          "maskScore": 1.0217156410217285,
+          "similarity": 0.974973201751709,
+          "belowCoverage": 0.9988621433933934,
+          "aboveCoverage": 0.0
+        }
+      },
+      "acquisitionMs": 211.92570000130218
+    },
+    {
+      "image": "../../data/annotations/frame-1789355829573.jpg",
+      "sha256": "0fe1792c0f9c531dda72c6caccd18ba52c2effcd62e797557c3a0a173d169998",
+      "identity": "present",
+      "edge": [
+        [
+          0.0,
+          262.21875
+        ],
+        [
+          639.0,
+          260.21875
+        ]
+      ],
+      "group": "original-keyboard-references",
+      "reference": true,
+      "independent": false,
+      "thinStrip": false,
+      "review": "Existing human-marked edge, visually reviewed; fitting reference, not independent accuracy",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": [
+        [
+          0.0,
+          262.21875
+        ],
+        [
+          639.0,
+          260.21875
+        ]
+      ],
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Reference-conditioned mask does not support this boundary",
+      "processingMs": 81.35179999953834,
+      "evidence": {
+        "status": "rejected",
+        "reason": "Reference-conditioned mask does not support this boundary",
+        "scores": {
+          "maskScore": 1.0061066150665283,
+          "similarity": 0.9727339744567871,
+          "belowCoverage": 0.5289064388750101,
+          "aboveCoverage": 0.0
+        }
+      }
+    },
+    {
+      "image": "../../data/annotations/frame-1789355904232.jpg",
+      "sha256": "b4f463df5f6956b1273e7a185151c43b594440c375c2854a1caab70edadd596d",
+      "identity": "present",
+      "edge": [
+        [
+          1.0,
+          461.21875
+        ],
+        [
+          638.0,
+          457.21875
+        ]
+      ],
+      "group": "original-keyboard-references",
+      "reference": true,
+      "independent": false,
+      "thinStrip": true,
+      "review": "Existing human-marked edge, visually reviewed; fitting reference, not independent accuracy",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": [
+        [
+          1.0,
+          461.21875
+        ],
+        [
+          638.0,
+          457.21875
+        ]
+      ],
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Reference-conditioned mask does not support this boundary",
+      "processingMs": 76.12889999290928,
+      "evidence": {
+        "status": "rejected",
+        "reason": "Reference-conditioned mask does not support this boundary",
+        "scores": {
+          "maskScore": 1.0069706439971924,
+          "similarity": 0.9433027505874634,
+          "belowCoverage": 0.0,
+          "aboveCoverage": 0.4441079168644989
+        }
+      }
+    },
+    {
+      "image": "../../data/annotations/frame-1789403944835.jpg",
+      "sha256": "b05cc399d1263ef89d2a0d9276d62d0678745cc51fd764b6012da03f89d4f8cc",
+      "identity": "present",
+      "edge": [
+        [
+          2.0,
+          344.21875
+        ],
+        [
+          639.0,
+          339.21875
+        ]
+      ],
+      "group": "original-keyboard-references",
+      "reference": true,
+      "independent": false,
+      "thinStrip": false,
+      "review": "Existing human-marked edge, visually reviewed; fitting reference, not independent accuracy",
+      "valid": true,
+      "angleDeg": 23.98775566203723,
+      "referenceEdge": [
+        [
+          2.0,
+          344.21875
+        ],
+        [
+          639.0,
+          339.21875
+        ]
+      ],
+      "detectedEdge": [
+        [
+          33.8,
+          341.86337210066256
+        ],
+        [
+          606.2,
+          338.0287602705472
+        ]
+      ],
+      "boundaryErrorPixels": 2.105770364015628,
+      "correct": true,
+      "reason": "",
+      "processingMs": 67.48289999814006,
+      "evidence": {
+        "status": "accepted",
+        "reason": "",
+        "scores": {
+          "maskScore": 1.0161194801330566,
+          "similarity": 0.9655359387397766,
+          "belowCoverage": 0.9984406753665052,
+          "aboveCoverage": 0.0
+        }
+      },
+      "acquisitionMs": 198.8982999973814
+    },
+    {
+      "image": "../../data/annotations/frame-1789403981251.jpg",
+      "sha256": "f9f9c33b9a9db43a42e43d913bdddf0fc85bc394e1d75f5e7974dd68c1aab887",
+      "identity": "present",
+      "edge": [
+        [
+          2.0,
+          283.21875
+        ],
+        [
+          639.0,
+          282.21875
+        ]
+      ],
+      "group": "original-keyboard-references",
+      "reference": true,
+      "independent": false,
+      "thinStrip": false,
+      "review": "Existing human-marked edge, visually reviewed; fitting reference, not independent accuracy",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": [
+        [
+          2.0,
+          283.21875
+        ],
+        [
+          639.0,
+          282.21875
+        ]
+      ],
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Reference-conditioned mask does not support this boundary",
+      "processingMs": 76.24729999952251,
+      "evidence": {
+        "status": "rejected",
+        "reason": "Reference-conditioned mask does not support this boundary",
+        "scores": {
+          "maskScore": 1.0099339485168457,
+          "similarity": 0.9425694942474365,
+          "belowCoverage": 0.3848909266755024,
+          "aboveCoverage": 0.0
+        }
+      }
+    },
+    {
+      "image": "../../data/annotations/frame-1789404038377.jpg",
+      "sha256": "c2c42ee79dde93d7b1fc498de3bda3bc355be0751c79abec71884d14c75a6997",
+      "identity": "present",
+      "edge": [
+        [
+          0.0,
+          457.21875
+        ],
+        [
+          639.0,
+          450.21875
+        ]
+      ],
+      "group": "original-keyboard-references",
+      "reference": true,
+      "independent": false,
+      "thinStrip": true,
+      "review": "Existing human-marked edge, visually reviewed; fitting reference, not independent accuracy",
+      "valid": true,
+      "angleDeg": 43.090975748907155,
+      "referenceEdge": [
+        [
+          0.0,
+          457.21875
+        ],
+        [
+          639.0,
+          450.21875
+        ]
+      ],
+      "detectedEdge": [
+        [
+          33.8,
+          455.5684370459296
+        ],
+        [
+          606.2,
+          450.29849256661316
+        ]
+      ],
+      "boundaryErrorPixels": 1.280046913381832,
+      "correct": true,
+      "reason": "",
+      "processingMs": 72.95379999413854,
+      "evidence": {
+        "status": "accepted",
+        "reason": "",
+        "scores": {
+          "maskScore": 1.009040117263794,
+          "similarity": 0.9249903559684753,
+          "belowCoverage": 0.991778386786164,
+          "aboveCoverage": 0.09122785266232987
+        }
+      },
+      "acquisitionMs": 195.6415000022389
+    },
+    {
+      "image": "../../data/annotations/frame-1789404110497.jpg",
+      "sha256": "0a24c228a00f7051cb01b80afb24f67a8735c90050d82fab0dac471517198b5b",
+      "identity": "present",
+      "edge": [
+        [
+          0.0,
+          473.21875
+        ],
+        [
+          639.0,
+          470.21875
+        ]
+      ],
+      "group": "original-keyboard-references",
+      "reference": true,
+      "independent": false,
+      "thinStrip": true,
+      "review": "Existing human-marked edge, visually reviewed; fitting reference, not independent accuracy",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": [
+        [
+          0.0,
+          473.21875
+        ],
+        [
+          639.0,
+          470.21875
+        ]
+      ],
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Reference-conditioned mask does not support this boundary",
+      "processingMs": 72.88279999920633,
+      "evidence": {
+        "status": "rejected",
+        "reason": "Reference-conditioned mask does not support this boundary",
+        "scores": {
+          "maskScore": 1.006988763809204,
+          "similarity": 0.9434922337532043,
+          "belowCoverage": 0.0,
+          "aboveCoverage": 0.4286315993499426
+        }
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/1e3431a5-3cab-4982-8540-c58dbc473bbd/89b987bc-46d3-43e5-b399-0304e8706b3b.png",
+      "sha256": "2fb37e493214da44610865d520561016a8bdb3d76a60f3ecce747ee6dbcb98a4",
+      "identity": "absent",
+      "edge": null,
+      "group": "1e3431a5-3cab-4982-8540-c58dbc473bbd",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 1; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Moving boundary not visible or contrast too weak",
+      "processingMs": 4.302600005757995,
+      "evidence": {
+        "status": "unavailable",
+        "reason": "No structurally supported identity candidate",
+        "scores": {}
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/1e3431a5-3cab-4982-8540-c58dbc473bbd/9ffd55ed-5309-4a0a-8e3d-d418d85177bf.png",
+      "sha256": "420eb05e98a72e5126428bcbeb95e6984691443923dbf4da8fd03da995e69bee",
+      "identity": "absent",
+      "edge": null,
+      "group": "1e3431a5-3cab-4982-8540-c58dbc473bbd",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 2; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Moving boundary not visible or contrast too weak",
+      "processingMs": 4.999500000849366,
+      "evidence": {
+        "status": "unavailable",
+        "reason": "No structurally supported identity candidate",
+        "scores": {}
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/1e3431a5-3cab-4982-8540-c58dbc473bbd/adba242a-50c1-4180-84b0-829e770cdb1b.png",
+      "sha256": "86705b348506c2998d6984acd2855147e89d302f54c501f97bb2b97d009c6d3c",
+      "identity": "absent",
+      "edge": null,
+      "group": "1e3431a5-3cab-4982-8540-c58dbc473bbd",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 3; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Moving boundary not visible or contrast too weak",
+      "processingMs": 4.162099998211488,
+      "evidence": {
+        "status": "unavailable",
+        "reason": "No structurally supported identity candidate",
+        "scores": {}
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/361e67dc-555d-48f9-b74d-707488f164da/ac0c383b-685e-4fd1-8b56-9d90b413d270.png",
+      "sha256": "d97a51967e7eccc55372af382648ab91d4f04a444d5330692fda9aa021c420a0",
+      "identity": "absent",
+      "edge": null,
+      "group": "361e67dc-555d-48f9-b74d-707488f164da",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 4; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Moving boundary not visible or contrast too weak",
+      "processingMs": 4.358099999080878,
+      "evidence": {
+        "status": "unavailable",
+        "reason": "No structurally supported identity candidate",
+        "scores": {}
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/361e67dc-555d-48f9-b74d-707488f164da/f5a280de-a86a-4085-82b6-f6b4c0e8cce8.png",
+      "sha256": "540849c2f64934e1cb9a5ad10f98bcb97440a5f508f6de3150196b18cb856239",
+      "identity": "ambiguous",
+      "edge": null,
+      "group": "361e67dc-555d-48f9-b74d-707488f164da",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 5; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": true,
+      "angleDeg": 13.938561481228579,
+      "referenceEdge": null,
+      "detectedEdge": [
+        [
+          33.8,
+          283.1244230425023
+        ],
+        [
+          606.2,
+          281.6137731745877
+        ]
+      ],
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "",
+      "processingMs": 74.0014000039082,
+      "evidence": {
+        "status": "accepted",
+        "reason": "",
+        "scores": {
+          "maskScore": 1.0152736902236938,
+          "similarity": 0.9646902680397034,
+          "belowCoverage": 0.9937265193866729,
+          "aboveCoverage": 0.0
+        }
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/361e67dc-555d-48f9-b74d-707488f164da/2146fdc7-f751-4f28-a062-8e610708967a.png",
+      "sha256": "bc22b863700881cc85d7b8ed0ead3359b401b382a19f56b94ad1a5d0c8492b7d",
+      "identity": "ambiguous",
+      "edge": null,
+      "group": "361e67dc-555d-48f9-b74d-707488f164da",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 6; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": true,
+      "angleDeg": 25.918186623462706,
+      "referenceEdge": null,
+      "detectedEdge": [
+        [
+          33.8,
+          352.92553766794856
+        ],
+        [
+          606.2,
+          349.3009826445615
+        ]
+      ],
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "",
+      "processingMs": 81.7629000011948,
+      "evidence": {
+        "status": "accepted",
+        "reason": "",
+        "scores": {
+          "maskScore": 1.0142154693603516,
+          "similarity": 0.9715523719787598,
+          "belowCoverage": 0.9992763606507188,
+          "aboveCoverage": 0.0
+        }
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/550c5db3-94cc-414f-a9a8-6184f8b0b675/fa43a4f6-a8cf-4084-8294-9126c13dffaa.png",
+      "sha256": "f8933895b7eed40ed95ac0cf3c44fa23b99b1f48590a45d2af02702f6c62b1c3",
+      "identity": "absent",
+      "edge": null,
+      "group": "550c5db3-94cc-414f-a9a8-6184f8b0b675",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 7; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Moving boundary not visible or contrast too weak",
+      "processingMs": 4.697000003943685,
+      "evidence": {
+        "status": "unavailable",
+        "reason": "No structurally supported identity candidate",
+        "scores": {}
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/550c5db3-94cc-414f-a9a8-6184f8b0b675/d031684d-4646-4183-a5f3-9d0febd34fbc.png",
+      "sha256": "064ddd6d0d20ab0419d1428309c1339f4eba7dd0f3860e7f023882ab2407eb05",
+      "identity": "absent",
+      "edge": null,
+      "group": "550c5db3-94cc-414f-a9a8-6184f8b0b675",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 8; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": true,
+      "angleDeg": 28.851263446549844,
+      "referenceEdge": null,
+      "detectedEdge": [
+        [
+          33.8,
+          376.7750560536628
+        ],
+        [
+          606.2,
+          359.5613144993429
+        ]
+      ],
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "",
+      "processingMs": 73.26420000026701,
+      "evidence": {
+        "status": "accepted",
+        "reason": "",
+        "scores": {
+          "maskScore": 1.0102015733718872,
+          "similarity": 0.9698190093040466,
+          "belowCoverage": 0.990189287152638,
+          "aboveCoverage": 0.0
+        }
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/550c5db3-94cc-414f-a9a8-6184f8b0b675/383ade89-e3e1-435d-937b-fbf0eddfdcc6.png",
+      "sha256": "b7a4fb70d7cebd1410b648072cf223c9f1cb705c135817691b6232314d5907ea",
+      "identity": "ambiguous",
+      "edge": null,
+      "group": "550c5db3-94cc-414f-a9a8-6184f8b0b675",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 9; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Reference-conditioned mask does not support this boundary",
+      "processingMs": 68.39369999943301,
+      "evidence": {
+        "status": "rejected",
+        "reason": "Reference-conditioned mask does not support this boundary",
+        "scores": {
+          "maskScore": 1.0073068141937256,
+          "similarity": 0.9510841965675354,
+          "belowCoverage": 0.5289343945217656,
+          "aboveCoverage": 0.0
+        }
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/5539a6ff-1cb1-44d9-9a51-d651d7b34308/b6a34b6d-7175-4cac-9674-739b8e516d24.png",
+      "sha256": "353667360d3ed0679c56efb0cdd7543e21d781c5bdabfeac332d59e4bb230775",
+      "identity": "absent",
+      "edge": null,
+      "group": "5539a6ff-1cb1-44d9-9a51-d651d7b34308",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 10; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Moving boundary not visible or contrast too weak",
+      "processingMs": 6.274999999732245,
+      "evidence": {
+        "status": "unavailable",
+        "reason": "No structurally supported identity candidate",
+        "scores": {}
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/5539a6ff-1cb1-44d9-9a51-d651d7b34308/e5e2ac73-09d5-48c2-8f0d-9f1a37dc5f7a.png",
+      "sha256": "9bdf01bea572161dcc896a086ae7c75ede9502d5b870cf83ae37b903f1918185",
+      "identity": "absent",
+      "edge": null,
+      "group": "5539a6ff-1cb1-44d9-9a51-d651d7b34308",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 11; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Moving boundary not visible or contrast too weak",
+      "processingMs": 4.469600004085805,
+      "evidence": {
+        "status": "unavailable",
+        "reason": "No structurally supported identity candidate",
+        "scores": {}
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/5539a6ff-1cb1-44d9-9a51-d651d7b34308/56d31b5d-e771-4ec0-aeb7-acdf7e649574.png",
+      "sha256": "fb0be452b9e8ad2c4f744264ecc58109a56a00369e58562799e00f87effe724e",
+      "identity": "absent",
+      "edge": null,
+      "group": "5539a6ff-1cb1-44d9-9a51-d651d7b34308",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 12; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Moving boundary not visible or contrast too weak",
+      "processingMs": 4.272099999070633,
+      "evidence": {
+        "status": "unavailable",
+        "reason": "No structurally supported identity candidate",
+        "scores": {}
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/661d3ccc-3cb8-40ab-b8f8-b6af1082a997/b6415fee-5bf2-42e8-8990-1a630d3be4ae.png",
+      "sha256": "f2a6ae74b610d5c59054b54b982f7bab9fa8e2fd22d6ebc222a48a85e1446837",
+      "identity": "absent",
+      "edge": null,
+      "group": "661d3ccc-3cb8-40ab-b8f8-b6af1082a997",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 13; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Moving boundary not visible or contrast too weak",
+      "processingMs": 4.4896999970660545,
+      "evidence": {
+        "status": "unavailable",
+        "reason": "No structurally supported identity candidate",
+        "scores": {}
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/661d3ccc-3cb8-40ab-b8f8-b6af1082a997/a15c33d2-482f-4414-a328-a53568bd412f.png",
+      "sha256": "edf80df170aa833f98a4d3107d6f11f99e4a2bc924988f838aa689e7df3338a9",
+      "identity": "ambiguous",
+      "edge": null,
+      "group": "661d3ccc-3cb8-40ab-b8f8-b6af1082a997",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 14; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": true,
+      "angleDeg": 38.11474314726895,
+      "referenceEdge": null,
+      "detectedEdge": [
+        [
+          33.8,
+          424.94021839983003
+        ],
+        [
+          606.2,
+          420.8315207047312
+        ]
+      ],
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "",
+      "processingMs": 71.46759999886854,
+      "evidence": {
+        "status": "accepted",
+        "reason": "",
+        "scores": {
+          "maskScore": 1.010463833808899,
+          "similarity": 0.9477079510688782,
+          "belowCoverage": 0.9875028476584111,
+          "aboveCoverage": 0.16732330046704721
+        }
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/661d3ccc-3cb8-40ab-b8f8-b6af1082a997/837e0769-0323-4eb6-ae76-f75174bdaa94.png",
+      "sha256": "0b37e57e9f599688e6715757749c0a029b01083df5b4c7285464530296192f90",
+      "identity": "ambiguous",
+      "edge": null,
+      "group": "661d3ccc-3cb8-40ab-b8f8-b6af1082a997",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 15; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Reference-conditioned mask does not support this boundary",
+      "processingMs": 74.88069999817526,
+      "evidence": {
+        "status": "rejected",
+        "reason": "Reference-conditioned mask does not support this boundary",
+        "scores": {
+          "maskScore": 0.9626410007476807,
+          "similarity": 0.9530224204063416,
+          "belowCoverage": 0.9949271627377044,
+          "aboveCoverage": 0.6696335078534031
+        }
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/68631139-76e6-4429-8ac6-8de76c9f888d/7fd774be-9969-4cd3-af32-a47dbd6fab8e.png",
+      "sha256": "2ad19fac58110708ae6cf67e894fd50f03b7327bdf7f2f7a3c2015d548145756",
+      "identity": "absent",
+      "edge": null,
+      "group": "68631139-76e6-4429-8ac6-8de76c9f888d",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 16; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Moving boundary not visible or contrast too weak",
+      "processingMs": 4.520599999523256,
+      "evidence": {
+        "status": "unavailable",
+        "reason": "No structurally supported identity candidate",
+        "scores": {}
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/68631139-76e6-4429-8ac6-8de76c9f888d/1fb6ce51-0ba1-4159-8761-f3b0893a4d27.png",
+      "sha256": "bb4ebcfd1dc92c4cd31abc38d440ca971239fe748b3afb320bb063bc6f2afe6c",
+      "identity": "absent",
+      "edge": null,
+      "group": "68631139-76e6-4429-8ac6-8de76c9f888d",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 17; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Moving boundary not visible or contrast too weak",
+      "processingMs": 4.130199995415751,
+      "evidence": {
+        "status": "unavailable",
+        "reason": "No structurally supported identity candidate",
+        "scores": {}
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/68631139-76e6-4429-8ac6-8de76c9f888d/1745f8e1-447d-4b71-af8a-6fa6dbf98ab7.png",
+      "sha256": "c0c404094f39151aa3a0043ad9910473f0aa8729b7880ece8d55d9b35255e64c",
+      "identity": "absent",
+      "edge": null,
+      "group": "68631139-76e6-4429-8ac6-8de76c9f888d",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 18; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Moving boundary not visible or contrast too weak",
+      "processingMs": 4.855699997278862,
+      "evidence": {
+        "status": "unavailable",
+        "reason": "No structurally supported identity candidate",
+        "scores": {}
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/9d8e1da4-f2ce-4808-817b-538ba60faf30/8ed4a066-8d6e-4f7c-8a86-0f00c012eec8.png",
+      "sha256": "96e34dcb6a3d3ec0db6986372a3ecc04bad2371b539a3e7aea09e0c6d009b696",
+      "identity": "ambiguous",
+      "edge": null,
+      "group": "9d8e1da4-f2ce-4808-817b-538ba60faf30",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 19; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Reference-conditioned mask does not support this boundary",
+      "processingMs": 69.63199999881908,
+      "evidence": {
+        "status": "rejected",
+        "reason": "Reference-conditioned mask does not support this boundary",
+        "scores": {
+          "maskScore": 1.0027663707733154,
+          "similarity": 0.9524356126785278,
+          "belowCoverage": 0.0,
+          "aboveCoverage": 0.19800538691126154
+        }
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/9d8e1da4-f2ce-4808-817b-538ba60faf30/1ce68bc4-12ce-4be2-ba4c-d7ca9248de76.png",
+      "sha256": "2306f98b0e35bed9710ee152b2ee8fe6a0df66cd668ac5e874af48979014de70",
+      "identity": "ambiguous",
+      "edge": null,
+      "group": "9d8e1da4-f2ce-4808-817b-538ba60faf30",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 20; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": true,
+      "angleDeg": 13.705412045736828,
+      "referenceEdge": null,
+      "detectedEdge": [
+        [
+          33.8,
+          282.1882818104102
+        ],
+        [
+          606.2,
+          279.89434209031606
+        ]
+      ],
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "",
+      "processingMs": 76.66579999931855,
+      "evidence": {
+        "status": "accepted",
+        "reason": "",
+        "scores": {
+          "maskScore": 1.0092949867248535,
+          "similarity": 0.9652047157287598,
+          "belowCoverage": 0.9945352751560393,
+          "aboveCoverage": 0.0
+        }
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/9d8e1da4-f2ce-4808-817b-538ba60faf30/f4680407-5ac5-4d6c-817e-7d8eb0420608.png",
+      "sha256": "f0903460c75d5d4fdd23c35f04de5e0b358e06b7ba5897c971ce7902771c1cbd",
+      "identity": "ambiguous",
+      "edge": null,
+      "group": "9d8e1da4-f2ce-4808-817b-538ba60faf30",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 21; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Reference-conditioned mask does not support this boundary",
+      "processingMs": 73.68399999540998,
+      "evidence": {
+        "status": "rejected",
+        "reason": "Reference-conditioned mask does not support this boundary",
+        "scores": {
+          "maskScore": 1.0001064538955688,
+          "similarity": 0.9630860090255737,
+          "belowCoverage": 0.0,
+          "aboveCoverage": 0.23831132846862418
+        }
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/a6d1e916-c465-4934-ad1e-217ff7d79123/1c65dd56-e475-459c-b2bf-4f21ada80032.png",
+      "sha256": "37462557d523dc08f82815857d194765da29d79b4210e14aac43eaf81e6213b6",
+      "identity": "ambiguous",
+      "edge": null,
+      "group": "a6d1e916-c465-4934-ad1e-217ff7d79123",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 22; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": true,
+      "angleDeg": 44.34982962197326,
+      "referenceEdge": null,
+      "detectedEdge": [
+        [
+          33.8,
+          465.6431153769176
+        ],
+        [
+          606.2,
+          455.59415451386377
+        ]
+      ],
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "",
+      "processingMs": 85.39420000306563,
+      "evidence": {
+        "status": "accepted",
+        "reason": "",
+        "scores": {
+          "maskScore": 0.990836501121521,
+          "similarity": 0.923939049243927,
+          "belowCoverage": 1.0,
+          "aboveCoverage": 0.0
+        }
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/a6d1e916-c465-4934-ad1e-217ff7d79123/2cb96337-e068-478c-90a9-dae1f805cc0d.png",
+      "sha256": "c29fa5da111b52e9b1d427df95e7c4c01092caf16ccf80816cfb630223472533",
+      "identity": "ambiguous",
+      "edge": null,
+      "group": "a6d1e916-c465-4934-ad1e-217ff7d79123",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 23; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": true,
+      "angleDeg": 17.157562833029296,
+      "referenceEdge": null,
+      "detectedEdge": [
+        [
+          33.8,
+          302.87903999973787
+        ],
+        [
+          606.2,
+          298.5824382795836
+        ]
+      ],
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "",
+      "processingMs": 110.67259999981616,
+      "evidence": {
+        "status": "accepted",
+        "reason": "",
+        "scores": {
+          "maskScore": 1.013161301612854,
+          "similarity": 0.966162383556366,
+          "belowCoverage": 0.9978158351948374,
+          "aboveCoverage": 0.0
+        }
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/a6d1e916-c465-4934-ad1e-217ff7d79123/6165c6c3-e21b-4fb4-b305-758ca26bac16.png",
+      "sha256": "91aabf9f73507f4ee64b30d45ebaab82cdc8862dbe13b9b2f2ce96b9efcfa4fb",
+      "identity": "ambiguous",
+      "edge": null,
+      "group": "a6d1e916-c465-4934-ad1e-217ff7d79123",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 24; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Reference-conditioned mask does not support this boundary",
+      "processingMs": 95.67330000572838,
+      "evidence": {
+        "status": "rejected",
+        "reason": "Reference-conditioned mask does not support this boundary",
+        "scores": {
+          "maskScore": 1.0049878358840942,
+          "similarity": 0.9590245485305786,
+          "belowCoverage": 0.0,
+          "aboveCoverage": 0.20798273515456397
+        }
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/e1ea1648-e2a2-45b6-9cbd-c6155e7fa007/f79fc5ba-694b-4fb3-a617-f87f90d48933.png",
+      "sha256": "09cafd6668a1ae75caf48a81892095cf053cfb6e7bd4581e583eedcb534d62ec",
+      "identity": "absent",
+      "edge": null,
+      "group": "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 25; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Moving boundary not visible or contrast too weak",
+      "processingMs": 6.0557000033441,
+      "evidence": {
+        "status": "unavailable",
+        "reason": "No structurally supported identity candidate",
+        "scores": {}
+      }
+    },
+    {
+      "image": "../../../light-track/data/annotations/e1ea1648-e2a2-45b6-9cbd-c6155e7fa007/de8fedf3-6818-4eb0-a363-25ed5c0ead04.png",
+      "sha256": "760238a6d9d8333dacdbb4024b932a36bb6befe1b61a3604c0b3d60a78c2e467",
+      "identity": "absent",
+      "edge": null,
+      "group": "e1ea1648-e2a2-45b6-9cbd-c6155e7fa007",
+      "reference": false,
+      "independent": false,
+      "review": "Visual review of unmodified original, contact sheet item 26; automated angle label ignored; ambiguous boundaries not scored",
+      "valid": false,
+      "angleDeg": null,
+      "referenceEdge": null,
+      "detectedEdge": null,
+      "boundaryErrorPixels": null,
+      "correct": false,
+      "reason": "Moving boundary not visible or contrast too weak",
+      "processingMs": 4.14219999947818,
+      "evidence": {
+        "status": "unavailable",
+        "reason": "No structurally supported identity candidate",
+        "scores": {}
+      }
+    }
+  ],
+  "metrics": {
+    "positiveCount": 8,
+    "negativeCount": 15,
+    "correctPositives": 4,
+    "positiveCoverage": 0.5,
+    "falseAccepts": 1,
+    "absentFalseAccepts": 1,
+    "meanBoundaryErrorPixels": 1.4242626479242133,
+    "medianAcquisitionMs": 203.80979999754345,
+    "p95ProcessingMs": 100.92305500365907
+  },
+  "referenceDiagnostic": {
+    "positiveCount": 8,
+    "negativeCount": 0,
+    "correctPositives": 4,
+    "positiveCoverage": 0.5,
+    "falseAccepts": 0,
+    "absentFalseAccepts": 0,
+    "meanBoundaryErrorPixels": 1.4242626479242133,
+    "medianAcquisitionMs": 203.80979999754345,
+    "p95ProcessingMs": 152.5503949986159
+  },
+  "heldOutGroups": {
+    "positiveCount": 0,
+    "negativeCount": 15,
+    "correctPositives": 0,
+    "positiveCoverage": null,
+    "falseAccepts": 1,
+    "absentFalseAccepts": 1,
+    "meanBoundaryErrorPixels": null,
+    "medianAcquisitionMs": null,
+    "p95ProcessingMs": 93.10352500506269
+  },
+  "thinStrip": {
+    "positiveCount": 3,
+    "negativeCount": 0,
+    "correctPositives": 1,
+    "positiveCoverage": 0.3333333333333333,
+    "falseAccepts": 0,
+    "absentFalseAccepts": 0,
+    "meanBoundaryErrorPixels": 1.280046913381832,
+    "medianAcquisitionMs": 195.6415000022389,
+    "p95ProcessingMs": 75.81138999303221
+  }
+}

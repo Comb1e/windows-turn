@@ -1,0 +1,7 @@
+{
+  "host": "127.0.0.1",
+  "port": 1819,
+  "leaseIdleSeconds": 30,
+  "maxBodyBytes": 2000000,
+  "readTimeoutSeconds": 5
+}

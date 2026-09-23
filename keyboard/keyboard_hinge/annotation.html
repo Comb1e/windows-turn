@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Keyboard angle annotation</title>
+<style>
+:root{font:16px system-ui,sans-serif;color:#1d2838;background:#f1f5f9}
+*{box-sizing:border-box}body{max-width:1100px;margin:auto;padding:24px}h1{margin:0 0 8px;font-size:1.7rem}
+button,input,select{font:inherit}button{cursor:pointer;border:1px solid #cbd5e1;background:white;border-radius:6px;padding:9px 14px}button:disabled{opacity:.5;cursor:default}
+.primary{background:#1566c0;color:white}header p,.help{color:#46566c}section{background:white;padding:18px;border-radius:12px;margin:16px 0}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.row+ .row{margin-top:14px}[hidden]{display:none!important}
+#stage{background:#182131;min-height:140px;text-align:center;border-radius:8px;overflow:hidden}
+canvas,video{display:block;max-width:100%;max-height:60vh;margin:auto}canvas{touch-action:none;cursor:crosshair}
+input[type=number]{width:90px;padding:8px}input[type=range]{flex:1;min-width:180px}input[type=text]{flex:1;min-width:150px;padding:8px}
+#status{min-height:1.5em}#status.error{color:#b42318}#status.success{color:#137647}
+#itemName{overflow-wrap:anywhere}.help{font-size:.9rem}.badge{background:#e6edf5;padding:5px 10px;border-radius:20px}
+</style>
+</head>
+<body>
+<header><h1>Keyboard angle annotation</h1><p>Capture a few openings, label the measured angle, and mark the moving boundary with two points, or select four fixed physical corners.</p></header>
+<section>
+<div class="row"><label>Upload images <input id="file" type="file" accept=".png,.jpg,.jpeg,.bmp,.webp" multiple></label><button id="camera">Use front camera</button><select id="devices" aria-label="Camera device" hidden></select><button id="snap" class="primary" hidden>Capture frame</button><button id="stop" hidden>Stop camera</button></div>
+<p class="help" id="captureHelp"></p>
+<div id="stage"><canvas id="canvas" width="960" height="400" aria-label="Mark the moving boundary or fixed corners"></canvas><video id="video" autoplay muted playsinline hidden></video></div>
+<div class="row"><button id="prev">Previous</button><button id="next">Next</button><span id="itemName">No images</span><span id="labelStatus" class="badge"></span></div>
+<div class="row"><label for="annotationMode">Annotation</label><select id="annotationMode"><option value="visible-edge">Moving boundary (2 points)</option><option value="physical">Fixed rectangle (4 corners)</option></select></div>
+<p id="instruction">Upload or capture an image to begin.</p>
+<div class="row"><button id="undo">Undo point</button><button id="reset">Reset points</button><span class="help">Drag a marker to adjust it. In boundary mode, click its left and right ends in the lower half of the photo.</span></div>
+</section>
+<section>
+<div class="row"><label for="slider">Measured angle</label><input id="slider" type="range" step=".1" disabled><input id="angle" type="number" step=".1" aria-label="Measured angle in degrees" disabled><span>degrees</span></div>
+<div class="row"><label for="notes">Notes</label><input id="notes" type="text" placeholder="Optional"><button id="save" class="primary">Save annotation</button></div>
+<p class="help">Shortcuts: ← / → navigate, R reset, Backspace undo, Enter save. Shortcuts are inactive while typing.</p>
+<p id="status" role="status" aria-live="polite">Loading…</p>
+</section>
+<section>
+<h2>Keyboard identity examples</h2>
+<p class="help">Build a new batch of about 20 photos across different scenes. Include visible bases, thin strips, and similar sofa/table/touchpad edges with no base. These identity labels are separate from angle calibration; no angle is required for absent or uncertain views.</p>
+<div class="row"><label>Target <select id="identity-label"><option value="present">Base visible</option><option value="absent">Base not visible</option><option value="ambiguous">Uncertain</option></select></label><label>Role <select id="identity-split"><option value="reference">Reference</option><option value="validation">Validation</option><option value="test">Held-out test</option></select></label></div>
+<div class="row"><label for="identity-group">Scene / capture group</label><input id="identity-group" placeholder="e.g. desk-daylight-session-1"><button id="save-identity">Save identity example</button></div>
+<p class="help">For a visible base, choose Moving boundary and mark its two endpoints. Keep every photo from one capture group in the same role. Test photos and their duplicates must never become references. A saved identity boundary is shown first when available. Saving identity keeps angle annotations unchanged; Save annotation updates the angle and its points.</p>
+</section>
+<script>
+"use strict";
+const $ = id => document.getElementById(id), canvas = $("canvas"), ctx = canvas.getContext("2d");
+const State = Object.freeze({EMPTY:"empty", READY:"ready", DIRTY:"dirty", CAMERA:"camera", SAVING:"saving", BUSY:"busy"});
+const pointCount=()=>$("annotationMode").value==="visible-edge"?2:4;
+const pointLabels=()=>pointCount()===2?config.edge_labels:config.labels;
+let state=State.EMPTY, config, items=[], index=0, corners=[], stream=null, photo=null, generation=0, drag=null, selectedSource="upload", selectedTimestamp=null;
+let savedAngle="", savedIdentity="";
+const angleDraft=()=>JSON.stringify([$("angle").value,$("notes").value,$("annotationMode").value,corners]);
+const identityDraft=()=>JSON.stringify([$("identity-label").value,$("identity-split").value,$("identity-group").value,$("identity-label").value==="present"?corners:null]);
+const hasUnsaved=()=>angleDraft()!==savedAngle||identityDraft()!==savedIdentity;
+function status(text,error=false){$("status").textContent=text;$("status").className=error?"error":"success";}
+function transition(next){
+  state=[State.READY,State.DIRTY].includes(next)?(hasUnsaved()?State.DIRTY:State.READY):next;
+  const editing=[State.READY,State.DIRTY].includes(state), current=items[index];
+  $("save").disabled=!editing||corners.length!==pointCount(); $("reset").disabled=!editing; $("undo").disabled=!editing||!corners.length;
+  $("prev").disabled=!editing||index===0; $("next").disabled=!editing||index+1>=items.length;
+  $("angle").disabled=$("slider").disabled=!editing; $("notes").disabled=!editing;$("annotationMode").disabled=!editing;
+  for(const id of ["identity-label","identity-split","identity-group"])$(id).disabled=!editing;
+  $("save-identity").disabled=!editing||($("identity-label").value==="present"&&(pointCount()!==2||corners.length!==2));
+  $("file").disabled=$("camera").disabled=[State.CAMERA,State.SAVING,State.BUSY].includes(state);
+  $("labelStatus").textContent=state===State.DIRTY?"Unsaved changes":[(current?.annotation?.corners||current?.annotation?.edge)?"Angle labeled":"Angle not labeled",current?.identity?"Identity reviewed":"Identity not reviewed"].join(" · ");
+  $("instruction").textContent=!editing?"Capture or upload a photo, then mark its keyboard.":corners.length<pointCount()?("Click "+(corners.length+1)+": "+pointLabels()[corners.length]):"Selection complete. Drag markers to correct it, then save.";
+}
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height); if(!photo)return;
+  ctx.drawImage(photo,0,0);const unit=canvas.width/(canvas.getBoundingClientRect().width||canvas.width);
+  ctx.lineWidth=2*unit;ctx.strokeStyle="#59ffc0";ctx.fillStyle="rgba(0,200,150,.12)";
+  if(corners.length){ctx.beginPath();corners.forEach((p,n)=>n?ctx.lineTo(...p):ctx.moveTo(...p));if(corners.length===4){ctx.closePath();ctx.fill()}ctx.stroke()}
+  corners.forEach((p,n)=>{ctx.fillStyle="#59ffc0";ctx.beginPath();ctx.arc(...p,6*unit,0,Math.PI*2);ctx.fill();
+    const text=(n+1)+": "+pointLabels()[n];ctx.font="bold "+(13*unit)+"px system-ui";let x=Math.min(p[0]+10*unit,canvas.width-ctx.measureText(text).width-4*unit), y=Math.max(18*unit,p[1]-12*unit);
+    ctx.lineWidth=4*unit;ctx.strokeStyle="#111827";ctx.strokeText(text,x,y);ctx.fillStyle="white";ctx.fillText(text,x,y);ctx.strokeStyle="#59ffc0";
+  });
+}
+async function api(url,options){const response=await fetch(url,options);const data=await response.json();if(!response.ok)throw Error(data.error||"Request failed");return data;}
+function canLeave(){return state!==State.DIRTY||confirm("Discard unsaved annotation changes?");}
+async function show(){
+  const token=++generation,item=items[index];photo=null;corners=[];draw();
+  $("itemName").textContent=item?((index+1)+"/"+items.length+" — "+item.id):"No images";
+  const label=item?.annotation;$("annotationMode").value=label?.corner_mode||config.corner_mode;selectedSource=label?.source||(item?.id.startsWith("frame-")?"camera":"upload");selectedTimestamp=label?.timestamp||Date.now()/1000;
+  $("angle").value=$("slider").value=label?.angle_deg??config.min_angle_deg;$("notes").value=label?.notes||"";
+  $("identity-label").value=item?.identity?.identity||"present";
+  $("identity-split").value=item?.identity?.split||$("identity-split").value;
+  $("identity-group").value=item?.identity?.group||$("identity-group").value;
+  if(item?.identity?.edge&&!label)$("annotationMode").value="visible-edge";
+  if(!item){transition(State.EMPTY);return;}
+  transition(State.BUSY);
+  const img=new Image();img.src=item.url;
+  try{await img.decode();if(token!==generation)return;photo=img;canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
+    corners=(pointCount()===2?(item?.identity?.edge||label?.edge):label?.corners)?.map(p=>p.slice())||[];savedAngle=angleDraft();savedIdentity=identityDraft();transition(State.READY);draw();status("Image "+canvas.width+" × "+canvas.height+". "+(corners.length?"Saved label loaded.":"Select its boundary endpoints or fixed corners."));
+  }catch(error){if(token===generation){transition(State.EMPTY);status("Unable to load image: "+error.message,true);}}
+}
+async function reload(id){items=await api("/api/items");index=id?Math.max(0,items.findIndex(item=>item.id===id)):Math.min(index,Math.max(0,items.length-1));await show();}
+function point(event){const r=canvas.getBoundingClientRect();return [Math.max(0,Math.min(canvas.width-1,(event.clientX-r.left)*canvas.width/r.width)),Math.max(0,Math.min(canvas.height-1,(event.clientY-r.top)*canvas.height/r.height))];}
+canvas.addEventListener("pointerdown",event=>{
+  if(![State.READY,State.DIRTY].includes(state))return;
+  const p=point(event),radius=16*canvas.width/canvas.getBoundingClientRect().width;
+  drag=corners.findIndex(q=>Math.hypot(q[0]-p[0],q[1]-p[1])<radius);
+  if(drag<0){if(corners.length===pointCount()){drag=null;return;}corners.push(p);drag=corners.length-1;transition(State.DIRTY);draw();}
+  canvas.setPointerCapture(event.pointerId);
+});
+canvas.addEventListener("pointermove",event=>{if(drag===null||drag<0)return;corners[drag]=point(event);transition(State.DIRTY);draw();});
+for(const name of ["pointerup","pointercancel","lostpointercapture"])canvas.addEventListener(name,()=>{drag=null;});
+$("slider").oninput=()=>{$("angle").value=$("slider").value;transition(State.DIRTY);};
+$("angle").oninput=()=>{$("slider").value=$("angle").value;transition(State.DIRTY);};
+$("notes").oninput=()=>transition(State.DIRTY);
+for(const id of ["identity-label","identity-split","identity-group"])$(id).oninput=()=>transition(State.DIRTY);
+$("save-identity").onclick=async()=>{
+  if(!photo||$("save-identity").disabled)return;
+  transition(State.SAVING);
+  try{items[index].identity=await api("/api/identity",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({item_id:items[index].id,revision:items[index].identity?.revision||0,identity:$("identity-label").value,split:$("identity-split").value,group:$("identity-group").value,edge:$("identity-label").value==="present"?corners:null})});
+    savedIdentity=identityDraft();transition(State.READY);status("Identity example saved separately. "+(state===State.DIRTY?"Angle edits remain unsaved.":"Angle annotation was not changed."));
+  }catch(error){transition(State.DIRTY);status(error.message,true);}
+};
+$("annotationMode").onchange=()=>{corners=pointCount()===2?corners.slice(0,2):[];transition(State.DIRTY);draw();};
+$("undo").onclick=()=>{corners.pop();transition(State.DIRTY);draw();};
+$("reset").onclick=()=>{corners=[];transition(State.DIRTY);draw();};
+$("prev").onclick=()=>{if(canLeave()){index--;void show();}};
+$("next").onclick=()=>{if(canLeave()){index++;void show();}};
+$("save").onclick=async()=>{
+  if(!photo||corners.length!==pointCount())return;const angle=$("angle").valueAsNumber;
+  if(!Number.isFinite(angle)||angle<config.min_angle_deg||angle>config.max_angle_deg){status("Enter an angle between "+config.min_angle_deg+" and "+config.max_angle_deg+".",true);return;}
+  transition(State.SAVING);
+  try{items[index].annotation=await api("/api/annotations",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({item_id:items[index].id,timestamp:selectedTimestamp,angle_deg:angle,corner_mode:$("annotationMode").value,corners:pointCount()===4?corners:null,edge:pointCount()===2?corners:null,source:selectedSource,notes:$("notes").value})});
+    savedAngle=angleDraft();transition(State.READY);status("Saved angle for "+items[index].id+(state===State.DIRTY?". Identity edits remain unsaved.":""));
+  }catch(error){transition(State.DIRTY);status(error.message,true);}
+};
+async function upload(blob,name){const form=new FormData();form.append("file",blob,name);return api("/api/upload",{method:"POST",body:form});}
+$("file").onchange=async event=>{
+  if(!canLeave())return;const files=Array.from(event.target.files);if(!files.length)return;
+  transition(State.BUSY);let id;
+  try{for(const file of files)id=(await upload(file,file.name)).id;await reload(id);}
+  catch(error){await reload(id);status(error.message,true);}finally{event.target.value="";}
+};
+function stopTracks(){if(stream)stream.getTracks().forEach(track=>track.stop());stream=null;$("video").srcObject=null;}
+async function startCamera(deviceId){
+  stopTracks();
+  stream=await navigator.mediaDevices.getUserMedia({video:{width:{exact:config.width},height:{exact:config.height},...(deviceId?{deviceId:{exact:deviceId}}:{facingMode:"user"})}});
+  $("video").srcObject=stream;await $("video").play();
+}
+function cameraControls(active){$("video").hidden=!active;canvas.hidden=active;for(const id of ["snap","stop","devices"])$(id).hidden=!active;}
+$("camera").onclick=async()=>{
+  if(!canLeave())return;
+  try{if(!navigator.mediaDevices)throw Error("Camera access needs localhost or HTTPS.");transition(State.BUSY);cameraControls(true);await startCamera();
+    const devices=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="videoinput");$("devices").replaceChildren(...devices.map(d=>new Option(d.label||"Camera",d.deviceId)));
+    $("devices").value=stream.getVideoTracks()[0].getSettings().deviceId;transition(State.CAMERA);status("Set a measured opening, hold still, then capture.");
+  }catch(error){stopTracks();cameraControls(false);await show();status("Camera: "+error.message+" Check the configured resolution and camera permissions.",true);}
+};
+$("devices").onchange=async()=>{try{await startCamera($("devices").value);}catch(error){stopTracks();cameraControls(false);await show();status(error.message,true);}};
+$("stop").onclick=async()=>{stopTracks();cameraControls(false);await show();};
+$("snap").onclick=async()=>{
+  if(!stream||!$("video").videoWidth)return;$("snap").disabled=true;
+  try{const frozen=document.createElement("canvas");frozen.width=$("video").videoWidth;frozen.height=$("video").videoHeight;frozen.getContext("2d").drawImage($("video"),0,0);
+    const blob=await new Promise(resolve=>frozen.toBlob(resolve,"image/jpeg",.95));const saved=await upload(blob,"frame-"+Date.now()+".jpg");
+    stopTracks();cameraControls(false);await reload(saved.id);selectedSource="camera";selectedTimestamp=Date.now()/1000;
+  }catch(error){status(error.message,true);}finally{$("snap").disabled=false;}
+};
+document.addEventListener("keydown",event=>{
+  if(["INPUT","TEXTAREA","SELECT","BUTTON"].includes(event.target.tagName))return;
+  const actions={ArrowLeft:"prev",ArrowRight:"next",r:"reset",R:"reset",Backspace:"undo",Enter:"save"};
+  const id=actions[event.key];if(id&&!$(id).disabled){event.preventDefault();$(id).click();}
+});
+window.addEventListener("beforeunload",event=>{if(state===State.DIRTY){event.preventDefault();event.returnValue="";}});
+window.addEventListener("pagehide",stopTracks);window.addEventListener("resize",draw);
+(async()=>{try{config=await api("/api/config");$("annotationMode").value=config.corner_mode;for(const id of ["angle","slider"]){$(id).min=config.min_angle_deg;$(id).max=config.max_angle_deg;$(id).value=config.min_angle_deg;}
+  $("captureHelp").textContent="Use the same screen-mounted camera at "+config.width+" × "+config.height+" for capture and live estimation. Images are unmirrored.";
+  await reload();if(!items.length)status("Ready to capture or upload images.");
+}catch(error){status(error.message,true);}})();
+</script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Light Track · Screenshot annotation</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="annotation.css"></head>
+<body>
+<header><a class="brand" href="/">◈ LIGHT TRACK</a><a href="/">Live measurement</a></header>
+<main>
+  <section class="intro"><p class="eyebrow">BUILD A LIGHTING DATASET</p><h1>One lighting setup.<br>Any number of angles.</h1><p>Collect keyboard-labeled screenshots automatically at small angles, or capture and label measured angles yourself. Every annotation session is one group.</p></section>
+  <section class="panel">
+    <div class="section-title"><h2>Annotation sessions</h2><button id="reload">Reload saved groups</button></div>
+    <label>Saved group<select id="groups"><option value="">New session</option></select></label>
+    <div class="metadata-grid">
+      <label>Laptop identifier<input id="meta-device" placeholder="my-laptop" required></label>
+      <label>Lighting condition<input id="meta-lighting" placeholder="daylight + desk lamp" required></label>
+      <label>Location (optional)<input id="meta-location" placeholder="office"></label>
+      <label>Position / orientation (optional)<input id="meta-position" placeholder="facing window"></label>
+      <label>Display settings (optional)<input id="meta-display" placeholder="50%, light theme"></label>
+    </div>
+    <div class="camera-controls"><button id="new-group" class="primary">Start annotation session</button><button id="end-group" disabled>End session</button><button id="export-group" disabled>Export group JSON</button></div>
+    <p id="group-status" class="muted">No group selected.</p>
+    <p class="muted">Keep the lighting setup consistent within a group. The next session can use the same lighting or different lighting; it always creates a separate group. There is no required angle list, order, range, or screenshot count.</p>
+  </section>
+  <section class="panel">
+    <h2>Calibrate one scene</h2>
+    <p class="muted">Keep the laptop base and lighting fixed. Start a separate session, then capture about ten measured angles across your intended range. Use Keyboard-assisted collection at small angles and enter externally measured angles for the rest. Suggested angles are guidance, never automatic labels.</p>
+    <label>Base model<select id="scene-base"><option value="">Loading models…</option></select></label>
+    <div class="camera-controls"><button id="scene-start">Start scene calibration</button><button id="scene-fit" disabled>Save scene profile</button><button id="scene-reset" disabled>Reset calibration</button></div>
+    <p id="scene-status" role="status">Idle</p><p id="scene-guide" class="muted"></p>
+    <a id="scene-result" href="/" hidden>Use the saved Scene profile in live measurement →</a>
+  </section>
+  <section class="annotation-workspace">
+    <div class="panel">
+      <h2>Screenshots</h2>
+      <div class="camera-controls"><button id="camera">Start camera preview</button><button id="stop-camera" disabled>Stop camera</button><button id="snap" class="primary" disabled>Capture screenshot</button></div>
+      <label>Camera<select id="devices"><option value="">Default camera</option></select></label>
+      <div class="automatic-collection">
+        <h3>Keyboard-assisted collection</h3>
+        <p class="muted">Move through the keyboard-visible angles. Valid measurements save a labeled screenshot every 0.5 seconds, including repeated angles. Stop collection to capture and label larger angles manually.</p>
+        <div class="camera-controls"><button id="auto-start" class="primary" disabled>Start automatic collection</button><button id="auto-stop" disabled>Stop collection</button></div>
+        <p id="auto-status" role="status" aria-live="polite">Start an annotation session and camera preview.</p>
+        <p id="auto-reading" class="muted">Keyboard angle — · Supported range — · Saved 0</p>
+      </div>
+      <label>Upload camera screenshots<input id="files" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" multiple disabled></label>
+      <video id="video" autoplay muted playsinline hidden></video>
+      <p id="capture-help" class="muted"></p>
+      <div class="photo-stage"><img id="photo" alt="Selected screenshot for measured-angle annotation" hidden><p id="empty-photo">Start a session, then capture or upload a screenshot.</p></div>
+      <div class="camera-controls"><button id="previous" disabled>Previous</button><button id="next" disabled>Next</button><span id="item-status" class="muted">No screenshots</span></div>
+    </div>
+    <aside class="panel annotation-editor">
+      <h2>Label this screenshot</h2><p class="muted">Automatic screenshots use the matching keyboard measurement. Use an external measurement for manual labels and corrections. 0° is closed; 90° is upright.</p>
+      <label>Measured angle (degrees)<input id="angle" type="number" step="any" placeholder="e.g. 37.5" disabled></label>
+      <label>Notes (optional)<input id="notes" type="text" disabled></label>
+      <div class="camera-controls"><button id="save" class="primary" disabled>Save annotation</button><button id="clear" disabled>Clear label</button><button id="discard" disabled>Discard edits and reload</button></div>
+      <button id="delete-photo" class="danger" disabled>Delete photo</button>
+      <p id="label-status" class="muted"></p>
+      <p class="muted">Deleting permanently removes this photo and its annotation from this group and future training. Existing models, profiles, and exported copies stay unchanged; train or fit a new one after correcting its references.</p>
+      <p class="muted">Screenshots and saved labels stay on this computer and survive reloads. Unlabeled images stay in the group and are excluded from training. You can correct labels after ending a session.</p>
+    </aside>
+  </section>
+  <p id="message" role="status" aria-live="polite">Loading saved sessions…</p>
+  <section class="panel"><h2>Train across lighting groups</h2><p class="muted">End the sessions you want to train on. Train a new model from all ended, labeled groups for this laptop and camera setup. Training compares models across complete sessions and keeps the original method when there is too little evidence to choose another. Each run keeps its own model and report.</p>
+    <button id="train-model" class="primary">Train model</button>
+    <button id="train-image-model">Evaluate richer image model</button>
+    <p class="muted">Richer image training compares held-out sessions and lighting descriptions and publishes only when every improvement check passes. The optional local vision dependencies and weights must be installed; evaluation may take several minutes. The original model remains available.</p>
+    <p id="training-status" role="status" aria-live="polite">Ready to train from saved annotations.</p>
+    <p id="training-diagnostic" class="muted" hidden></p>
+    <div id="training-result" hidden><a href="/">Use newest model →</a> · <a id="trained-model" download>Download model</a> · <a id="training-report" download>Download training report</a></div>
+    <details><summary>Command-line training and loading a model</summary><p class="muted">To train from the command line, use a new output folder. Load your downloaded model by passing its path to npm start:</p><pre>.\.venv\Scripts\python.exe research/train_annotations.py data/annotations --output artifacts/photos-v1
+node research/check-parity.mjs artifacts/photos-v1/model.json artifacts/photos-v1/parity.json
+npm start -- --model artifacts/photos-v1/model.json</pre></details><p class="muted">The live measurement page uses the selected annotation model. Whole-group diagnostics report how the model transfers between sessions. Repeated lighting is allowed; a separate session alone does not establish performance under unseen lighting. Screenshots do not measure motion accuracy or response delay.</p></section>
+</main><script type="module" src="src/annotation-app.js"></script>
+</body></html>

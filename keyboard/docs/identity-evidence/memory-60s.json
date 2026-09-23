@@ -1,0 +1,112 @@
+{
+  "kind": "saved-image identity/session memory replay",
+  "seconds": 60.000262100002146,
+  "frames": 900,
+  "valid": 275,
+  "fps": 14.999934475285697,
+  "p95Ms": 42.2,
+  "maxMs": 58.143900001596194,
+  "missedDeadlines": 0,
+  "sessionResets": 0,
+  "maxInFlight": 1,
+  "pendingFrames": 0,
+  "identity": {
+    "method": "dino",
+    "backend": "cuda",
+    "available": true,
+    "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "weightSha256": "b938bf1bc15cd2ec0feacfe3a1bb553fe8ea9ca46a7e1d8d00217f29aef60cd9",
+    "extractorVersion": 1
+  },
+  "memory": [
+    {
+      "elapsedSeconds": 1.2000018614344299e-06,
+      "workingSetBytes": 1156685824,
+      "privateBytes": 2699874304,
+      "gpuAllocatedBytes": 100236800,
+      "gpuReservedBytes": 121634816
+    },
+    {
+      "elapsedSeconds": 5.000560200001928,
+      "workingSetBytes": 1154899968,
+      "privateBytes": 2694492160,
+      "gpuAllocatedBytes": 100236800,
+      "gpuReservedBytes": 121634816
+    },
+    {
+      "elapsedSeconds": 10.067073800004437,
+      "workingSetBytes": 1154342912,
+      "privateBytes": 2693873664,
+      "gpuAllocatedBytes": 100236800,
+      "gpuReservedBytes": 121634816
+    },
+    {
+      "elapsedSeconds": 15.06729759999871,
+      "workingSetBytes": 1154904064,
+      "privateBytes": 2694406144,
+      "gpuAllocatedBytes": 100236800,
+      "gpuReservedBytes": 121634816
+    },
+    {
+      "elapsedSeconds": 20.134328899999673,
+      "workingSetBytes": 1154060288,
+      "privateBytes": 2694557696,
+      "gpuAllocatedBytes": 100236800,
+      "gpuReservedBytes": 121634816
+    },
+    {
+      "elapsedSeconds": 25.200264300001436,
+      "workingSetBytes": 1141506048,
+      "privateBytes": 2681946112,
+      "gpuAllocatedBytes": 100236800,
+      "gpuReservedBytes": 121634816
+    },
+    {
+      "elapsedSeconds": 30.20061859999987,
+      "workingSetBytes": 1140699136,
+      "privateBytes": 2681069568,
+      "gpuAllocatedBytes": 100236800,
+      "gpuReservedBytes": 121634816
+    },
+    {
+      "elapsedSeconds": 35.266799099998025,
+      "workingSetBytes": 1140731904,
+      "privateBytes": 2681073664,
+      "gpuAllocatedBytes": 100236800,
+      "gpuReservedBytes": 121634816
+    },
+    {
+      "elapsedSeconds": 40.267250000004424,
+      "workingSetBytes": 1154101248,
+      "privateBytes": 2694422528,
+      "gpuAllocatedBytes": 100236800,
+      "gpuReservedBytes": 121634816
+    },
+    {
+      "elapsedSeconds": 45.3339008000039,
+      "workingSetBytes": 1154396160,
+      "privateBytes": 2694672384,
+      "gpuAllocatedBytes": 100236800,
+      "gpuReservedBytes": 121634816
+    },
+    {
+      "elapsedSeconds": 50.33390280000458,
+      "workingSetBytes": 1154625536,
+      "privateBytes": 2694860800,
+      "gpuAllocatedBytes": 100236800,
+      "gpuReservedBytes": 121634816
+    },
+    {
+      "elapsedSeconds": 55.40038450000429,
+      "workingSetBytes": 1140895744,
+      "privateBytes": 2681110528,
+      "gpuAllocatedBytes": 100236800,
+      "gpuReservedBytes": 121634816
+    }
+  ],
+  "privateGrowthAfterWarmupBytes": null,
+  "rendererCapHz": 60,
+  "rendererReport": "../../data/identity/release-cuda-60hz.renderer.json",
+  "physicalCameraAcceptance": false,
+  "implementationNote": "Release bank capped at 128 foreground/background prototypes per reference; 60 seconds is too short for a post-60-second warmup growth estimate."
+}
