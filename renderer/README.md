@@ -22,7 +22,7 @@ Frosting depends on each image point's **distance from the glass**. The bottom e
 
 The **entire active bottom edge stays fixed**, including both corners. Viewing distance controls the centered perspective; screen dimensions describe the active panel. The plane rotates by `referenceAngle − angle` with no width/height resizing. Back-facing geometry is hidden without flipping it. Preview windows preserve the selected monitor's aspect ratio, including 16:9 and portrait displays.
 
-**Physical lid mode has been removed.** Grid, live desktop, preview, full-screen output and benchmarks all use one bottom-anchored rotation. Old preferences cannot restore the removed mode. This version does not provide the former world-space lid compensation.
+Grid, live desktop, preview, full-screen output and benchmarks all use one bottom-anchored rotation. This is a visual desktop effect and does not anchor the image in world space as the physical panel moves.
 
 The cursor is drawn into the virtual content before projection and frosting. Actual input coordinates, clicks, focus, and game mouse movement remain unchanged. The overlay is an animation, not a replacement desktop hit-testing system. A small companion process restores system-cursor visibility if the renderer crashes. It exits when the renderer exits.
 
@@ -38,7 +38,7 @@ This selects **Fusion** as the angle source. With the ordinary `./renderer/start
 
 **Fusion address** defaults to `http://127.0.0.1:1820`. If Fusion uses a custom port, enter that same address here; changes reconnect immediately and **Apply / save** remembers it. The renderer subscribes to `/api/events` and uses `/api/angle` to initialize each connection. Status distinguishes waiting for the camera, waiting for a valid measurement, live/stale angles, and connection errors, and includes the address being used. Either application may start first; lost connections retry automatically. An idle SSE connection can time out and reconnect while waiting for camera frames. This application does not own or start the camera.
 
-`IAngleSource::sample(now)` returns angle, angular velocity, source and reception timestamps, session identity, validity, and freshness. Manual and scripted sources implement the same interface. Fusion uses the already-smoothed `displayAngleDeg` / `displayVelocityDegS`, predicts for at most the configured 17 ms publication interval, and freezes geometry on stale input while video remains live. Old session data cannot revive a retired session. All network access is loopback HTTP, with bounded messages and connection timeouts.
+Manual, scripted and Fusion sources share one angle interface with velocity, timestamps, session identity and freshness. Fusion uses the already-smoothed `displayAngleDeg` / `displayVelocityDegS`, predicts for at most the configured 17 ms horizon, and freezes geometry on stale input while video remains live. Old session data cannot revive a retired session. All network access is loopback HTTP, with bounded messages and connection timeouts.
 
 Fusion currently supports **10–120°**. Its 10° endpoint is not a closed-lid measurement. Full 0° closure is available in debug mode; physical integration below Fusion's current range requires an improved angle source.
 
@@ -77,4 +77,4 @@ For a brief live preview check:
 
 Configuration is validated before changes take effect. `--config path` selects defaults; `--no-preferences` ignores and does not save user settings. `--preview` opens an interactive preview immediately and `--fusion` selects the Fusion angle source. `--fps`, `--angle`, `--synthetic`, `--overlay`, `--benchmark`, `--seconds`, and `--report` support reproducible diagnostics. The removed `--projection` option is rejected; the benchmark no longer accepts `-Projection`. Legacy `projectionMode`, eye lateral/height and hinge-offset settings are ignored and omitted when saving preferences. Older files without `frostDistanceMm` use its default.
 
-See [architecture](docs/architecture.md), [research](docs/research.md), and [validation](docs/validation.md).
+See [architecture](docs/architecture.md), [research](docs/research.md), [validation](docs/validation.md), and [iteration history](../docs/iteration.md).

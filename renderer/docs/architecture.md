@@ -1,176 +1,120 @@
 # Hinge Glass architecture
 
-## Data flow
+Hinge Glass is a native Windows desktop animation. It captures a composed monitor, rotates a virtual desktop plane about the active bottom edge, and adds frosting according to the plane's distance from the glass. Manual and scripted angles work independently; Fusion can supply its already-smoothed display angle. The renderer neither owns the camera nor changes estimator output.
+
+## Components and data flow
 
 ```mermaid
 flowchart LR
-  Manual[Manual slider / numeric angle] --> Source[IAngleSource]
-  Sweep[Timed closing / opening / reversal] --> Source
-  Fusion[Fusion snapshot and SSE] --> Gate[Session ordering and freshness gate]
-  Gate --> Source
-  Source --> Geometry[Single bottom-anchored rotation / homography]
-  Settings[Validated config / user preferences] --> Geometry
-  Desktop[Windows composed monitor] --> WGC[GPU capture / latest frame only]
-  WGC --> Light[1-pixel ambient light reduction]
-  WGC --> Warp[Cursor composition and perspective projection]
+  Manual[Manual slider or scripted sweep] --> Angle[Shared angle-source contract]
+  Fusion[Fusion snapshot and SSE] --> Gate[Identity, ordering and freshness gate]
+  Gate --> Angle
+  Settings[Validated settings snapshot] --> Geometry[Bottom-anchored plane projection]
+  Angle --> Geometry
+  Desktop[Windows composed monitor] --> Capture[GPU capture: newest frame]
+  Capture --> Ambient[Ambient light reduction]
+  Capture --> Warp[Cursor composition and projection]
   Cursor[Cursor shape and original position] --> Warp
   Geometry --> Warp
-  Light --> Warp
-  Geometry --> Gap[Distance of each image point to finite glass]
-  Gap --> Warp
-  Warp --> Blur[Four reduced-resolution Gaussian levels]
-  Blur --> Compose[Linear-light glass composition]
-  Warp --> Compose
-  Gap --> Compose
-  Compose --> Present[Waitable flip swapchain / bounded 2-frame queue]
-  Present --> Overlay[Excluded nonactivating click-through window]
+  Geometry --> Distance[Image-to-glass separation]
+  Ambient --> Warp
+  Warp --> Blur[Four Gaussian blur levels]
+  Warp --> Compose[Linear-light glass composition]
+  Blur --> Compose
+  Distance --> Compose
+  Compose --> Present[Refresh-paced swapchain]
+  Present --> Output[Capture-excluded preview or overlay]
 ```
 
-The UI thread owns Win32 controls, emergency hotkey and session/power notifications. A render thread owns the D3D immediate context and capture polling. Capture callbacks only signal an event; they never use the immediate context. A separate cancellable Fusion worker handles bounded loopback HTTP. Immutable angle-source ownership and settings snapshots cross the UI/render boundary under a mutex.
+| Component | Responsibility |
+| --- | --- |
+| UI thread | Controls, settings, source selection, emergency hotkey and power/session notifications |
+| Render thread | D3D device/context, capture polling, projection, blur, presentation and recovery |
+| Fusion worker | Cancellable loopback HTTP, incremental event parsing and angle validation |
+| Cursor guardian | Restore system-cursor visibility if the renderer exits unexpectedly |
 
-The GPU can differ from the display's adapter; Windows performs the capture/presentation transfer. Telemetry reports capture delivery latency separately from GPU shader duration. GPU query results are read asynchronously from a bounded query ring. Pixel readback exists only in explicit synthetic PNG diagnostics after measurement.
+Settings snapshots and angle-source ownership cross the UI/render boundary under a mutex. Capture callbacks signal frame availability; the render thread owns GPU work. The capture adapter and render adapter may differ, so Windows can perform a cross-adapter transfer. Telemetry distinguishes capture delivery, GPU processing and presentation rather than attributing them to one latency number.
 
-## Fusion connection and angle freshness
+## Angle transport and freshness
+
+Fusion connections start with `/api/angle`, then subscribe to `/api/events`. The worker consumes available HTTP bytes promptly and incrementally parses bounded messages, including fragmented events. EOF, timeout and HTTP errors trigger a new snapshot and subscription after the configured retry interval.
 
 ```mermaid
 stateDiagram-v2
-  [*] --> Connecting: select Fusion / launch with --fusion
-  Connecting --> WaitingForCamera: snapshot says STOPPED
-  Connecting --> WaitingForAngle: requesting / no valid reading
-  Connecting --> Streaming: valid snapshot
-  WaitingForCamera --> Streaming: valid angle event
-  WaitingForAngle --> Streaming: valid angle event
-  Streaming --> WaitingForCamera: camera stopped
-  Streaming --> WaitingForAngle: invalid payload
-  Streaming --> Retrying: HTTP error / stream closed
-  WaitingForCamera --> Retrying: timeout / connection lost
-  WaitingForAngle --> Retrying: timeout / connection lost
-  Connecting --> Retrying: connection failed
-  Retrying --> WaitingForCamera: snapshot says STOPPED
-  Retrying --> WaitingForAngle: requesting / no valid reading
-  Retrying --> Streaming: accepted snapshot / event
+  [*] --> Connecting
+  Connecting --> WaitingForCamera: Snapshot says STOPPED
+  Connecting --> WaitingForAngle: No valid display reading
+  Connecting --> Streaming: Accepted snapshot
+  Connecting --> Retrying: Connection failed
+  WaitingForCamera --> Streaming: Accepted angle
+  WaitingForAngle --> Streaming: Accepted angle
+  Streaming --> WaitingForCamera: Camera stopped
+  Streaming --> WaitingForAngle: Invalid payload
+  Streaming --> Retrying: HTTP error or stream closed
+  WaitingForCamera --> Retrying: Timeout or connection lost
+  WaitingForAngle --> Retrying: Timeout or connection lost
+  Retrying --> WaitingForCamera: Snapshot says STOPPED
+  Retrying --> WaitingForAngle: No valid display reading
+  Retrying --> Streaming: Accepted snapshot or event
 ```
 
-The WinHTTP worker calls `WinHttpQueryDataAvailable` before `WinHttpReadData`, using a bounded reusable buffer. A direct 8 KiB read tried to fill the buffer across SSE publications and could withhold a small complete angle event until later data or timeout. The parser still handles fragmented JSON, CRLF and comments. Snapshot and event payloads share one acceptance function and update connection status immediately. EOF is a reconnect condition. Idle streams may time out; retries resnapshot the coordinator and subscribe again without requiring a source toggle or renderer restart.
+Network state and angle freshness are independent. A streaming connection can carry a retained `STALE` controller value. Accepted Fusion payloads require an angle in 10–120°, finite displayed velocity and timestamps, a nonempty session, and a recognized controller state. Duplicate/reordered timestamps and retired sessions are rejected across reconnections. A camera stop retires the previous session.
 
-Freshness is separate from the network state: a Streaming connection can carry `STALE` controller output or stop publishing angles. Both hold geometry while capture continues. A valid reading requires the Fusion 10–120° range, finite displayed velocity/timestamps, a nonempty session and a recognized controller state. The gate rejects duplicate/reordered timestamps and retired camera sessions even across network reconnections; an explicit camera stop retires the last session. Prediction uses only the existing displayed velocity and bounded interval.
+Prediction uses only Fusion's displayed velocity for at most the configured 17 ms horizon. A disconnected, stale or overly old reading freezes geometry while capture remains live. The default freshness timeout is 500 ms. Controls sample the angle source even while rendering is disabled and show the connection address and status.
 
-Controls sample `IAngleSource` directly, so **Disabled** rendering still shows a received angle and its freshness. The editable loopback **Fusion address** is persisted with other preferences and reconnects an active Fusion source when changed. Connection status includes this address. **Manual / debug** remains the normal launch default, while `start.ps1 -Fusion` / `--fusion` select Fusion immediately. Slider movement deliberately selects manual input. No camera or estimator control is performed by the renderer.
+Manual/debug is the default source; selecting Fusion or launching with `-Fusion` enables the worker. Editing the manual angle deliberately selects manual input. A Fusion-address change creates a connection for the new loopback endpoint. The Fusion range does not include full 0° closure; manual/debug input spans 0–180°.
 
-The network regression suite runs the production C++ worker against real chunked HTTP sockets and the actual Fusion coordinator with simulated RGBA camera uploads and measurement services. This covers transport behavior that parser-only tests missed; it does not establish physical camera accuracy.
+## Projection and frosting
 
-## Geometry
+Preview, live overlay, synthetic grid and benchmarks all use one projection. The virtual desktop keeps its width and height while rotating by the difference between reference and input angles. Its entire active bottom edge is fixed. A centered viewer casts rays through the stationary output plane onto the virtual plane; the resulting homography maps output pixels to source coordinates.
 
-```mermaid
-flowchart LR
-  Angle[Angle and reference] --> R[Stationary output / rigid source plane rotates]
-  R --> Shared[Shared eye-ray / source-plane projection]
-  Shared --> Bottom[Fixed active bottom edge]
-  Shared --> Blur[Frost radius from local image-to-glass distance]
-```
+At or above the reference angle the projection is identity. Back faces, edge-on singularities, behind-eye rays and coordinates outside the desktop produce ambient glass rather than flipped or invalid imagery. Preview dimensions use a uniform scale to preserve monitor aspect ratio. This is a visual desktop rotation; it does not anchor content in world space as the physical panel moves.
 
-There is one projection: a true rotation of the source rectangle (width/height unchanged), with a centered pinhole camera `(0, screenHeight/2, -eyeY)` and fixed destination plane. The rotation is `referenceAngle − angle`. It culls the exact edge-on singularity and back faces.
+Frosting follows the closest distance from each visible image point to the finite glass rectangle. The hinge stays clear; points farther up become more frosted as the planes separate. Beyond 90° of relative rotation, the closest glass point is on the bottom edge, so the distance cannot shrink through the infinite extension of the glass plane. Frost amount uses a bounded exponential response; maximum blur zero disables blur and tint.
 
-The former physical-lid compensation path and all selectors were removed at the user's request after a benchmark forced that path and reproduced the reported stretch. `Settings` has no mode member, configuration does not load or save one, and the old CLI selector is rejected. **Preview**, **Enable screen**, synthetic grid, live capture and benchmarks all call the same geometry. Angle sources remain independent; Fusion cannot choose a different projection. This version does not claim world-space image anchoring as the real panel moves.
+Projection and blur operate in linear light. Four reduced-resolution Gaussian levels cover increasing radii, and composition interpolates adjacent levels by variance using the local frost amount. This makes the blur footprint vary across the image. SDR output is encoded for presentation; HDR capture uses floating-point scRGB. The captured desktop is one plane, so this effect does not use object depth inside a game or video.
 
-```mermaid
-flowchart TB
-  H[Stationary active bottom edge] --> P[Pixel P on fixed output plane]
-  H --> V[Virtual image plane rotated by reference minus angle]
-  E[Centered eye E] --> Ray[Ray through output pixel P]
-  P --> Ray
-  Ray --> Q[Intersect ray with virtual plane at Q]
-  V --> Q
-  Q --> UV[Virtual desktop texture coordinates]
-  UV --> Clip[Clip finite desktop bounds / use ambient glass outside]
-```
+Independent CPU controls compare forward projection and ray intersections with inverse sampling. Separate closest-point controls and actual shader tests cover fixed-bottom geometry, singularities, reopening, reference-angle identity, zero blur and near-hinge contrast. Implementation sources are recorded in [research](research.md); test evidence is in [validation](validation.md).
 
-Coordinates are millimetres: x is right, y runs upward along the output plane, and z recedes from it. The source plane's upward direction is `(0, cos(tilt), sin(tilt))`. The **visual pivot is the complete active bottom edge**, fixed at y=z=0. At the reference angle projection is identity; larger angles show the native desktop. Unused eye-height/lateral/hinge-offset controls were removed with the alternative geometry.
+## Output, controls and cursor
 
-For eye E, output pixel P, and virtual-plane normal n, the intersection is `Q = E - dot(n,E) / dot(n,P-E) * (P-E)`. Expanding this into a 3×3 homography avoids matrix inversions per pixel. Near-parallel or behind-eye rays produce ambient glass. The independent CPU test uses ray intersection directly rather than this expansion.
+The full-screen output is an independent, nonactivating, click-through window excluded from capture. The controls are also capture-excluded and stay above visible output without taking focus; deliberate minimization is respected. Switching the calibration grid changes only the image source, preserving angle, geometry and output dimensions.
 
-Additional independent tests start with known source points, rigidly rotate them in 3D, project them forward, and check that inverse sampling recovers the original texture coordinates. A projected bounding box is never rescaled to fill the window. `fitPreview` uses one uniform scale for both window dimensions so non-16:10 monitors are not stretched.
+The render pipeline draws the cursor into virtual content before projection. Over controls, their child widgets, dialogs, popup lists and active drags, the native cursor remains visible. Elsewhere, a cursor guardian must be ready before the duplicate system cursor is hidden. Disable, suspension, recovery and normal exit restore visibility; the guardian restores it if the renderer process terminates unexpectedly. Input coordinates, focus and clicks continue to reach the original applications.
 
-For a visible source point at height `h = (1-sourceV)*screenHeight` above the fixed bottom, the shortest distance to the finite glass rectangle is `d = h*sin(min(max(reference-angle,0),90°))`. This follows by projecting that point onto the glass and clamping the closest point to the active rectangle. Beyond 90° of relative rotation, the nearest point is the bottom edge; using the infinite plane would incorrectly reduce frosting during further closure. Perspective determines which source point a pixel sees, so the shader uses the projected source coordinate rather than an arbitrary output-row gradient. Outside the image, the softly lit background uses the reciprocal glass-point distance to the finite source rectangle. Grazing and behind-eye rays never supply invalid texture coordinates to this calculation.
+Capture retains only the newest frame. A waitable flip swapchain uses three buffers and permits at most two queued frames. Render cadence is capped by configuration and the active display refresh. Static desktops can legitimately provide few new capture frames; source-frame age alone does not establish failure. GPU timing queries use a bounded asynchronous ring.
 
-Local frost amount is `a = 1-exp(-frostResponse*d/frostDistanceMm)`, with defaults 3 and 150 mm. Radius is `maxBlurPixels*a` (default maximum 64). Exactly on the hinge or at/above reference, `a=0`; maximum blur zero also disables tint. For a given image point, separation and radius grow monotonically with closure, remain bounded at exact closure, and retrace on reopening. Small reference angles produce a smaller physical separation and therefore less frosting, rather than forcing every closure to the same blur. This models image-to-glass distance, not depth within a captured video or game: the captured desktop is one virtual plane.
-
-The projected FP16 texture stores linear RGB and local frost amount in alpha. Four Gaussian levels use radii 1/8, 1/4, 1/2 and 1 of the configured maximum; each uses dense horizontal/vertical samples, sigma radius/3, and reduced resolution. Composition interpolates adjacent levels by squared radius (variance), including the original full-resolution image for the smallest radii. Thus blur footprint varies spatially without leaving a sharp ghost under heavily frosted areas. Fixed kernels also avoid a variable vertical pass importing the wrong horizontal radius near the hinge. The 100-pixel maximum and 0.5 maximum reduced scale bound each pass to 101 taps. Tint uses the same local amount. No closing fade to black is used.
-
-```mermaid
-flowchart LR
-  UV[Projected source point] --> Distance[Closest point on finite glass rectangle]
-  Distance --> Amount[Exponential distance response]
-  Amount --> Radius[Local blur radius / alpha]
-  Projected[Projected linear image] --> Levels[Four dense Gaussian levels]
-  Projected --> Mix[Interpolate adjacent radii by variance]
-  Levels --> Mix
-  Radius --> Mix
-  Mix --> Tint[Local glass tint then SDR or HDR output]
-```
-
-## Debug controls and comparisons
-
-```mermaid
-flowchart TD
-  Controls[Angle / reference / distance controls] --> Settings[One settings snapshot]
-  Grid[Grid checkbox] --> Input{Image source only}
-  Input --> Pattern[Generated calibration image]
-  Input --> Capture[Live GPU capture]
-  Pattern --> Shared[Same projection and frosting pipeline]
-  Capture --> Shared
-  Settings --> Shared
-  Shared --> Output[Preview or independent full-screen window]
-  Output --> Layer[Controls above visible full-screen output]
-  Layer --> Pointer[Native pointer over controls / transformed cursor elsewhere]
-```
-
-The full-screen output is unowned; making it owned by the controls put it permanently above its owner under Win32 ordering rules. `keepControlsAccessible` keeps the controls above the visible output with `SWP_NOACTIVATE`, releases topmost when hidden/disabled, and respects deliberate minimization. Preview ownership is unchanged. Controls and output remain capture-excluded. `pointerUsesControls` includes children, owned dialogs, popup lists and mouse capture during drags. The grid checkbox restarts only the image source at the same output size and preserves the angle source. Benchmark scripts have no projection selector; reports identify the sole geometry as rotation.
-
-## State and recovery
+## Lifecycle and recovery
 
 ```mermaid
 stateDiagram-v2
   [*] --> Disabled
-  Disabled --> Starting: preview / enable
-  Starting --> Active: first usable capture
-  Starting --> Recovering: capture / device failure
-  Active --> Recovering: monitor / device change
-  Active --> Suspended: lock / sleep
-  Starting --> Suspended: lock / sleep
-  Recovering --> Suspended: lock / sleep
-  Suspended --> Starting: unlock / resume
-  Recovering --> Starting: bounded retry
-  Recovering --> Faulted: three consecutive failures
-  Faulted --> Starting: explicit enable
-  Active --> Disabled: disable / emergency hotkey / exit
-  Suspended --> Disabled: disable / exit
-  Faulted --> Disabled: disable / exit
+  Disabled --> Starting: Preview or enable
+  Starting --> Active: First usable capture
+  Starting --> Recovering: Capture or device failure
+  Active --> Recovering: Capture, display or device failure
+  Starting --> Suspended: Lock or sleep
+  Active --> Suspended: Lock or sleep
+  Recovering --> Suspended: Lock or sleep
+  Suspended --> Starting: Unlock or resume
+  Recovering --> Starting: Retry after backoff
+  Recovering --> Faulted: Three consecutive failures
+  Faulted --> Starting: Explicit enable
+  Active --> Disabled: Disable or emergency hotkey
+  Starting --> Disabled: Cancel
+  Recovering --> Disabled: Disable
+  Suspended --> Disabled: Disable
+  Faulted --> Disabled: Disable
 ```
 
-Angle freshness is separate: a stale source freezes the last rendered angle while capture continues. A static source image can legitimately keep the same capture timestamp. Resource failure hides the overlay and restores the cursor before retry. Recovery recreates device/capture/swapchain resources instead of reusing invalid surfaces.
+The diagram shows normal recovery paths; exit disables rendering from any state. Resource failure hides output and restores cursor visibility before recreating the device, capture and swapchain. Three consecutive failures stop automatic recovery, leaving the native desktop visible. A successful active run resets the failure count after ten seconds. Stale angle input does not cause device recovery.
 
-## Cursor and input workflow
+While enabled, an execution-state request prevents idle sleep. The renderer does not change power plans or Windows refresh settings. Deliberate lid sleep, firmware panel shutdown, secure desktops and protected/exclusive-fullscreen capture are outside its control. Physical lid and panel behavior require hardware verification.
 
-```mermaid
-sequenceDiagram
-  participant UI as Controls
-  participant R as Renderer
-  participant G as Cursor guardian
-  participant OS as Windows / original application
-  UI->>R: Enable below reference
-  R->>G: Start process with parent handle
-  G-->>R: Ready
-  R->>OS: Hide duplicate system cursor
-  OS-->>R: Cursor shape / original position
-  R->>R: Composite cursor into virtual desktop
-  OS->>OS: Deliver original mouse / keyboard input
-  alt Normal disable or recovery
-    R->>OS: Restore cursor; hide overlay
-  else Renderer process exits or crashes
-    G->>OS: Restore cursor visibility
-    G->>G: Exit
-  end
-```
+## Configuration and storage
 
-No pointer remapping, input injection, global input hooks, camera ownership, estimator modification or game process integration is used.
+[config.json](../config.json) supplies defaults for geometry, frosting, frame cap, angle timing, monitor and adapter. User preferences in `%LOCALAPPDATA%/HingeGlass/preferences.json` override those defaults. Settings are validated before use and saved through a temporary file and atomic replacement. `--no-preferences` provides reproducible diagnostics without loading or saving user preferences.
+
+Camera data and angle histories are not recorded by the renderer. Capture surfaces, shader intermediates, latest angle and telemetry live in memory. Explicit diagnostics save JSON reports under the chosen path; synthetic runs can also save a PNG after timing. Live desktop pixels are not written to disk.
+
+The default test cap is 60 Hz. HDR, full-resolution game contention, physical lid behavior and 240 Hz acceptance for the current effect remain hardware checks; software present counts do not measure optical motion-to-photon delay. See [research](research.md) for sources actually used, [validation](validation.md) for measured evidence, and [workspace iteration history](../../docs/iteration.md) for dated changes.

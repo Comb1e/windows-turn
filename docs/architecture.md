@@ -1,74 +1,97 @@
 # Workspace architecture
 
+This workspace estimates a laptop hinge angle from the front camera and can use that angle to animate the live Windows desktop. Keyboard measurements take priority; a photo-trained Light Track model supplies provisional estimates when the keyboard is unavailable. Fusion turns those measurements into continuous display motion. Hinge Glass renders that motion independently.
+
+## Components and ownership
+
+| Component | Responsibility | Boundary |
+| --- | --- | --- |
+| Fusion launcher | Start or reuse compatible services; stop processes it owns | Does not install dependencies or stop independently launched services |
+| Fusion browser and coordinator | Own one camera capture, distribute frames, select measurements, smooth motion, publish angles | No model training or persistent frame recording |
+| Keyboard service | Detect the moving keyboard boundary and return a valid angle or an unavailable result | Independent repository; advertises its model, camera dimensions and supported angle range |
+| Light Track | Photo annotation, model training, scene calibration, image inference and temporary live adaptation | Independent repository; owns photos, models, profiles and inference workers |
+| Hinge Glass | Capture a Windows monitor and project its image using manual, scripted or Fusion angles | Native application; owns no camera or estimator |
+
+The root Git repository tracks `fusion/`, `renderer/` and integration documentation. `keyboard/` and `light-track/` are separate, ignored repositories that must be provisioned alongside it. Links into those directories describe the local workspace and require the corresponding checkout.
+
 ```mermaid
 flowchart LR
-  Start[Fusion launcher] --> Services[Independent local services]
-  Annotation[Photo annotation: manual or matching-frame keyboard angle] --> Photos[Immutable source PNGs and revisioned labels]
-  Photos --> Train[Light Track model training and photo scene calibration]
-  Train --> Saved[Saved models and profiles]
-  Camera[Fusion camera] --> Keyboard[Automatic keyboard detector]
-  Camera --> Light[Light Track selected model]
-  Saved --> Light
-  Keyboard --> Fusion[Keyboard target priority; lighting fallback]
-  Light --> Fusion
-  Fusion --> Display[Smooth displayed angle and velocity]
-  Display --> Glass[Hinge Glass renderer]
+  Camera[Fusion browser camera] --> Frames[RGBA pixels with identity and capture time]
+  Frames --> Keyboard[Keyboard service]
+  Frames --> Light[Light Track service]
+  Keyboard --> Select[Keyboard priority and image fallback]
+  Light --> Select
+  Keyboard --> Pair[Exact-frame matching]
+  Light --> Pair
+  Pair --> Adapt[Temporary Light Track adaptation]
+  Adapt --> Light
+  Select --> Display[Fusion display controller]
+  Display --> API[Angle snapshot and event stream]
+  API --> UI[Fusion status]
+  API --> Glass[Hinge Glass]
+  Desktop[Windows desktop capture] --> Glass
 ```
 
-The root repository owns Fusion and Hinge Glass. `keyboard/` and `light-track/` are independent repositories on `main`. Light Track uses photo annotations as its only training and calibration workflow. Keyboard-assisted collection labels exact saved frames within the service-reported range; manual measurements cover other angles. Scene calibration also uses photo references. Sweep calibration, timed checkpoint collection, CSV labeling, geometric absolute-angle setup and reflection simulation are removed. Existing source data and published artifacts remain preserved.
+## Startup and live measurement
 
-## Measurement and ownership
+1. The launcher checks local service identities and configuration, starts missing dependencies, and waits for readiness before starting Fusion. An incompatible occupied port or startup failure stops the attempt and cleans up only its own processes.
+2. **Start camera** allocates a Fusion session. Camera geometry comes from Keyboard health when available, otherwise Light Track or Fusion defaults. A saved profile must match width, height and horizontal field of view; an incompatible profile is reported and image measurement is disabled for that session.
+3. The browser requests that exact resolution and uploads RGBA frames with increasing IDs, monotonic capture timestamps and available camera settings. Cancellation, camera failure or disconnect releases its tracks and coordinator session. Service leases reject competing inference owners, so stop Fusion before using Keyboard-assisted photo collection.
+4. The browser upload queue and each service queue keep one running frame and one replaceable pending frame. Slow processing drops intermediate frames instead of accumulating a timeline. Responses must match the active service session, frame and timestamp; lighting generations reject results from a replaced model.
+5. A fresh valid Keyboard result supplies the exact target. Brief keyboard loss can retain its last reading within the configured grace; otherwise a fresh valid Light Track result supplies the fallback. Neither source available means no current measurement, even if a previous display value remains visible.
+6. Fusion updates the display controller independently of capture and publishes its angle, velocity, source, age and correction status through a JSON snapshot and server-sent events. Hinge Glass consumes the displayed angle rather than the raw measurement.
+
+Session status, measurement selection and display motion are separate state machines. For example, `state: UNAVAILABLE` can coexist briefly with a retained display target; `controllerState: STALE` means display motion is frozen. The exact states and transitions are in [Fusion architecture](../fusion/docs/architecture.md).
+
+Keyboard authority is an application policy, not a guarantee of physical accuracy. Rejected or unavailable Keyboard results cannot supply new targets or adaptation anchors. Keyboard motion alone drives keyboard targets; scene motion cannot override them. Light Track estimates remain provisional, including after temporary adaptation. The current display range is 10–120°.
+
+## Photos, models and adaptation
 
 ```mermaid
 flowchart TD
-  Owner[One active camera workflow] --> Frame[RGBA, ID, timestamp and camera metadata]
-  Frame --> K[Keyboard bounded latest-frame queue]
-  Frame --> L[Light Track bounded latest-frame queue]
-  K --> Valid[Valid identity and boundary]
-  Valid --> Target[Keyboard angle is target]
-  L --> Fallback[Photo-trained fallback]
-  Target --> Pair[Exact-frame keyboard adaptation anchors]
-  Fallback --> Pair
-  Target --> Controller[Continuous display controller]
-  Fallback --> Controller
-  Controller --> API[Snapshot and SSE]
+  Capture[Light Track annotation capture or upload] --> Labels[Measured manual or exact-frame Keyboard labels]
+  Labels --> Groups[Saved photo groups and revisioned labels]
+  Groups --> Train[Train an annotation model]
+  Groups --> Scene[Fit a scene profile using measured references]
+  Train --> Base[Saved base model]
+  Base --> Scene
+  Groups --> Evaluate[Evaluate richer image model]
+  Evaluate --> Published[Published image models]
+  Scene --> Published
+  Published --> Use[Refresh and select in Fusion]
+  Use --> Infer[Light Track live inference]
 ```
 
-Fusion discards image feature vectors from coordinator state and keeps a bounded pair cache. It has no training or recording buffers. Rejected keyboard identity results supply no angle or adaptation anchor. Optional identity verifiers remain experimental because none qualified for default promotion; the human identity-review sidecar is separate from measured-angle annotations. Session/generation checks reject stale responses. Camera ownership prevents simultaneous Fusion and annotation capture.
+Photo annotations are the training and calibration input. Automatic collection saves the exact frame that received a valid Keyboard label; manual measurements cover other angles. A scene profile binds a base model, camera geometry and measured references. Standard v1 annotation models can be used in standalone Light Track or as bases for published scene profiles; Fusion's selector lists published image models and profiles.
 
-Photo mutation uses serialized revision checks and usage leases. Permanent deletion journals removal and atomically replaces the manifest before cleaning up the PNG. Published models and profiles remain immutable; correcting training data requires a new artifact. Offline trainers require stable inputs outside server lease management.
+Published artifacts are immutable. Editing or deleting a source photo requires training a new artifact to incorporate the correction. Light Track serializes photo mutations, checks revisions and holds usage leases during collection, training and fitting. Photo deletion journals file removal and commits by atomically replacing the manifest; restart completes cleanup or rolls back the uncommitted deletion. Offline trainers do not share these leases and require stable inputs.
 
-## Hinge Glass
+Live adaptation is separate from training. Fusion matches Keyboard and Light Track results by frame ID and timestamp, then sends an anchor to Light Track's bounded session cache. Light Track validates the cached frame and model generation and adjusts a temporary affine correction. Restarting the session discards that correction; exporting it does not publish a model. The current live anchor endpoint accepts 10–45°, even when Keyboard advertises a 46° endpoint. A rejected anchor does not invalidate Fusion's keyboard target.
 
-```mermaid
-flowchart LR
-  Sources[Manual slider, debug sweep or Fusion angle source] --> Gate[Identity, time, range and freshness]
-  Desktop[GPU desktop capture and cursor] --> Plane[Single bottom-anchored plane projection]
-  Gate --> Plane
-  Reference[Adjustable reference angle and viewpoint] --> Plane
-  Plane --> Distance[Per-pixel separation from glass]
-  Plane --> Blur[Linear-light Gaussian blur levels]
-  Distance --> Mix[Distance-based frosting]
-  Blur --> Mix
-  Mix --> Output[Preview or capture-excluded overlay]
-  Output --> Controls[Independent controls above overlay]
-```
+## Data and configuration
 
-The renderer has one projection path for grid and live capture. Physical-lid mode is absent. The bottom remains anchored; the top becomes more frosted as image separation from the glass increases. Renderer debug sweeps are animation tests and are unrelated to the removed Light Track training sweeps. Fusion snapshot/SSE reads available bytes immediately, validates session identity, and reconnects automatically. Stale input freezes geometry while live capture continues.
+| Data | Owner and lifetime |
+| --- | --- |
+| Camera pixels and service queues | Browser and service memory; replaced as frames advance and released on stop |
+| Latest measurements, display trajectory and matched pairs | Fusion session memory; feature vectors are discarded and pairs are bounded to 256 by default |
+| Temporary correction and cached inference features | Light Track session memory; bounded by its service configuration |
+| Photo groups, labels, model artifacts and selected profile | Light Track storage under its configured data/artifact directories; profile selection persists across restarts |
+| Keyboard angle model and annotations | Keyboard repository's configured local data storage |
+| Render preferences | `%LOCALAPPDATA%/HingeGlass/preferences.json`, applied over renderer defaults |
+| Diagnostic exports | Explicit downloads or renderer reports under the chosen output path; live desktop pixels are not saved |
 
-```mermaid
-stateDiagram-v2
-  [*] --> Disabled
-  Disabled --> Starting: Enable
-  Starting --> Active: Capture and device ready
-  Active --> Recovering: Capture or GPU lost
-  Recovering --> Active: Recreated resources
-  Active --> Suspended: Lock or panel unavailable
-  Suspended --> Starting: Unlock or resume
-  Starting --> Faulted: Unrecoverable failure
-  Recovering --> Faulted: Recovery failed
-  Active --> Disabled: Disable or emergency hotkey
-  Faulted --> Starting: Retry
-```
+[Fusion configuration](../fusion/config.json) controls service addresses, capture rate, queue/lease limits, source freshness and controller timing. [Renderer configuration](../renderer/config.json) controls geometry, frosting, angle freshness and presentation. Keyboard and Light Track manage their own models, runtimes and configurations. Ignored local data and independent repositories are not included in a root clone.
 
-GPU selection and timing identify the actual adapter. Tests use a 60 Hz render cap and never change Windows refresh settings. RTX/240 Hz, full-resolution game contention and physical lid closure remain hardware acceptance items. See [renderer architecture](../renderer/docs/architecture.md), [Fusion architecture](../fusion/docs/architecture.md), and the independent Light Track and Keyboard architecture documents for current details and actual research references.
+## Desktop rendering and failures
+
+Hinge Glass captures the composed monitor on the GPU, adds the cursor, rotates a virtual desktop plane around its fixed active bottom edge, and applies frosting according to each image point's distance from the glass. Preview, calibration grid and live output share the same projection. The reference angle defaults to 110°; at or above it the native desktop is unobscured. Input coordinates stay unchanged.
+
+A capture-excluded, click-through overlay prevents feedback, while separate controls remain accessible. A companion process restores cursor visibility if the renderer exits unexpectedly. A stale or disconnected angle source freezes geometry while desktop capture continues. Capture/device failure hides the effect, restores the cursor and retries resource creation; three consecutive failures leave the app faulted. Lock or sleep suspends rendering. **Ctrl+Alt+F12** disables the effect. See [renderer architecture](../renderer/docs/architecture.md) for lifecycle and transport states.
+
+Service errors affect the failing measurement source rather than blocking the other queue. Expired service sessions reconnect on later frames; malformed, reordered and obsolete responses are rejected. If neither source recovers, Fusion retains its last display value without claiming a fresh measurement. A new start may replace an idle Fusion session after its lease threshold; this is not a background camera-stop timer.
+
+## Evidence and constraints
+
+The architecture was checked against the current coordinator, service clients, controller, launcher, renderer and the local independent-service interfaces. Automated tests cover successful flows, source loss, stale identities, queue bounds, correction deadlines and independent projection controls. They do not establish physical camera accuracy, unseen-scene transfer, HDR behavior, game contention or physical lid/panel behavior. Renderer tests use a 60 Hz cap and do not change Windows refresh settings.
+
+Research sources actually used and their limits are recorded in [technical design](technical-design.md), [renderer research](../renderer/docs/research.md), [Light Track research](../light-track/docs/scene-model-research.md) and [Keyboard identity research](../keyboard/docs/identity-research.md). Dated changes and historical validation belong in [iteration history](iteration.md).

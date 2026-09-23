@@ -1,48 +1,60 @@
 # Windows hinge estimation
 
-The independent **Hinge Glass** native renderer is now in [`renderer/`](renderer/README.md). Run `./renderer/build.ps1 -Test`, then `./renderer/start.ps1`. It supports manual angle debugging, an adjustable reference angle (110° initially), a fixed bottom edge, live desktop capture, distance-based frosting (stronger at the top), and an optional Fusion angle source. The controls stay above the effect; **Show calibration grid** lets you compare grid and live output with the same angle and projection. Tests default to 60 Hz; the render cap can be raised to 240 Hz. Ctrl+Alt+F12 disables the overlay.
+Estimate a laptop hinge angle from one front-camera stream and optionally use it to animate the live Windows desktop. A valid Keyboard measurement sets Fusion's exact target; Light Track supplies a photo-trained fallback. Fusion publishes a separate, smoothly moving display angle for Hinge Glass.
 
-To use camera angles, start Fusion's camera and run **`./renderer/start.ps1 -Fusion`**, or select **Fusion** in the renderer's **Angle source** list. The received angle and connection status appear before rendering is enabled. **Fusion address** lets you match a custom coordinator port. Hinge Glass 0.1.5 fixes buffered angle events and reconnects automatically.
-
-Three independently runnable components share one front-camera stream:
-
-| Project | Function | Default address |
+| Component | Purpose | Default address |
 | --- | --- | --- |
-| `keyboard/` | Existing accurate moving-boundary estimator, exposed as a frame API | http://localhost:1819 |
-| `light-track/` | Photo-trained image inference, annotation and scene profiles | http://localhost:1818 |
-| `fusion/` | Camera UI, independent API clients, keyboard priority, motion-based display | http://localhost:1820 |
+| Keyboard | Moving-boundary angle estimator | [Keyboard service](http://localhost:1819) |
+| Light Track | Photo annotation, model training, scene profiles and image inference | [Light Track](http://localhost:1818) |
+| Fusion | Shared capture, keyboard priority and continuous display motion | [Hinge Fusion](http://localhost:1820) |
+| Hinge Glass | Native desktop capture, bottom-anchored rotation and distance-based frosting | Local Windows application |
 
-`keyboard/` and `light-track/` retain their own Git repositories and standalone applications. This root repository contains the coordinator and integration documentation, and ignores those two repositories. All three use branch `main`. No estimator source is copied into the coordinator.
+This repository contains `fusion/`, `renderer/` and integration docs. `keyboard/` and `light-track/` are independent, ignored Git repositories; a root clone does not include them or local models. Provision their runtimes and data using the [Keyboard README](keyboard/README.md) and [Light Track README](light-track/README.md). These links require the sibling checkouts. Fusion requires Node.js 20+ and uses Keyboard's local Python environment unless overridden.
 
-Light Track uses [screenshot annotation](http://localhost:1818/annotate) as its only training/calibration workflow: each session is one lighting group with arbitrary angles and image count. **Start automatic collection** saves exact keyboard-labeled screenshots every 0.5 seconds at visible small angles, including repeated angles; stop it to add manual larger-angle labels. **Train model** trains all ended labeled groups from the page and provides model/report downloads. Its standalone camera defaults remain independently configured as 640×480/60°. See the Light Track README for setup, provenance and optional CLI commands.
+## Run the camera stack
 
-Light Track 0.16 retains **Delete photo** for the selected screenshot in open or ended groups. One confirmation identifies the permanent removal, including unsaved edits. Collection, training and scene fitting block conflicting deletion. Published models and profiles retain their original contents; train a new artifact after correcting its source data.
-
-Keyboard 0.7 adds **Keyboard identity examples** to its annotation page for your next approximately 20 photos. Label visible bases with two endpoints; label absent or uncertain views without an angle. Keep capture groups separate across reference, validation and test roles. See [the capture and evaluation guide](keyboard/docs/identity-research.md). DINO, PerSAM/MobileSAM and YOLO-World verifiers are available as experiments, but none met promotion criteria, so the default detector is unchanged. When an optional verifier rejects a frame or is unavailable, the service returns no keyboard angle and Fusion uses its existing fallback behavior.
-
-Light Track 0.14 adds **Evaluate richer image model** and an optional guide for approximately ten measured angles per scene. The evaluated DINOv2/ridge model reuses the existing 253 annotations and is available as **Image model · 253 screenshots** in Fusion's saved model/profile selector. Select it with **Use profile** before starting the camera, or use **Newest annotation model** in standalone Light Track. Local CUDA inference is configured for the RTX 4070; old models remain available. Scene profiles use actual reference labels and preserve all original files. See `light-track/docs/scene-model-research.md` for measured improvements, setup and remaining validation limits.
-
-The [Light Track live page](http://localhost:1818/) provides **Choose model** and defaults to the newest successfully completed annotation model. Older annotation models, an optional server startup model, and local JSON files can be selected while the camera is stopped. The annotation result's **Use newest model** link opens measurement directly, without a server restart.
-
-Light Track 0.13.0 compares regularized color forests using complete annotation groups and reports a nested comparison with the original trainer. It reuses saved features and preserves annotation and model formats; no relabeling or migration is required. The existing four development groups show a 14.21% reduction in mean group error, with substantial larger-angle error still present. See `light-track/docs/annotation-model-research.md` for papers, methods, and evaluation limits.
-
-## Run
-
-From `fusion`, one command starts or reuses all three services:
+From the workspace root:
 
 ```powershell
-Set-Location E:\Projects\windows-turn\fusion
+Set-Location fusion
 npm start
 ```
 
-The launcher uses each project's own runtime and configuration. It checks service health, reports occupied incompatible ports, and stops only the processes it started when you press Ctrl+C. Existing independently started services keep running. `npm run start:coordinator` starts only Fusion if you prefer managing the services yourself.
+The launcher starts missing services, reuses compatible healthy ones, and reports incompatible occupied ports. Ctrl+C stops only processes it started. `npm run start:coordinator` starts Fusion alone. Shared service addresses, camera defaults and controller settings are in [fusion/config.json](fusion/config.json).
 
-Open [Hinge Fusion](http://localhost:1820), then select **Start camera**. Only the coordinator browser opens the webcam; leave the other applications' camera workflows stopped.
+Open [Hinge Fusion](http://localhost:1820) and choose **Start camera**. Only one camera workflow should run at a time; stop the other applications' camera workflows. The browser uses the geometry advertised by the active services. The local Keyboard model uses 640×480 and supports 10–46°; consumers read its current limits from the health API.
 
-Fusion keeps only compact angle summaries in its live pair cache. Training uses saved photos; Fusion no longer allocates a recording timeline. Frame queues remain bounded, and artifact downloads use Blob-based export.
+Without a compatible image model, Keyboard measurements still work. If no source is available, the displayed value is retained and is not a fresh measurement. The initial 120° value is provisional. Display corrections aim to finish within one second, preserve their original deadline across interruptions, and report missed deadlines.
 
-Without a trained image model, keyboard readings still work. The wide-angle measurement remains unavailable; the displayed initial 120° is explicitly a retained/provisional value. Train using **photo annotation**, then select the saved image model or a photo-based scene profile. Sweep calibration, timed checkpoint collection and CSV labeling are removed. Restart running services and reload the pages after updating.
+## Train and select an image model
 
-The existing keyboard model requests 640×480 and supports 10–46°; consumers obtain the active supported range from its API. A fresh valid keyboard reading sets Fusion's exact **Target angle**; brightness and scene motion cannot override it. Brightness supplies a fallback when keyboard readings become unavailable. The displayed angle is separate and may take time to converge to an accurate measurement, with a hard 1-second correction deadline and continuous trajectory replanning.
+1. Stop Fusion's camera and open [Light Track photo annotation](http://localhost:1818/annotate).
+2. Capture or upload photos and save measured angles. **Start automatic collection** saves exact Keyboard-labeled frames every 0.5 seconds within the visible supported range; stop it before manually labeling larger angles.
+3. End the photo groups and choose **Train model** or **Evaluate richer image model**. Optional scene calibration fits a separate group of measured reference photos.
+4. In Fusion, choose **Refresh profiles**, select a published image model or scene profile, then **Use profile** and **Start camera**.
 
-See [fusion setup and calibration](fusion/README.md), [architecture](docs/architecture.md), [technical design and research](docs/technical-design.md), and [iteration history](iteration.md).
+Standard v1 annotation models are directly selectable in standalone Light Track and can serve as bases for published scene profiles. Fusion lists published image models and profiles. Correcting or deleting a photo does not change an existing artifact; train a new one to incorporate the correction. See [Fusion setup](fusion/README.md) and the [Light Track guide](light-track/README.md) for details.
+
+Keyboard identity rejection supplies no new angle or adaptation anchor. Image estimates remain provisional; the [identity research guide](keyboard/docs/identity-research.md) and [scene-model research](light-track/docs/scene-model-research.md) describe evidence and limits.
+
+## Run Hinge Glass
+
+From the workspace root:
+
+```powershell
+./renderer/build.ps1 -Test
+./renderer/start.ps1
+```
+
+Start with **Preview** and the manual angle slider. The reference angle defaults to 110° and is adjustable. The bottom edge stays fixed, while frosting grows with image-to-glass distance. **Show calibration grid** compares grid and live desktop through the same projection. **Ctrl+Alt+F12** disables the overlay.
+
+To consume Fusion's displayed angle, start its camera and run `./renderer/start.ps1 -Fusion`, or choose **Fusion** in the renderer's angle-source list. Match **Fusion address** to the coordinator if its port differs. Received angles and connection status appear even before rendering is enabled. Stale input holds geometry while desktop capture continues.
+
+Tests default to a 60 Hz cap and do not change Windows refresh settings. The renderer can be configured up to 240 Hz; physical lid behavior, HDR and game-specific performance require hardware validation. Build requirements and controls are in the [renderer README](renderer/README.md).
+
+## Documentation
+
+- [Workspace architecture](docs/architecture.md): ownership, end-to-end workflows, storage and failure paths.
+- [Fusion architecture](fusion/docs/architecture.md) and [renderer architecture](renderer/docs/architecture.md): component state machines and design constraints.
+- [Technical design and research](docs/technical-design.md): model assumptions, controller reasoning and sources actually used.
+- [Iteration history](docs/iteration.md): dated changes, verification and remaining limitations.
