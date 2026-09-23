@@ -1,0 +1,53 @@
+{
+  "pathNormalization": "Absolute workspace paths replaced by paths relative to this directory; numeric evaluation results unchanged. Memory implementation notes added and short-run growth marked unavailable.",
+  "artifacts": {
+    "evaluation.json": {
+      "originalReportSha256": "be3028e66de1e000717aeba97ae788c10efc5ef4cad44608d97bb7d9c67ee3af",
+      "archivedSha256": "22a6e1e13ad36f2b2d2912c2d85b98828a55ba5919001236e1b895c4e6c4ea5f"
+    },
+    "cuda-report.json": {
+      "originalReportSha256": "f0d1a52ee0adf1b2f980ca83b31ac78bf5752011adaf8aeaa93d4074168c36e5",
+      "archivedSha256": "3d6590aa11a7bb923f72e07627e3ec416a439438c2461c86ec593b62876b01ac"
+    },
+    "cpu-report.json": {
+      "originalReportSha256": "9a2588ab341e8548af912ad559f6bb64100265339894ec17c59472b2cc404660",
+      "archivedSha256": "1991cb033522cbeb2ee6ff4000a8b5024d16f3e3938cf7e4de407e6b409bd841"
+    },
+    "yolo-cpu-report.json": {
+      "originalReportSha256": "57be180c6d906ada5ae1e967dc7b13aaddda61e01231f11cbfbf61ff75ab80fe",
+      "archivedSha256": "831913e02f137d89ccc0a959d7fec9071c2b0065a37d7e25ff6e024711bcd9c7"
+    },
+    "memory-900s.json": {
+      "originalReportSha256": "3208cc42c8f15454eb00368f655ff85eccb935274d83686d33e9af67fa064747",
+      "archivedSha256": "ed0f04fe3a1466ad9367d068eb99e88b653a325bb791cf1aae569781adecc19e"
+    },
+    "renderer-900s.json": {
+      "originalReportSha256": "c923e7813fbef77187afa624d492bb163a0a8563e5b155c5008336d0e4be208b",
+      "archivedSha256": "0b1210d9eee0154465ca36eae1fd9a12045596fd0e6c54fb0af9806bce0d7815"
+    },
+    "memory-60s.json": {
+      "originalReportSha256": "516b1fa6dd82e2303cc30d31934b1b27c09b21db0faef8fe791bb8ac5030a3e1",
+      "archivedSha256": "9998d08cdc24698f642518f91144042c1dd978729bbc8e6e5bb258faf3495895"
+    },
+    "renderer-60s.json": {
+      "originalReportSha256": "101dca5da1654fd1d294ad26726944b8fc31fd785824d863fe872b5ddc83e52f",
+      "archivedSha256": "1144166a732826e33b58b2ad022700cf6525230661fbebb419027e6859de89f3"
+    },
+    "baseline-predictions.json": {
+      "originalReportSha256": "37770f949508db7b078eddec06b54d1921b3ffba60ed44377dc721cb8ab308c4",
+      "archivedSha256": "f410ec3ca23030a6821766aabdc69260e607a6aec9d6688b796c2506ab052aaa"
+    },
+    "dino-predictions.json": {
+      "originalReportSha256": "16bce2146027b85bcd0f4ff5c364cd13265c50e16f2dbce92468e9a9d70c5157",
+      "archivedSha256": "d60eae34d1fa940c89ae89e5b669b35284caa420df99b72ece6349a80fe7b421"
+    },
+    "persam-predictions.json": {
+      "originalReportSha256": "65c2ed9626d71c093f9fd8560cc29dd694f832beed5801bf064246d97df6e191",
+      "archivedSha256": "5e951f5cd3a0f6f7bbe69c46c5c9c79206ba55b7574dcbb3636696ad65567934"
+    },
+    "yolo-predictions.json": {
+      "originalReportSha256": "111cb62559c88d0bffe63ae7f1e6ee6204e893920eff9c3d0cdd48d828574cbb",
+      "archivedSha256": "b717e2871236ec0ca814074384e23cffb6dc2dee6e00362612280556e069d650"
+    }
+  }
+}

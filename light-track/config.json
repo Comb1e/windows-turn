@@ -1,0 +1,162 @@
+{
+  "camera": {
+    "width": 640,
+    "height": 480,
+    "horizontalFovDegrees": 60
+  },
+  "modelSelection": {
+    "maxBytes": 20000000
+  },
+  "sceneCalibration": {
+    "targetReferences": 10,
+    "minDistinctAngles": 3,
+    "minSpanDeg": 20,
+    "angleToleranceDeg": 1e-09,
+    "suggestedAngles": [
+      15,
+      25,
+      35,
+      45,
+      60,
+      75,
+      90,
+      100,
+      110,
+      120
+    ],
+    "maxReferences": 100,
+    "maxTrainingMs": 180000,
+    "pollMs": 1000
+  },
+  "imageInference": {
+    "backend": "cuda",
+    "workerTimeoutMs": 30000,
+    "maxFeatureCount": 20000
+  },
+  "processing": {
+    "fps": 15,
+    "width": 640,
+    "statusIntervalMs": 200,
+    "maxOverlayRegions": 30
+  },
+  "features": {
+    "columns": 8,
+    "rows": 6,
+    "darkThreshold": 0.04,
+    "clipThreshold": 0.98,
+    "normalizationFloor": 0.05,
+    "brightFloor": 0.55,
+    "brightCeiling": 0.97,
+    "localSigma": 1.5,
+    "minRegionPixels": 8
+  },
+  "annotation": {
+    "directory": "data/annotations",
+    "maxPixels": 409600,
+    "maxMetadataBytes": 16384,
+    "maxTextLength": 1000,
+    "keyboard": {
+      "url": "http://127.0.0.1:1819",
+      "saveIntervalMs": 500,
+      "requestTimeoutMs": 20000,
+      "healthTimeoutMs": 1500,
+      "leaseIdleMs": 30000,
+      "releaseRetryMs": 100
+    },
+    "training": {
+      "treeCount": 64,
+      "maxDepth": 10,
+      "minSamplesLeaf": 1,
+      "workers": 1,
+      "selection": {
+        "enabled": true,
+        "minGroups": 3,
+        "maxFolds": 5,
+        "minRelativeImprovement": 0.02,
+        "candidates": [
+          {
+            "id": "color-extra",
+            "estimator": "extra-trees",
+            "featureSet": "chromaticity",
+            "minSamplesLeaf": 1,
+            "maxFeatures": 1.0
+          },
+          {
+            "id": "color-extra-smooth",
+            "estimator": "extra-trees",
+            "featureSet": "chromaticity",
+            "minSamplesLeaf": 4,
+            "maxFeatures": 1.0
+          },
+          {
+            "id": "relative-extra-smooth",
+            "estimator": "extra-trees",
+            "featureSet": "relative-color",
+            "minSamplesLeaf": 4,
+            "maxFeatures": 1.0
+          },
+          {
+            "id": "color-forest",
+            "estimator": "random-forest",
+            "featureSet": "chromaticity",
+            "minSamplesLeaf": 1,
+            "maxFeatures": 0.25
+          },
+          {
+            "id": "color-forest-smooth",
+            "estimator": "random-forest",
+            "featureSet": "chromaticity",
+            "minSamplesLeaf": 4,
+            "maxFeatures": 0.25
+          }
+        ]
+      },
+      "directory": "data/annotation-models",
+      "maxJobs": 32,
+      "maxTrainingMs": 120000,
+      "imageTrainingMs": 1800000,
+      "pollMs": 1000
+    }
+  },
+  "estimation": {
+    "staleMs": 500,
+    "maxDarkFraction": 0.8,
+    "maxClippedFraction": 0.5,
+    "minContrast": 0.015,
+    "targetErrorDegrees": 5
+  },
+  "filter": {
+    "minCutoff": 1.5,
+    "beta": 0.04,
+    "derivativeCutoff": 1,
+    "resetGapSeconds": 0.5
+  },
+  "tracking": {
+    "maxPixels": 409600,
+    "workerTimeoutMs": 15000,
+    "maxCorners": 480,
+    "gridColumns": 4,
+    "gridRows": 3,
+    "cornerQuality": 0.01,
+    "cornerDistance": 10,
+    "minTracks": 24,
+    "minCells": 5,
+    "minInlierFraction": 0.6,
+    "forwardBackwardPixels": 1.0,
+    "ransacPixels": 1.5,
+    "rotationResidualPixels": 1.0,
+    "rotationRansacIterations": 64,
+    "poseCompetitionFraction": 0.9,
+    "flowWindowPixels": 21,
+    "flowPyramidLevels": 3,
+    "ambiguityDegrees": 2,
+    "maxOffAxisDegrees": 3,
+    "maxSpeedDegrees": 100,
+    "maxGapMs": 500,
+    "minContrast": 5
+  },
+  "training": {
+    "seed": 42,
+    "scaleFloor": 0.05
+  }
+}

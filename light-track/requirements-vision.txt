@@ -1,0 +1,4 @@
+# Optional local frozen image encoders. Install the CUDA wheel explicitly for GPU use.
+torch>=2.8,<3
+torchvision>=0.23,<0.27
+Pillow>=11,<13

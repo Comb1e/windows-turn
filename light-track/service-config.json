@@ -1,0 +1,35 @@
+{
+  "maxBodyBytes": 2000000,
+  "maxPixels": 409600,
+  "leaseIdleMs": 30000,
+  "frameCacheSize": 256,
+  "motionDeadlineMs": 180,
+  "adaptation": {
+    "initialAngle": 120,
+    "minAngle": 10,
+    "maxAngle": 120,
+    "settleMs": 1000,
+    "maxSettleMs": 3000,
+    "maxBootstrapSamples": 64,
+    "refitMs": 500,
+    "anchorIntervalMs": 200,
+    "maxAnchors": 256,
+    "binDegrees": 2,
+    "minBins": 3,
+    "minAngleSpan": 10,
+    "minPredictionSpan": 5,
+    "huberDegrees": 5,
+    "ridge": 0.05,
+    "startupWeight": 0.05,
+    "maxAbsScale": 4,
+    "minAbsScale": 0.25,
+    "fitIterations": 8,
+    "stationaryDegrees": 0.3,
+    "environmentMeanChange": 0.12,
+    "stationaryRotationDegrees": 0.1,
+    "maxAnchorGapMs": 500
+  },
+  "profiles": {
+    "directory": "data/profiles"
+  }
+}

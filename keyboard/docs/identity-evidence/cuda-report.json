@@ -1,0 +1,224 @@
+{
+  "version": 1,
+  "manifestHash": "be3028e66de1e000717aeba97ae788c10efc5ef4cad44608d97bb7d9c67ee3af",
+  "modelHash": "def32e6a34a7f047ac13acfce7e575a8b03be7a1c3b33154767ff728a6a9a1ca",
+  "config": {
+    "version": 1,
+    "backend": "cuda",
+    "threads": 4,
+    "imageSize": [
+      640,
+      480
+    ],
+    "assets": "data/identity-assets",
+    "dependencies": "data/identity-deps",
+    "references": "../../data/identity/release-cuda/references.json",
+    "maxReferences": 64,
+    "maxPrototypePatchesPerReference": 128,
+    "maxSide": 336,
+    "maskInsetPixels": 3,
+    "minPatchOccupancy": 0.95,
+    "regions": 4,
+    "minPatchesPerRegion": 1,
+    "dino": {
+      "assetManifest": "../light-track/artifacts/vision-assets/dino.json",
+      "minSimilarity": 0.65,
+      "minForegroundMargin": 0.03,
+      "minRegionSupport": 0.6,
+      "grid": {
+        "minSimilarity": [
+          0.6,
+          0.7,
+          0.8
+        ],
+        "minForegroundMargin": [
+          0.02,
+          0.05,
+          0.1
+        ]
+      }
+    },
+    "persam": {
+      "minSimilarity": 0.5,
+      "minMaskScore": 0.8,
+      "minBelowCoverage": 0.7,
+      "maxAboveCoverage": 0.3
+    },
+    "yolo": {
+      "confidence": 0.35,
+      "boundaryTolerancePixels": 8,
+      "minWidthCoverage": 0.8,
+      "classes": [
+        "laptop",
+        "keyboard"
+      ]
+    },
+    "evaluation": {
+      "minIndependentGroups": 3,
+      "positiveRetention": 0.9,
+      "boundaryTolerancePixels": 4.8,
+      "warmup": 5,
+      "iterations": 30,
+      "fps": 15,
+      "acquisitionFrames": 6,
+      "p95BudgetMs": 66.7,
+      "memorySeconds": 900
+    },
+    "sources": {
+      "persam": {
+        "repo": "ZrrSkywalker/Personalize-SAM",
+        "commit": "a7e87245156e0b8efcba10a15a745e699c679d9d"
+      },
+      "mobileSam": {
+        "repo": "ChaoningZhang/MobileSAM",
+        "commit": "f706ad9c4eb7f219c00d9050e46328518ffb65d2",
+        "weights": "https://raw.githubusercontent.com/ChaoningZhang/MobileSAM/f706ad9c4eb7f219c00d9050e46328518ffb65d2/weights/mobile_sam.pt"
+      },
+      "yolo": {
+        "package": "ultralytics",
+        "version": "8.4.155",
+        "weights": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8s-worldv2.pt"
+      }
+    }
+  },
+  "python": "3.13.14",
+  "opencv": "4.14.0",
+  "numpy": "2.5.3",
+  "partition": "diagnostic",
+  "protocol": "Frozen thresholds; reference images leave-one-image-out; whole groups held out. Validation never scores test images. Existing angle fit is not independently tested.",
+  "review": {
+    "date": "2026-09-19",
+    "reviewer": "Codex visual inspection",
+    "limitations": "Eight human-labeled fitting references plus 26 reviewed Light Track images. No new independently captured positives; uncertain boundaries deliberately excluded. No automatic labels used as identity ground truth."
+  },
+  "availability": {
+    "dino": {
+      "method": "dino",
+      "backend": "cuda",
+      "available": true,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "weightSha256": "b938bf1bc15cd2ec0feacfe3a1bb553fe8ea9ca46a7e1d8d00217f29aef60cd9",
+      "extractorVersion": 1
+    },
+    "persam": {
+      "method": "persam",
+      "backend": "cuda",
+      "available": true,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "weightSha256": "6dbb90523a35330fedd7f1d3dfc66f995213d81b29a5ca8108dbcdd4e37d6c2f",
+      "extractorVersion": 1
+    },
+    "yolo": {
+      "method": "yolo",
+      "backend": "cuda",
+      "available": true,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "weightSha256": "9b2c17ab6124a913e9b3a5c170617920d91b0f01111a8479da69f00e2cf27792",
+      "extractorVersion": 1
+    }
+  },
+  "latencies": {
+    "baseline": {
+      "p50Ms": 6.440949997340795,
+      "p95Ms": 6.998440000825212,
+      "iterations": 30
+    },
+    "dino": {
+      "p50Ms": 31.938599997374695,
+      "p95Ms": 37.71483500022441,
+      "iterations": 30
+    },
+    "persam": {
+      "p50Ms": 92.77534999637282,
+      "p95Ms": 101.39611999838962,
+      "iterations": 30
+    },
+    "yolo": {
+      "p50Ms": 27.51075000196579,
+      "p95Ms": 32.093444998099585,
+      "iterations": 30
+    }
+  },
+  "metrics": {
+    "baseline": {
+      "positiveCount": 8,
+      "negativeCount": 15,
+      "correctPositives": 8,
+      "positiveCoverage": 1.0,
+      "falseAccepts": 1,
+      "absentFalseAccepts": 1,
+      "meanBoundaryErrorPixels": 1.4419741903684242,
+      "medianAcquisitionMs": 138.36335000451072,
+      "p95ProcessingMs": 9.740215001875184
+    },
+    "dino": {
+      "positiveCount": 8,
+      "negativeCount": 15,
+      "correctPositives": 5,
+      "positiveCoverage": 0.625,
+      "falseAccepts": 0,
+      "absentFalseAccepts": 0,
+      "meanBoundaryErrorPixels": 1.558961243214484,
+      "medianAcquisitionMs": 162.09550000348827,
+      "p95ProcessingMs": 37.59833000112848
+    },
+    "persam": {
+      "positiveCount": 8,
+      "negativeCount": 15,
+      "correctPositives": 4,
+      "positiveCoverage": 0.5,
+      "falseAccepts": 1,
+      "absentFalseAccepts": 1,
+      "meanBoundaryErrorPixels": 1.4242626479242133,
+      "medianAcquisitionMs": 203.80979999754345,
+      "p95ProcessingMs": 100.92305500365907
+    },
+    "yolo": {
+      "positiveCount": 8,
+      "negativeCount": 15,
+      "correctPositives": 0,
+      "positiveCoverage": 0.0,
+      "falseAccepts": 0,
+      "absentFalseAccepts": 0,
+      "meanBoundaryErrorPixels": null,
+      "medianAcquisitionMs": null,
+      "p95ProcessingMs": 121.79799499972431
+    }
+  },
+  "promotion": {
+    "dino": {
+      "passed": false,
+      "checks": {
+        "independentEvidence": false,
+        "fewerFalseAccepts": true,
+        "noKnownNegativeAccepted": true,
+        "retainsPositiveCoverage": false,
+        "noBoundaryErrorRegression": true,
+        "runtime": true
+      }
+    },
+    "persam": {
+      "passed": false,
+      "checks": {
+        "independentEvidence": false,
+        "fewerFalseAccepts": false,
+        "noKnownNegativeAccepted": false,
+        "retainsPositiveCoverage": false,
+        "noBoundaryErrorRegression": true,
+        "runtime": false
+      }
+    },
+    "yolo": {
+      "passed": false,
+      "checks": {
+        "independentEvidence": false,
+        "fewerFalseAccepts": true,
+        "noKnownNegativeAccepted": true,
+        "retainsPositiveCoverage": false,
+        "noBoundaryErrorRegression": false,
+        "runtime": true
+      }
+    }
+  },
+  "defaultChanged": false
+}

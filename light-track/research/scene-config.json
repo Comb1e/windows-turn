@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "seed": 42,
+  "featureVersion": 2,
+  "maxSide": 192,
+  "pyramid": [1, 2, 4],
+  "quantiles": [0.1, 0.25, 0.5, 0.75, 0.9],
+  "epsilon": 0.00392156862745098,
+  "gradientBins": 9,
+  "metadataFields": ["exposureTime", "exposureCompensation", "brightness", "contrast", "saturation", "sharpness", "colorTemperature"],
+  "metadataModes": ["exposureMode", "whiteBalanceMode"],
+  "visionSide": 336,
+  "depthSide": 392,
+  "visionThreads": 4,
+  "sources": {
+    "dino": {"repo": "facebookresearch/dinov2", "commit": "7764ea0f912e53c92e82eb78a2a1631e92725fc8", "weights": "https://dl.fbaipublicfiles.com/dinov2/dinov2_vits14/dinov2_vits14_pretrain.pth"},
+    "depth": {"repo": "DepthAnything/Depth-Anything-V2", "commit": "a561b849ebae10a6f5ef49e26c83cbbcd36c71bf", "weights": "https://huggingface.co/depth-anything/Depth-Anything-V2-Small/resolve/main/depth_anything_v2_vits.pth"}
+  },
+  "featureSets": [["lighting"], ["texture"], ["metadata"], ["dino"], ["depth"], ["legacy", "lighting"], ["legacy", "texture"], ["legacy", "metadata"], ["legacy", "dino"], ["legacy", "depth"], ["lighting", "texture", "metadata"], ["legacy", "lighting", "texture", "dino", "depth", "metadata"]],
+  "heads": [
+    {"kind": "ridge", "alpha": 1},
+    {"kind": "ridge", "alpha": 100},
+    {"kind": "extra-trees", "trees": 48, "depth": 8, "leaf": 4, "fraction": 0.5},
+    {"kind": "random-forest", "trees": 48, "depth": 8, "leaf": 4, "fraction": 0.5}
+  ],
+  "scaleFloor": 0.00001,
+  "calibrationBudgets": [3, 5, 10],
+  "calibrationMinQueries": 5,
+  "calibrationRepeats": 3,
+  "calibrationAlphas": [0.1, 1, 10],
+  "calibrationWidths": [0.5, 1, 2],
+  "promotion": {"minGroups": 3, "relativeMAE": 0.1, "maxGroupRegression": 2, "keyboardCeiling": 46, "highAngle": 90},
+  "benchmark": {"warmup": 5, "iterations": 40, "p95Ms": 66.7},
+  "cacheDirectory": "artifacts/scene-feature-cache",
+  "assetDirectory": "artifacts/vision-assets"
+}

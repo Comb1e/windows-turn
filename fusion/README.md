@@ -10,7 +10,7 @@ From this directory:
 npm start
 ```
 
-Requires Node.js 20+ and the separately provisioned `../keyboard/` and `../light-track/` repositories and their runtimes. They are ignored by the root repository and are not included in a clone. The launcher starts Keyboard, Light Track and Fusion, reusing healthy local services. Open [Hinge Fusion](http://localhost:1820). `npm run start:coordinator` runs only Fusion. Stop and restart already running services after updating, then reload their pages.
+Requires Node.js 20+ and the runtimes and local models described in the [Keyboard guide](../keyboard/README.md) and [Light Track guide](../light-track/README.md). Both components are included in this repository; their environments and trained artifacts must be set up locally. The launcher starts Keyboard, Light Track and Fusion, reusing healthy local services. Open [Hinge Fusion](http://localhost:1820). `npm run start:coordinator` runs only Fusion. Stop and restart already running services after updating, then reload their pages.
 
 ## Train Light Track with photos
 

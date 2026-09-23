@@ -2,6 +2,16 @@
 
 Entries record behavior and validation at the stated version. Historical commands and results are not claims about the current release; use the [README](../README.md) and [architecture](architecture.md) for current workflows.
 
+## 2026-09-22 — Include Keyboard and Light Track in the shared repository
+
+**Issue:** A root clone omitted the two estimator applications required by Fusion because their directories were ignored and maintained as nested Git repositories.
+
+**Changes:** Imported all 58 Keyboard files from `6170a6e2cbf93277e32000cdc966611e20c004a2` and all 84 Light Track files from `6c989223a7479408278a94522915dd72f43cbde4` as ordinary directories in the root repository. Removed the root directory exclusions, retained component ignore rules, and added an ignore rule for Keyboard's machine-specific `config.json`. Updated setup and architecture documentation for a single clone. Separate Git metadata was archived outside the workspace after verifying history bundles and full metadata backups. Runtime files, local settings, datasets, environments and trained artifacts were preserved.
+
+**Verification:** All 144 Keyboard tests, 54 Light Track Node tests, 29 Light Track Python tests and 28 Fusion tests pass, including real service startup, failure cases and boundary conditions. Light Track syntax checks cover 31 modules. The imported path list matches both original repositories, source SHA-256 checks confirm unchanged runtime files, both component directories resolve to the root Git repository, and no Git submodule entries are present. Local environments, data, trained artifacts and Keyboard configuration remain ignored. Original research evidence bytes and Windows line endings are retained.
+
+**Limits:** Dependencies and local models still need setup after cloning. No inference behavior, model fitting or hardware acceptance changed.
+
 ## 2026-09-22 — Align documentation with the implemented architecture
 
 **Issue:** Current architecture mixed camera-session, source-selection and controller states, omitted storage and failure boundaries, and included implementation history. Release history was split between root-level and `docs/` logs, while the technical design described only the earlier tree-model path.

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Light Track · Photo-trained angles</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><a class="brand" href="./">◈ LIGHT TRACK</a><a href="/annotate">Annotate lighting screenshots</a></header>
+<main>
+  <section class="intro"><p class="eyebrow">FOLLOW THE SCENE</p><h1>Angles from annotated photos.</h1><p>Train with screenshots labeled manually or by Keyboard, then measure the lid angle locally with the saved model.</p></section>
+  <section class="panel"><h2>Train with screenshots under different lighting</h2><p class="muted">Capture or upload still images and label their measured angles. Each session is one lighting group, with any angles and any number of screenshots. The next group may repeat the lighting or use a new setup.</p><p><a href="/annotate">Open screenshot annotation →</a></p></section>
+  <section id="workspace" class="workspace">
+    <div>
+      <div id="camera-stage" class="camera-stage"><video id="video" playsinline muted hidden></video><canvas id="view" width="640" height="480" aria-label="Live camera preview"></canvas><div id="empty-state"><h2>Start with a clear view</h2><p>Use the built-in webcam. No known light source is required.</p></div></div>
+      <label>Camera (choose the built-in webcam)<select id="camera-source"><option value="">Default camera</option></select></label>
+      <section class="panel model-picker">
+        <h2>Lighting model</h2>
+        <label>Choose model<select id="model-choice" disabled><option value="">Loading saved models…</option></select></label>
+        <div class="camera-controls"><button id="refresh-models" disabled>Refresh models</button></div>
+        <label>Open a model JSON file<input id="model-file" type="file" accept=".json,application/json" disabled></label>
+        <p id="model-status" class="muted" role="status" aria-live="polite">Loading saved models…</p>
+          <p class="muted">The newest completed annotation model is selected when this page opens. Stop the camera to change models. Select a Scene profile only for its saved scene; choose the base model to reset calibration. Image models use the local service. <a href="/annotate">Calibrate this scene →</a></p>
+      </section>
+      <div class="camera-controls"><button id="start" class="primary">Start camera</button><button id="stop" disabled>Stop</button><button id="toggle-video" aria-controls="camera-stage" aria-expanded="true">Hide video</button><span id="fps">— fps</span></div>
+      <div class="session-info"><span id="live-tag">CAMERA OFF</span><span id="frame-size">LOCAL SESSION</span></div><p id="instruction" class="muted"></p><p id="preview-note" class="muted" hidden>Preview hidden. Tracking continues while a session is active. Use Stop to release the camera.</p>
+    </div>
+    <aside>
+      <section class="panel"><div class="section-title"><h2>Experimental screen angle</h2><span id="status" class="badge">STOPPED</span></div><div id="angle" class="angle">—</div><p id="reliability" class="muted">Model required</p><p id="estimate-note" class="muted"></p><p class="muted"><span id="angle-range">10°–120°</span> · 0° closed, 90° upright. Target: 95% within 5°, ≤1° jitter, ≤0.5 s lag. These targets require real validation.</p></section>
+      <section class="panel"><h2>Image statistics</h2><p id="lighting-summary" class="muted"></p></section>
+      <details class="panel"><summary>Diagnostics</summary><p id="raw-angle" class="muted"></p><h2>Reported camera settings</h2><pre id="camera-settings"></pre><button id="stable-camera" disabled>Request stable exposure / white balance</button><p class="muted">Only supported controls are requested. Automatic settings are also supported in collection and training. Estimates remain experimental under unfamiliar lighting.</p></details>
+    </aside>
+  </section>
+  <div id="message" role="status" aria-live="polite"></div>
+  <footer><span>LIGHT TRACK / 0.16</span><span>Local processing. Training uses annotated photos.</span></footer>
+</main><script type="module" src="src/app.js"></script>
+</body></html>

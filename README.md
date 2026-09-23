@@ -9,7 +9,7 @@ Estimate a laptop hinge angle from one front-camera stream and optionally use it
 | Fusion | Shared capture, keyboard priority and continuous display motion | [Hinge Fusion](http://localhost:1820) |
 | Hinge Glass | Native desktop capture, bottom-anchored rotation and distance-based frosting | Local Windows application |
 
-This repository contains `fusion/`, `renderer/` and integration docs. `keyboard/` and `light-track/` are independent, ignored Git repositories; a root clone does not include them or local models. Provision their runtimes and data using the [Keyboard README](keyboard/README.md) and [Light Track README](light-track/README.md). These links require the sibling checkouts. Fusion requires Node.js 20+ and uses Keyboard's local Python environment unless overridden.
+This repository contains `keyboard/`, `light-track/`, `fusion/`, `renderer/` and their documentation. One clone includes all component sources; install their runtimes and prepare local models using the [Keyboard README](keyboard/README.md) and [Light Track README](light-track/README.md). Python environments, datasets, trained artifacts and Keyboard's local `config.json` are ignored by Git. Fusion requires Node.js 20+ and uses Keyboard's local Python environment unless overridden.
 
 ## Run the camera stack
 
@@ -55,6 +55,6 @@ Tests default to a 60 Hz cap and do not change Windows refresh settings. The ren
 ## Documentation
 
 - [Workspace architecture](docs/architecture.md): ownership, end-to-end workflows, storage and failure paths.
-- [Fusion architecture](fusion/docs/architecture.md) and [renderer architecture](renderer/docs/architecture.md): component state machines and design constraints.
+- [Keyboard architecture](keyboard/docs/architecture.md), [Light Track architecture](light-track/docs/architecture.md), [Fusion architecture](fusion/docs/architecture.md) and [renderer architecture](renderer/docs/architecture.md): component workflows, state machines and design constraints.
 - [Technical design and research](docs/technical-design.md): model assumptions, controller reasoning and sources actually used.
 - [Iteration history](docs/iteration.md): dated changes, verification and remaining limitations.
