@@ -3,3 +3,4 @@
 .calibration-panel { margin: 1.5rem 0; padding: 1.5rem; border: 1px solid #334155; border-radius: 16px; }
 #calibration-guide { font-weight: 600; }
 #profiles { max-width: 100%; }
+.metrics { flex-wrap: wrap; }

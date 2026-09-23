@@ -49,25 +49,7 @@
   },
   "output": {
     "fps": 60,
-    "publishMs": 16,
-    "maxTimelineRecords": 60000
-  },
-  "calibration": {
-    "holdMs": 800,
-    "maxGapMs": 500,
-    "minSamples": 8,
-    "minSpanDeg": 10,
-    "smallAngleExclusive": 25,
-    "upperAngle": 120,
-    "paceTolerance": 0.2,
-    "boundaryMs": 300,
-    "stationarySpanDeg": 0.6,
-    "stationaryRotationDegS": 1,
-    "movingRotationDegS": 2,
-    "departureDeg": 1,
-    "maxDurationMs": 180000,
-    "maxRecords": 10000,
-    "jobPollMs": 1000
+    "publishMs": 16
   },
   "startup": {
     "keyboardDirectory": "../keyboard",

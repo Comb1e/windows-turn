@@ -1,3 +1,7 @@
+# Current workflow validation
+
+Light Track 0.16.0 / Fusion 0.3.0 uses photo annotations only for training/calibration. Current verification is recorded in [iteration.md](iteration.md). The records below are historical evidence; removed collection/training commands are not supported.
+
 # Validation record — 2026-09-14
 
 ## Software checks

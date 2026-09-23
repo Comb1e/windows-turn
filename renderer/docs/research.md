@@ -15,3 +15,21 @@ Reviewed 2026-09-17. Project code was written independently; no Magpie implement
 | [Microsoft Projection Transform](https://learn.microsoft.com/en-us/windows/win32/direct3d9/projection-transform), reread for 0.1.2 | Distinguish rigid geometry from perspective and viewport scaling; preserve aspect ratio in slider previews | A rotating-plane test is not a substitute for the physical-lid compensation required to anchor the image in the room |
 
 Robert Kooima's generalized-perspective article was located during planning, but its original server could not be read securely in this environment; it is not claimed as a directly read implementation source.
+
+## References used for 0.1.5 — Fusion transport — 2026-09-17
+
+| Reference actually read | Role in this change | Limit |
+| --- | --- | --- |
+| [Microsoft WinHttpQueryDataAvailable](https://learn.microsoft.com/en-us/windows/win32/api/winhttp/nf-winhttp-winhttpquerydataavailable), remarks and example | Explicit guidance to query available data before reading when processing partial responses promptly; motivated the SSE transport fix | Availability does not define an SSE message boundary; the existing incremental parser remains necessary |
+| [Microsoft WinHttpReadData](https://learn.microsoft.com/en-us/windows/win32/api/winhttp/nf-winhttp-winhttpreaddata), synchronous read semantics | Bounded reads, buffer-filling behavior and zero-byte EOF handling | Documentation alone does not establish actual latency; the native HTTP regression first failed on the old code and passed with the fix |
+| This repository's [Fusion server](../../fusion/server.js), [controller](../../fusion/src/controller.js) and [HTTP contract test](../../fusion/tests/server.test.js) | Verify snapshot/SSE payloads, stopped/requesting states, displayed angle/velocity and session changes; run the real coordinator as an integration control | Measurement services and camera uploads in this test are simulated; no estimator implementation was copied or changed |
+
+## Additional references used for 0.1.3–0.1.4 — 2026-09-17
+
+| Reference actually read | Role in this change | Limit |
+| --- | --- | --- |
+| [NVIDIA GPU Gems 3, Chapter 28: Practical Post-Process Depth of Field](https://developer.nvidia.com/gpugems/gpugems3/part-iv-image-effects/chapter-28-practical-post-process-depth-field) | Per-pixel blur radius, reduced-resolution Gaussian images, and blending multiple blur levels; motivates spatially varying footprints instead of a uniform blur/opacity mix | Uses camera depth of field; our independently derived distance is between the virtual desktop and finite glass, not the thin-lens CoC formula or scene depth |
+| [Microsoft Window Features: Owned Windows](https://learn.microsoft.com/en-us/windows/win32/winmsg/window-features) | Explains why the full-screen owned overlay always covered the controls and disappeared when the owner minimized | Window ordering does not alone establish end-to-end capture correctness |
+| [Microsoft SetWindowPos](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowpos) | Keep controls above output without activating them; release topmost after disable | Verified separately with native fixture windows |
+
+Distance is derived by closest-point projection onto a finite rectangle sharing the hinge axis. Gaussian levels are interpolated by variance. No project source or shader implementation was copied.

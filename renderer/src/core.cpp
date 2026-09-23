@@ -13,20 +13,24 @@ void Settings::validate() const {
         if(!std::isfinite(v)||v<lo||v>hi)throw std::runtime_error(std::string("Invalid ")+name);
     };
     range(manualAngle,0,180,"manual angle (0–180)");range(referenceAngle,1,179,"reference angle (1–179)");
-    range(blurPixels,0,100,"blur (0–100 pixels)");range(eyeX,-2000,2000,"eye lateral offset");
+    range(blurPixels,0,100,"blur (0–100 pixels)");
     range(frostResponse,1,8,"frost response (1–8)");
-    range(eyeY,100,3000,"eye distance (100–3000 mm)");range(eyeZ,50,2000,"eye height (50–2000 mm)");
+    range(frostDistanceMm,1,2000,"frost distance scale (1–2000 mm)");
+    range(eyeY,100,3000,"viewing distance (100–3000 mm)");
     range(screenWidth,50,2000,"screen width");range(screenHeight,50,2000,"screen height");
-    range(hingeOffset,0,200,"hinge offset");range(maxFps,1,240,"frame cap (1–240)");
+    range(maxFps,1,240,"frame cap (1–240)");
     range(sweepSeconds,.25,120,"sweep duration");range(staleMs,50,5000,"stale timeout");
     range(predictionMs,0,50,"prediction horizon");range(retryMs,100,30000,"retry interval");
     range(captureTimeoutMs,1000,30000,"capture timeout");range(blurScale,.125,.5,"blur scale");
-    if(!fusionUrl.starts_with("http://127.0.0.1:")&&!fusionUrl.starts_with("http://localhost:"))
-        throw std::runtime_error("Fusion URL must use loopback HTTP");
-    if(projectionMode!="rotation"&&projectionMode!="physical")throw std::runtime_error("Unknown projection mode");
-    const double r=referenceAngle*std::numbers::pi/180;
-    if(projectionMode=="physical"&&std::abs(-std::sin(r)*eyeY+std::cos(r)*eyeZ)<1)
-        throw std::runtime_error("Eye must not lie on the virtual screen plane");
+    // Only a loopback origin is supported; credentials, paths and queries would
+    // otherwise be silently discarded by the fixed /api endpoint requests.
+    std::string port;
+    for(auto prefix:{"http://127.0.0.1:","http://localhost:"})
+        if(fusionUrl.starts_with(prefix))port=fusionUrl.substr(std::char_traits<char>::length(prefix));
+    if(port.ends_with('/'))port.pop_back();
+    if(port.empty()||port.size()>5||!std::all_of(port.begin(),port.end(),[](char c){return c>='0'&&c<='9';})
+       ||std::stoi(port)<1||std::stoi(port)>65535)
+        throw std::runtime_error("Fusion address must be http://127.0.0.1:PORT or http://localhost:PORT (1–65535)");
 }
 double nowMs(){return std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now().time_since_epoch()).count();}
 PixelSize fitPreview(int sourceWidth,int sourceHeight,int maxWidth,int maxHeight){
@@ -35,8 +39,8 @@ PixelSize fitPreview(int sourceWidth,int sourceHeight,int maxWidth,int maxHeight
     return {std::max(1,int(std::round(sourceWidth*scale))),std::max(1,int(std::round(sourceHeight*scale)))};
 }
 namespace {
-// Destination pixels cast rays onto the source plane. The two modes differ in
-// which plane moves, not in texture scaling. Both share the active bottom edge.
+// Destination pixels cast rays onto the rotating source plane. Both planes
+// share the active bottom edge; the full image is never stretched to fit.
 Mapping projectPlanes(const Settings& s,Vec3 e,Vec3 sourceUp,Vec3 destinationUp){
     Mapping result;const Vec3 n{0,-sourceUp.z,sourceUp.y};
     const std::array<Vec3,3> p{Vec3{s.screenWidth,0,0},destinationUp*(-s.screenHeight),
@@ -60,22 +64,13 @@ Mapping projection(const Settings& s,double angle){
     if(!std::isfinite(angle)||angle<0||angle>180)throw std::runtime_error("Invalid physical angle");
     if(angle>=s.referenceAngle)return {{1,0,0,0,1,0,0,0,1},true};
     const double radians=std::numbers::pi/180;
-    if(s.projectionMode=="rotation"){
-        // Stationary monitor: a rigid source rectangle rotates away around its
-        // bottom edge. A centered pinhole camera makes the preview independent
-        // of the current physical lid pose. Width/height are never resized to fit.
-        double tilt=(s.referenceAngle-angle)*radians;
-        const Vec3 up{0,std::cos(tilt),std::sin(tilt)},eye{0,s.screenHeight/2,-s.eyeY};
-        const Vec3 normal{0,-up.z,up.y};
-        // Cull the back face and the exact edge-on singularity; don't flip the image.
-        if(dot(normal,eye)>=-1e-7)return {{0,0,0,0,0,0,0,0,-1},false};
-        return projectPlanes(s,eye,up,{0,1,0});
-    }
-    const double a=angle*radians,r=s.referenceAngle*radians;
-    const Vec3 ref{0,std::cos(r),std::sin(r)};
-    // Mechanical hinge offset locates the stationary visual bottom at reference.
-    const Vec3 eye=Vec3{s.eyeX,s.eyeY,s.eyeZ}-ref*s.hingeOffset;
-    return projectPlanes(s,eye,ref,{0,std::cos(a),std::sin(a)});
+    // One geometry for live capture, grid, preview and full-screen presentation.
+    double tilt=(s.referenceAngle-angle)*radians;
+    const Vec3 up{0,std::cos(tilt),std::sin(tilt)},eye{0,s.screenHeight/2,-s.eyeY};
+    const Vec3 normal{0,-up.z,up.y};
+    // Cull the back face and the exact edge-on singularity; don't flip the image.
+    if(dot(normal,eye)>=-1e-7)return {{0,0,0,0,0,0,0,0,-1},false};
+    return projectPlanes(s,eye,up,{0,1,0});
 }
 std::optional<std::array<double,2>> Mapping::map(double u,double v)const{
     const double d=h[6]*u+h[7]*v+h[8];
@@ -83,7 +78,16 @@ std::optional<std::array<double,2>> Mapping::map(double u,double v)const{
     return std::array<double,2>{(h[0]*u+h[1]*v+h[2])/d,(h[3]*u+h[4]*v+h[5])/d};
 }
 double closure(double angle,double reference){double t=std::clamp((reference-angle)/reference,0.,1.);return t*t*(3-2*t);}
-double frosting(double angle,double reference,double response){return 1-std::pow(1-closure(angle,reference),response);}
+double glassSeparationAtTop(const Settings& s,double angle){
+    if(!std::isfinite(angle)||angle<0||angle>180)throw std::runtime_error("Invalid physical angle");
+    // Beyond 90 degrees the closest point on the finite glass is its bottom
+    // edge, not the extension of the mathematical plane below the keyboard.
+    double tilt=std::clamp(s.referenceAngle-angle,0.,90.)*std::numbers::pi/180;
+    return s.screenHeight*std::sin(tilt);
+}
+double frostAtDistance(double distanceMm,double distanceScaleMm,double response){
+    return -std::expm1(-response*std::max(0.,distanceMm)/distanceScaleMm);
+}
 const wchar_t* stateName(State s){switch(s){case State::Disabled:return L"Disabled";case State::Starting:return L"Starting";
 case State::Active:return L"Active";case State::Recovering:return L"Recovering";case State::Suspended:return L"Suspended";default:return L"Faulted";}}
 bool canTransition(State a,State b){
@@ -105,14 +109,19 @@ AngleSample SweepAngle::sample(double now){
     double p=t*t*t*(10+t*(-15+6*t)),v=30*t*t*(1-t)*(1-t)*(to_-from_)*1000/duration_;
     return {from_+(to_-from_)*p,v,now,now,true,true,"sweep","sweep"};
 }
-void AngleGate::connection(){connected_=true;retired_.clear();last_.session.clear();last_.valid=false;last_.fresh=false;}
+void AngleGate::connection(){connected_=true;last_.fresh=false;}
 void AngleGate::disconnect(){connected_=false;last_.fresh=false;}
+void AngleGate::endSession(){
+    disconnect();
+    if(!last_.session.empty()&&std::find(retired_.begin(),retired_.end(),last_.session)==retired_.end())retired_.push_back(last_.session);
+}
 bool AngleGate::ingest(const AngleSample& v){
-    if(v.session.empty()||!std::isfinite(v.angle)||v.angle<0||v.angle>180||!std::isfinite(v.velocity)
-       ||!std::isfinite(v.sourceMs)||!std::isfinite(v.receivedMs))return false;
+    if(!v.valid||v.session.empty()||!std::isfinite(v.angle)||v.angle<0||v.angle>180||!std::isfinite(v.velocity)
+       ||!std::isfinite(v.sourceMs)||v.sourceMs<0||!std::isfinite(v.receivedMs)||v.receivedMs<0)return false;
     if(std::find(retired_.begin(),retired_.end(),v.session)!=retired_.end())return false;
     if(v.session==last_.session&&v.sourceMs<=last_.sourceMs)return false;
-    if(v.session!=last_.session&&!last_.session.empty())retired_.push_back(last_.session);
+    if(v.session!=last_.session&&!last_.session.empty()
+       &&std::find(retired_.begin(),retired_.end(),last_.session)==retired_.end())retired_.push_back(last_.session);
     // A retained display is usable but is never reported as a fresh measurement.
     last_=v;connected_=true;return true;
 }

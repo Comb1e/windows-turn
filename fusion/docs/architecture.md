@@ -1,166 +1,114 @@
-# Fusion architecture and workflows
+# Fusion architecture
+
+Fusion connects one browser camera to independent Keyboard and Light Track services, selects an angle measurement, and publishes smooth display motion. It owns orchestration and controller state; Light Track owns photo training and saved models, and Hinge Glass owns rendering.
+
+## Components and data flow
+
+```mermaid
+flowchart LR
+  Browser[Browser camera and upload queue] --> API[Coordinator frame validation]
+  API --> KQ[Keyboard queue]
+  API --> LQ[Light Track queue]
+  KQ --> K[Keyboard HTTP service]
+  LQ --> L[Light Track HTTP service]
+  K --> Results[Validated compact results]
+  L --> Results
+  Results --> Pair[Exact-frame pair cache]
+  Pair --> Anchors[Latest pending adaptation anchor]
+  Anchors --> L
+  Results --> Selection[Source selection and physical velocity]
+  Selection --> Controller[Persistent display controller]
+  Controller --> Output[JSON snapshot and SSE events]
+  Output --> UI[Browser status]
+  Output --> Renderer[Hinge Glass]
+```
+
+The browser opens the webcam and provides RGBA8 pixels, capture time, frame ID and available camera settings. The coordinator serves the UI, owns one camera session, validates uploads and maps browser timestamps onto its monotonic clock. Independent HTTP clients acquire service leases and serialize requests. Each upload/service queue retains one running request and only the newest waiting frame, so a slow image model cannot block keyboard output.
+
+The source selector determines measurement authority and physical velocity. The display controller owns the continuous trajectory. A default 60 Hz timer advances it independently of the default 15 fps capture; angle events are rate-limited by the configured publication interval. Slow SSE readers are disconnected rather than accumulating output.
+
+## Startup and camera session
+
+The launcher verifies an existing coordinator before starting dependencies. It reuses compatible healthy services, starts missing ones with their own runtimes and configurations, and polls readiness with a bounded backoff. Occupied incompatible ports, missing runtimes or readiness failures stop startup. Shutdown and child-process failure clean up only processes created by that launcher.
+
+The following diagram describes the camera session lifecycle. `STOPPED` and `REQUESTING` are snapshot states; after the first frame, the snapshot's `state` comes from source selection below.
+
+```mermaid
+stateDiagram-v2
+  [*] --> STOPPED
+  STOPPED --> REQUESTING: Start accepted and session allocated
+  REQUESTING --> Running: Camera ready and first upload accepted
+  REQUESTING --> STOPPED: Cancel or camera acquisition failure
+  Running --> STOPPED: Stop, camera disconnect or page exit
+```
+
+Camera geometry comes from Keyboard health when supplied, otherwise Light Track health or Fusion defaults. The browser requests exact width and height and rejects a different delivered resolution. A saved profile must match width, height and field of view. An incompatible startup profile produces a visible error and a lighting session without model measurement; keyboard processing can continue.
+
+Only one coordinator session can be active. A second start receives 409 unless the existing session has exceeded the idle lease threshold; the new start then closes it. This replacement check runs on start, not on a periodic expiration timer. Cancelled browser attempts release camera tracks even if permission resolves late. Service leases also reject competing consumers such as Keyboard-assisted photo collection.
+
+Uploads must use the current session ID, exact RGBA byte count and dimensions, strictly increasing frame IDs and nonnegative increasing timestamps. Clients accept replies only for the requested service session, frame and timestamp and an eligible lighting generation. Per-source timestamp ordering prevents a late result from replacing a newer one. A processing timeout retains service ownership; an explicit expired-session response causes reconnection on later frames.
+
+## Measurement selection
+
+Source selection evaluates these rules in order on every controller tick. Freshness is measured from capture time, not response arrival.
 
 ```mermaid
 flowchart TD
-    UI[Camera UI: exact resolution and RGBA] --> HTTP[Frame upload]
-    HTTP --> Clients[Independent service clients]
-    Clients --> Results[Session-bound timestamped results]
-    Results --> Engine[Source state machine]
-    Results --> Pairs[Bounded exact-frame pairing]
-    Pairs --> Anchors[Latest pending anchor to Light Track]
-    Engine --> Motion[Keyboard robust slope or relative scene velocity]
-    Engine --> Target[Authoritative target]
-    Motion --> Display[Physical feedforward and septic correction]
-    Target --> Display
-    Display --> API[Current JSON and 60 Hz SSE]
-    API --> View[Displayed angle plus raw measurement]
-    Display --> Recording[Actual display timeline]
-    Clients --> Recording
+  Tick[Controller tick] --> K{Fresh valid Keyboard angle?}
+  K -->|Yes| Keyboard[KEYBOARD: exact measured target]
+  K -->|No| Grace{Last valid Keyboard within grace?}
+  Grace -->|Yes| Held[KEYBOARD_GRACE: held keyboard target]
+  Grace -->|No| L{Fresh valid Light Track angle?}
+  L -->|Yes| Lighting[LIGHTING: provisional target]
+  L -->|No| Unavailable[UNAVAILABLE: no current measurement]
 ```
 
-```mermaid
-stateDiagram-v2
-    [*] --> STOPPED
-    STOPPED --> UNAVAILABLE: start camera
-    UNAVAILABLE --> KEYBOARD: valid keyboard result
-    UNAVAILABLE --> LIGHTING: usable brightness result
-    KEYBOARD --> KEYBOARD: fresh valid keyboard, regardless of brightness
-    KEYBOARD --> KEYBOARD_GRACE: invalid keyboard, last valid at most 200 ms old
-    KEYBOARD_GRACE --> KEYBOARD: keyboard reacquired
-    KEYBOARD_GRACE --> LIGHTING: grace ends and brightness usable
-    KEYBOARD_GRACE --> UNAVAILABLE: neither source usable
-    LIGHTING --> KEYBOARD: valid keyboard immediately
-    LIGHTING --> UNAVAILABLE: unusable or stale brightness
-    KEYBOARD --> UNAVAILABLE: no fresh evidence
-    UNAVAILABLE --> STOPPED: stop
-    KEYBOARD --> STOPPED: stop
-    KEYBOARD_GRACE --> STOPPED: stop
-    LIGHTING --> STOPPED: stop
-```
+Defaults allow 500 ms source freshness and a 200 ms keyboard grace measured from the last valid keyboard capture. Grace is not an extra 200 ms added after freshness expires. Only `KEYBOARD` sets `authoritative: true`; grace is explicitly held and provisional. An identity rejection cannot contribute a new target or anchor, although an earlier accepted reading can still remain within grace.
 
-`FusionEngine.ingest()` accepts increasing capture timestamps independently for each source. Keyboard validity comes from the service; the fusion layer never compares its value against brightness to accept/reject it. A valid sample is authoritative until superseded or stale. An explicit loss gets a 200 ms grace period from the last valid capture. Samples older than 500 ms never become a current measurement.
+Keyboard velocity uses robust slopes from enough contiguous keyboard observations; if unavailable, input velocity is zero. Neither scene motion nor sample-age extrapolation alters a keyboard target, including a retained target. Light Track motion can drive a lighting fallback or a retained lighting target. Source/model changes are never differentiated into physical velocity.
 
-`DisplayController.update(target, motion, timestamp, observation)` retains position through jerk, exact filtered physical motion, and a deadline-bound septic correction. It advances physical motion in bounded substeps and evaluates correction polynomials directly. Stale gaps freeze position, retain the chase deadline, and clear derivative states; resuming starts from the retained position. Control constants reside in `config.json`.
+`measurementAngleDeg` is the currently selected measurement, `targetAngleDeg` is the controller feedback target, and `displayAngleDeg` is the animated output. Measurement age, held flags and source quality distinguish a current measurement from a retained value.
 
-The capture clock is aligned once to coordinator monotonic time on the first uploaded frame; frame IDs and timestamps strictly increase. The UI publishes at the configured camera rate, keeps one upload active plus one latest waiting upload, and does not use its preview canvas as an input. Each service client independently holds one request and one latest pending frame. Failed/expired leases can reconnect, while timeouts retain the active service's lease and do not overtake its worker operation.
-
-The `/api/events` stream contains session-bound angle and source events. Slow SSE readers are closed to prevent an unbounded network buffer and can reconnect. `/api/angle` supplies the same latest output for local applications. Recording and adaptation exports are explicit and bounded; stopping the session clears server-side state.
-
-```mermaid
-flowchart LR
-    Source[Separate full-range recordings] --> Split[Training / validation / test recording IDs]
-    Split --> Train[Light Track training function]
-    Train --> Model[Frozen source forest and motion calibration]
-    Model --> New[Selected profile and keyboard initialization]
-    New --> Online[Matched keyboard anchors after current prediction]
-    Online --> Temporary[Bounded temporary adapter]
-    Temporary --> Export[Export features and real display timeline]
-    Export --> Replay[Causal replay and independent reference scoring]
-```
-
-## Sweep calibration and smooth deadline controller — 2026-09-14
-
-```mermaid
-flowchart LR
-  Camera[One 640 x 480 RGBA stream] --> Keyboard[Keyboard API: accurate raw angle]
-  Camera --> Lighting[Light Track API: features and relative motion]
-  Keyboard --> Pair[Exact frame ID and timestamp pairing]
-  Lighting --> Pair
-  Pair --> Sweep[Fusion sweep state machine and pace checks]
-  Sweep --> Job[Light Track asynchronous training job]
-  Job --> Store[Immutable profile: model, recording, provenance, diagnostics]
-  Store --> Select[Fusion profile selector]
-  Select --> Install[Install between frames with generation ID]
-  Install --> Lighting
-  Keyboard --> Target[Authoritative source selection]
-  Lighting --> Target
-  Target --> Display[Persistent physical feedforward plus septic correction]
-  Display --> Output[Raw and displayed angles, deadline and comfort diagnostics]
-```
-
-```mermaid
-stateDiagram-v2
-  [*] --> WAIT_SMALL_ANGLE
-  WAIT_SMALL_ANGLE --> OPENING: stable keyboard below 25 degrees
-  OPENING --> UPPER_HOLD: reliable stop or explicit user hold; pace accepted
-  UPPER_HOLD --> CLOSING: visual departure or manual start
-  CLOSING --> LOWER_HOLD: keyboard below 25 degrees
-  LOWER_HOLD --> TRAINING: stable hold and pace accepted
-  TRAINING --> READY: immutable profile published and activated
-  OPENING --> RETRY: pace, gap, direction or configuration failure
-  CLOSING --> RETRY: pace, gap, direction or configuration failure
-  TRAINING --> RETRY: job failure
-  RETRY --> WAIT_SMALL_ANGLE: new attempt
-```
-
-Fusion owns workflow timing; Light Track owns features, recording, model training, profile persistence, and inference. Keyboard code remains in its own repository. The 120-degree upper endpoint is user-supplied; reliable visual motion detects stopping only. Manual upper/departure controls cover unavailable motion tracking. Holds last 0.8 seconds, keyboard pace requires eight samples and ten degrees of coverage, and accepted speed mismatch is at most 20%. Model coverage reflects actual small endpoints. Raw keyboard labels remain authoritative; hidden labels are explicitly inferred from timestamps, with a 300 ms boundary exclusion. Inferred labels cannot enter independent accuracy evaluation.
+## Display controller
 
 ```mermaid
 stateDiagram-v2
   [*] --> STALE
-  STALE --> TRACKING: fresh target within tolerance
-  STALE --> CHASING: fresh discrepancy above one degree
-  TRACKING --> CHASING: discrepancy above one degree
-  CHASING --> CHASING: retarget from current position, speed, acceleration and jerk
-  CHASING --> TRACKING: correction completed
-  TRACKING --> STALE: stale input
-  CHASING --> STALE: target older than 500 ms; freeze and retain deadline
+  STALE --> TRACKING: Usable target and settled error
+  STALE --> CHASING: Usable target needs correction
+  TRACKING --> CHASING: Position error exceeds tolerance
+  CHASING --> TRACKING: Fresh target reached with settled derivatives
+  TRACKING --> STALE: Target hold expires or update gap is too long
+  CHASING --> STALE: Target hold expires or update gap is too long
+  CHASING --> CHASING: Replan or mark overdue without renewing deadline
 ```
 
-The physical path uses three exact first-order velocity stages with a combined mean delay of 120 ms. This keeps physical velocity, acceleration, and jerk continuous when the supplied motion changes. Septic correction paths match all four derivatives at replanning boundaries. Analytical roots of polynomial derivatives determine preferred speed, acceleration, and jerk violations. The shortest candidate satisfying preferences is chosen; otherwise the candidate minimizing normalized violation is used before the immutable one-second deadline. A 250 ms tracking horizon and 0.95 s initial correction maximum leave scheduling reserve. Preferred limits are configurable and can be exceeded to meet the deadline. Position is clamped only at the physical operating range; stale gaps freeze retained output. These two cases are explicit continuity exceptions.
+The physical-motion path filters velocity through three stages with a combined 120 ms mean delay. A separate seventh-degree correction trajectory joins position, velocity, acceleration and jerk continuously. Ordinary replanning and profile/source changes preserve these derivatives. Physical-range clamping and stale freezing are explicit continuity exceptions.
 
-Light Track stores profiles under `data/profiles/:id`, publishing only after training artifacts validate. A separate atomically replaced selection file remembers the chosen ID; models/recordings are immutable. Temporary adapter anchors never overwrite them. Session creation supports `mode: features-only` to collect even with an incompatible CLI model, and `initialization: model-output` avoids a spurious 120-degree startup correction. Activation is queued for the next frame; generation IDs reject obsolete model results and anchors. Motion workers reset when model calibration changes and do not return old calibration velocities during the reset.
+Corrections larger than the default 1° tolerance start a one-second deadline. Initial candidates end within 950 ms; replanning keeps the original deadline. Preferred speed, acceleration and jerk limits choose comfortable trajectories where possible, but deadline pressure may exceed them. An expired deadline is reported, and smooth recovery continues without hiding the miss by restarting the countdown.
 
-## Unified startup and retained correction deadlines
+When source selection is `UNAVAILABLE`, the controller can retain its previous target through the 500 ms display-hold window measured from that observation. Beyond the hold, or after a controller update gap over 500 ms, it freezes at the current display angle with `controllerState: STALE`. Thus source availability and controller state can differ. The initial 120° display value is not a measured starting angle.
 
-```mermaid
-flowchart LR
-  Command[Fusion npm start] --> Health[Check configured local health APIs]
-  Health --> Reuse[Reuse compatible running services]
-  Health --> Spawn[Start missing services in independent projects]
-  Spawn --> Ready[Wait for readiness]
-  Ready --> UI[Fusion localhost page]
-  Stop[Ctrl+C or owned child failure] --> Shutdown[Gracefully stop only owned processes]
-```
+## Models and temporary adaptation
 
-`start.js` and the generic launcher handle runtime discovery, local port validation, bounded readiness checks, IPC shutdown of Node services, and the keyboard subprocess. Model/profile state stays in Light Track. `npm run start:coordinator` retains independent startup.
+Light Track's annotation page saves measured photos, trains annotation models and publishes evaluated image models or scene profiles. Fusion lists these published artifacts through the profile API. A profile selected while stopped becomes the saved selection; a live change is validated by Light Track and applied on its next frame. Fusion invalidates its previous lighting result, and clients reject older model generations. Light Track clears its inference cache and adaptation anchors when the new generation activates. The display controller remains continuous.
 
-```mermaid
-stateDiagram-v2
-  CHASING --> CHASING: fresh reading or brief display-target hold; deadline unchanged
-  CHASING --> STALE: target age exceeds 500 ms; retain deadline and freeze position
-  STALE --> CHASING: fresh target resumes before original deadline
-  STALE --> OVERDUE: original deadline expires
-  CHASING --> OVERDUE: deadline expires before convergence
-  OVERDUE --> OVERDUE: recover continuously; countdown stays at zero
-  CHASING --> TRACKING: fresh target reached within tolerance
-  OVERDUE --> TRACKING: target reached; report missed deadline
-```
+Fusion matches compact results by frame ID and exact timestamp. A valid Keyboard match supplies a temporary adaptation anchor carrying the lighting model generation. Light Track checks its own cached frame, generation, lighting usability and anchor range before fitting. The current anchor range is 10–45°, independently of Keyboard's advertised measurement range; a valid 46° reading can drive Fusion while being rejected as an adaptation anchor. Anchor errors do not block the keyboard queue or publish training labels.
 
-`OVERDUE` is exposed as a flag on the persistent chase rather than a new source-selection state. A correction starts with a 1000 ms deadline; its first trajectory is at most 950 ms. Repeated missing results do not restart its trajectory or countdown. The display may follow a separately aged target for at most 500 ms, while the selected raw measurement remains unavailable. Longer gaps freeze movement but retain the original deadline. This fixes stationary stagnation caused by discarding the curve repeatedly. The actual monotonic clock remains authoritative; overdue work is never represented as a new full countdown.
+Temporary adaptation never overwrites a base model or scene profile. Photo annotation is the training/calibration workflow; unsupported calibration, recording, checkpoint and reference API routes return 410 with an annotation-page pointer. Existing saved artifacts remain loadable and exportable. Historical recording replay is read-only analysis.
 
-## Automatic keyboard limits for calibration — 2026-09-15
+## Interfaces, storage and configuration
 
-```mermaid
-flowchart LR
-  Session[Keyboard session response: model ID and supported angle range] --> Bind[Fusion snapshots the active model at sweep start]
-  Frames[Keyboard frame result and model ID] --> Pair[Exact frame and timestamp matching]
-  Bind --> Pair
-  Pair --> Identity{Same keyboard model?}
-  Identity -->|No| Retry[RETRY: collect with one consistent model]
-  Identity -->|Yes| Export[Sweep export with keyboardModel and unchanged raw labels]
-  Export --> Validate[Shared Light Track keyboard label validator]
-  Legacy[Legacy sweep without model metadata] --> Fallback[Configured operating range only; model range unknown]
-  Fallback --> Validate
-  Validate --> Train[Weighted sweep training]
-  Train --> Trees[Export trees: repair endpoint roundoff only]
-  Trees --> Profile[Validate and publish immutable selectable profile]
-```
+| Interface | Purpose |
+| --- | --- |
+| `/api/health` | Coordinator identity, effective configuration and independent service health |
+| `/api/start`, `/api/stop`, `/api/frames` | Camera-session ownership and validated RGBA uploads |
+| `/api/angle`, `/api/events` | Latest display snapshot; `angle`, `service` and `stopped` events |
+| `/api/profiles`, `/api/profile`, `/api/profiles/:id/export` | List, select and download Light Track artifacts |
+| `/api/adaptation` | Export the current Light Track correction for diagnostics |
 
-Fusion obtains `modelId` and `angleRange` from the active keyboard session API; it does not read the keyboard project's configuration or model files. The range is already the keyboard model's supported range intersected with its configured operating limits (currently 10–46 degrees). The sweep captures this contract once, checks the model ID on subsequent matched frames, and supplies it automatically to training. A model change requires a new sweep. Future model ranges need no Light Track code edits.
+Fusion binds to loopback, rejects cross-origin browser requests, bounds request bodies and uses service timeouts. It persists no camera frames, models, training timeline or display recording. Its in-memory pair cache defaults to 256 entries; service feature vectors are discarded before storage. Light Track owns persistent artifacts and selected-profile state. Explicit browser downloads use Blobs and release their object URLs.
 
-The sweep trainer and shared source-recording loader use one validator. Recorded model limits are intersected with the lighting operating range from configuration; malformed contracts or out-of-range labels fail with the frame, angle, and accepted limits. Labels remain exact. The recording, model, report, and profile preserve `keyboardLabelValidation` with the model ID, reported range, accepted range, and range source.
+[config.json](../config.json) owns service locations, camera defaults, queue/lease limits, source timing, controller bounds and output cadence. The launcher uses the configured sibling directories and each project's runtime. A root clone alone does not contain the ignored Keyboard/Light Track repositories or local models.
 
-Older exports never recorded keyboard model metadata. They retain matching-frame provenance and use the configured lighting operating range, explicitly marked `legacy-operating-range-only`; the current model is not retroactively claimed as the original model. This compatibility path does not certify the missing historical model range. Independent accuracy gates remain unchanged.
-
-The shared tree exporter corrects only floating-point endpoint roundoff (for example, 120.00000000000006 to 120). It rejects materially out-of-range predictions and does not alter source labels or fitted trees. Runtime model validation remains strict.
+Tests cover camera cancellation, exact pairing, identity rejection, original successful source paths, conflicting scene motion, stale generations, queue bounds, missing-read coverage and controller boundaries. Independent trajectory controls and counterexamples are described in [technical design](../../docs/technical-design.md) and [keyboard-target validation](keyboard-target-validation.md). Simulated frames and model fixtures establish software behavior, not physical angle accuracy. Current verification and previous changes are in [iteration history](iteration.md).
